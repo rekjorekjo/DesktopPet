@@ -2,6 +2,7 @@
 #define PETACTION_H
 
 #include <QString>
+#include <QStringList>
 
 struct PetAction
 {
@@ -10,6 +11,7 @@ struct PetAction
     QString folderPath;
     int fps;
     int frameCount;
+    QStringList frameFiles;
 
     PetAction();
     PetAction(const QString &actionId, const QString &actionName, const QString &path, int actionFps = 15, int frames = 0);

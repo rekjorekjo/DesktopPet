@@ -28,12 +28,18 @@ public:
     static bool loadPlaylistFromJson(const QString &filePath, PetPlaylist &playlist);
     static bool savePlaylistToJson(const QString &filePath, const PetPlaylist &playlist);
 
+    static bool loadPetFromDirectory(const QString &petDirPath, PetBasicInfo &info, QList<PetAction> &actions, PetPlaylist &playlist);
+
 private:
     static QJsonObject actionToJson(const PetAction &action);
     static PetAction jsonToAction(const QJsonObject &obj);
 
     static QJsonObject actionRefToJson(const PetActionRef &ref);
     static PetActionRef jsonToActionRef(const QJsonObject &obj);
+
+    static void scanActionFrames(PetAction &action, const QString &petDirPath);
+    static QStringList scanFrameFiles(const QString &folderPath);
+    static bool naturalSortLessThan(const QString &a, const QString &b);
 };
 
 #endif // PETCONFIGMANAGER_H

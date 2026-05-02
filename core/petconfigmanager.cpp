@@ -1,6 +1,10 @@
 #include "petconfigmanager.h"
 
+#include <algorithm>
+
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -227,6 +231,101 @@ bool PetConfigManager::savePlaylistToJson(const QString &filePath, const PetPlay
     file.close();
 
     return true;
+}
+
+bool PetConfigManager::loadPetFromDirectory(const QString &petDirPath, PetBasicInfo &info, QList<PetAction> &actions, PetPlaylist &playlist)
+{
+    QDir petDir(petDirPath);
+    if (!petDir.exists()) {
+        return false;
+    }
+
+    QString petJsonPath = petDir.filePath("pet.json");
+    if (!loadPetJson(petJsonPath, info, actions)) {
+        return false;
+    }
+
+    QString playlistJsonPath = petDir.filePath("playlist.json");
+    if (QFile::exists(playlistJsonPath)) {
+        if (!loadPlaylistFromJson(playlistJsonPath, playlist)) {
+            playlist.clearAll();
+            return false;
+        }
+    } else {
+        playlist.clearAll();
+    }
+
+    for (PetAction &action : actions) {
+        scanActionFrames(action, petDirPath);
+    }
+
+    return true;
+}
+
+void PetConfigManager::scanActionFrames(PetAction &action, const QString &petDirPath)
+{
+    QString absoluteFolderPath;
+    if (QDir::isAbsolutePath(action.folderPath)) {
+        absoluteFolderPath = QDir::cleanPath(action.folderPath);
+    } else {
+        absoluteFolderPath = QDir::cleanPath(QDir(petDirPath).filePath(action.folderPath));
+    }
+
+    QDir actionDir(absoluteFolderPath);
+    if (!actionDir.exists()) {
+        action.frameCount = 0;
+        action.frameFiles.clear();
+        return;
+    }
+
+    QStringList frameFiles = scanFrameFiles(absoluteFolderPath);
+    action.frameFiles = frameFiles;
+    action.frameCount = frameFiles.size();
+}
+
+QStringList PetConfigManager::scanFrameFiles(const QString &folderPath)
+{
+    QStringList extensions;
+    extensions << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
+
+    QDir dir(folderPath);
+    QStringList files = dir.entryList(extensions, QDir::Files, QDir::Name);
+
+    QStringList result;
+    for (const QString &fileName : files) {
+        result.append(dir.filePath(fileName));
+    }
+
+    std::sort(result.begin(), result.end(), naturalSortLessThan);
+
+    return result;
+}
+
+bool PetConfigManager::naturalSortLessThan(const QString &a, const QString &b)
+{
+    QString baseA = QFileInfo(a).completeBaseName();
+    QString baseB = QFileInfo(b).completeBaseName();
+
+    bool okA = false;
+    bool okB = false;
+    int numA = baseA.toInt(&okA);
+    int numB = baseB.toInt(&okB);
+
+    if (okA && okB) {
+        if (numA != numB) {
+            return numA < numB;
+        }
+        return a < b;
+    }
+
+    if (okA) {
+        return true;
+    }
+    if (okB) {
+        return false;
+    }
+
+    return baseA < baseB;
 }
 
 QJsonObject PetConfigManager::actionToJson(const PetAction &action)
