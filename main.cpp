@@ -1,11 +1,11 @@
-#include "core/settingswindow.h"
+#include "core/petwidget.h"
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    SettingsWindow w;
-    w.show();
+    PetWidget pet;
+    pet.show();
     return a.exec();
 }
