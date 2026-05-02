@@ -10,8 +10,10 @@
 #include "core/petaction.h"
 #include "core/petplaylist.h"
 
+class QCheckBox;
 class QFrame;
 class QPushButton;
+class QSpinBox;
 
 class DefaultPetPage : public QWidget
 {
@@ -40,12 +42,21 @@ private:
     QListWidget* currentCategoryList() const;
     QList<PetActionRef> currentCategoryActions() const;
 
+    PetActionRef currentSelectedRef() const;
+    bool updateCurrentSelectedRef(const PetActionRef &ref);
+    void updateActionConfigPanel();
+    void setActionConfigPanelEnabled(bool enabled);
+    void clearCategorySelection();
+
 private slots:
     void onAddToCategory();
     void onMoveUp();
     void onMoveDown();
     void onRemove();
     void onTabChanged(int index);
+    void onCategorySelectionChanged();
+    void onLoopChanged(int state);
+    void onRepeatChanged(int value);
 
 private:
     QScrollArea *m_scrollArea;
@@ -72,6 +83,13 @@ private:
     QPushButton *m_moveUpButton;
     QPushButton *m_moveDownButton;
     QPushButton *m_removeButton;
+
+    QFrame *m_actionConfigPanel;
+    QLabel *m_actionConfigTitleLabel;
+    QCheckBox *m_loopCheckBox;
+    QLabel *m_repeatLabel;
+    QSpinBox *m_repeatSpinBox;
+    QLabel *m_repeatHintLabel;
 
     QList<PetAction> m_actionLibrary;
     PetPlaylist m_playlist;

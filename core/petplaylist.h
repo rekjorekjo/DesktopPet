@@ -9,6 +9,11 @@ struct PetActionRef
 {
     QString actionId;
     bool loop;
+    // repeat 规则：
+    // - repeat = 0 表示无限循环
+    // - repeat = 1 表示播放一次
+    // - repeat = 2 表示播放两次
+    // - repeat > 10 也视为无限循环
     int repeat;
     int intervalSeconds;
     QString emotion;
@@ -35,6 +40,11 @@ public:
     void removeRandomActionAt(int index);
     void removeTimedActionAt(int index);
     void removeEmotionActionAt(const QString &emotion, int index);
+
+    bool updateIdleActionAt(int index, const PetActionRef &ref);
+    bool updateRandomActionAt(int index, const PetActionRef &ref);
+    bool updateTimedActionAt(int index, const PetActionRef &ref);
+    bool updateEmotionActionAt(const QString &emotion, int index, const PetActionRef &ref);
 
     bool moveIdleActionUp(int index);
     bool moveIdleActionDown(int index);

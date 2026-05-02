@@ -2,11 +2,14 @@
 
 #include "theme/thememanager.h"
 
+#include <QCheckBox>
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QSignalBlocker>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QVBoxLayout>
 
@@ -32,12 +35,19 @@ DefaultPetPage::DefaultPetPage(QWidget *parent)
     , m_moveUpButton(nullptr)
     , m_moveDownButton(nullptr)
     , m_removeButton(nullptr)
+    , m_actionConfigPanel(nullptr)
+    , m_actionConfigTitleLabel(nullptr)
+    , m_loopCheckBox(nullptr)
+    , m_repeatLabel(nullptr)
+    , m_repeatSpinBox(nullptr)
+    , m_repeatHintLabel(nullptr)
 {
     setupUi();
     initData();
     connectSignals();
     refreshActionLibraryList();
     refreshCurrentCategoryList();
+    setActionConfigPanelEnabled(false);
 }
 
 DefaultPetPage::~DefaultPetPage() {}
@@ -207,6 +217,45 @@ void DefaultPetPage::setupUi()
     buttonLayout->addStretch();
     rightLayout->addLayout(buttonLayout);
 
+    m_actionConfigPanel = new QFrame(rightPanel);
+    m_actionConfigPanel->setObjectName("actionConfigPanel");
+    m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
+    QHBoxLayout *configPanelLayout = new QHBoxLayout(m_actionConfigPanel);
+    configPanelLayout->setContentsMargins(16, 12, 16, 12);
+    configPanelLayout->setSpacing(16);
+
+    m_actionConfigTitleLabel = new QLabel(tr("当前动作配置"), m_actionConfigPanel);
+    m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                              .arg(theme.textPrimaryColor()));
+    QFont configPanelTitleFont = m_actionConfigTitleLabel->font();
+    configPanelTitleFont.setBold(true);
+    m_actionConfigTitleLabel->setFont(configPanelTitleFont);
+    configPanelLayout->addWidget(m_actionConfigTitleLabel);
+
+    m_loopCheckBox = new QCheckBox(tr("循环播放"), m_actionConfigPanel);
+    m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    configPanelLayout->addWidget(m_loopCheckBox);
+
+    m_repeatLabel = new QLabel(tr("循环次数"), m_actionConfigPanel);
+    m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                   .arg(theme.textSecondaryColor()));
+    configPanelLayout->addWidget(m_repeatLabel);
+
+    m_repeatSpinBox = new QSpinBox(m_actionConfigPanel);
+    m_repeatSpinBox->setRange(0, 10);
+    m_repeatSpinBox->setValue(1);
+    m_repeatSpinBox->setMinimumWidth(80);
+    m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
+    configPanelLayout->addWidget(m_repeatSpinBox);
+
+    m_repeatHintLabel = new QLabel(tr("0 表示无限循环"), m_actionConfigPanel);
+    m_repeatHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                       .arg(theme.textSecondaryColor()));
+    configPanelLayout->addWidget(m_repeatHintLabel);
+
+    configPanelLayout->addStretch();
+    rightLayout->addWidget(m_actionConfigPanel);
+
     splitter->addWidget(rightPanel);
     splitter->setSizes({250, 500});
 
@@ -266,6 +315,14 @@ void DefaultPetPage::connectSignals()
     connect(m_moveDownButton, &QPushButton::clicked, this, &DefaultPetPage::onMoveDown);
     connect(m_removeButton, &QPushButton::clicked, this, &DefaultPetPage::onRemove);
     connect(m_categoryTabs, &QTabWidget::currentChanged, this, &DefaultPetPage::onTabChanged);
+
+    connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
+    connect(m_randomActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
+    connect(m_scheduledActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
+    connect(m_emotionActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
+
+    connect(m_loopCheckBox, &QCheckBox::stateChanged, this, &DefaultPetPage::onLoopChanged);
+    connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &DefaultPetPage::onRepeatChanged);
 }
 
 void DefaultPetPage::refreshActionLibraryList()
@@ -299,9 +356,13 @@ void DefaultPetPage::refreshCurrentCategoryList()
 
 void DefaultPetPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
 {
+    int savedRow = list->currentRow();
     list->clear();
     for (const PetActionRef &ref : actions) {
         list->addItem(formatActionDisplay(ref));
+    }
+    if (savedRow >= 0 && savedRow < list->count()) {
+        list->setCurrentRow(savedRow);
     }
 }
 
@@ -310,13 +371,20 @@ QString DefaultPetPage::formatActionDisplay(const PetActionRef &ref) const
     QString name = getActionName(ref.actionId);
     int tabIndex = m_categoryTabs->currentIndex();
 
+    QString repeatText;
+    if (ref.repeat == 0 || ref.repeat > 10) {
+        repeatText = tr("无限循环");
+    } else {
+        repeatText = tr("播放 %1 次").arg(ref.repeat);
+    }
+
     if (tabIndex == 2) {
         int minutes = ref.intervalSeconds / 60;
-        return QString("%1 (%2) - 每 %3 分钟").arg(name, ref.actionId).arg(minutes);
+        return QString("%1 (%2) - 每 %3 分钟 / %4").arg(name, ref.actionId).arg(minutes).arg(repeatText);
     } else if (tabIndex == 3) {
-        return QString("%1 (%2) - %3").arg(name, ref.actionId, ref.emotion);
+        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, ref.emotion, repeatText);
     } else {
-        return QString("%1 (%2) - 播放 %3 次").arg(name, ref.actionId).arg(ref.repeat);
+        return QString("%1 (%2) - %3").arg(name, ref.actionId, repeatText);
     }
 }
 
@@ -352,6 +420,78 @@ QList<PetActionRef> DefaultPetPage::currentCategoryActions() const
         case 3: return m_playlist.emotionActions("happy");
         default: return QList<PetActionRef>();
     }
+}
+
+PetActionRef DefaultPetPage::currentSelectedRef() const
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return PetActionRef();
+
+    int row = list->currentRow();
+    if (row < 0) return PetActionRef();
+
+    QList<PetActionRef> actions = currentCategoryActions();
+    if (row >= actions.size()) return PetActionRef();
+
+    return actions[row];
+}
+
+bool DefaultPetPage::updateCurrentSelectedRef(const PetActionRef &ref)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return false;
+
+    int row = list->currentRow();
+    if (row < 0) return false;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_playlist.updateIdleActionAt(row, ref);
+        case 1: return m_playlist.updateRandomActionAt(row, ref);
+        case 2: return m_playlist.updateTimedActionAt(row, ref);
+        case 3: return m_playlist.updateEmotionActionAt("happy", row, ref);
+        default: return false;
+    }
+}
+
+void DefaultPetPage::updateActionConfigPanel()
+{
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) {
+        setActionConfigPanelEnabled(false);
+        return;
+    }
+
+    setActionConfigPanelEnabled(true);
+
+    QSignalBlocker loopBlocker(m_loopCheckBox);
+    QSignalBlocker repeatBlocker(m_repeatSpinBox);
+
+    m_loopCheckBox->setChecked(ref.loop);
+    m_repeatSpinBox->setValue(ref.repeat);
+}
+
+void DefaultPetPage::setActionConfigPanelEnabled(bool enabled)
+{
+    m_actionConfigPanel->setEnabled(enabled);
+    m_loopCheckBox->setEnabled(enabled);
+    m_repeatSpinBox->setEnabled(enabled);
+
+    if (!enabled) {
+        QSignalBlocker loopBlocker(m_loopCheckBox);
+        QSignalBlocker repeatBlocker(m_repeatSpinBox);
+        m_loopCheckBox->setChecked(false);
+        m_repeatSpinBox->setValue(1);
+    }
+}
+
+void DefaultPetPage::clearCategorySelection()
+{
+    QListWidget *list = currentCategoryList();
+    if (list) {
+        list->clearSelection();
+    }
+    setActionConfigPanelEnabled(false);
 }
 
 void DefaultPetPage::onAddToCategory()
@@ -410,6 +550,7 @@ void DefaultPetPage::onMoveUp()
     if (success) {
         refreshCurrentCategoryList();
         list->setCurrentRow(row - 1);
+        updateActionConfigPanel();
     }
 }
 
@@ -434,6 +575,7 @@ void DefaultPetPage::onMoveDown()
     if (success) {
         refreshCurrentCategoryList();
         list->setCurrentRow(row + 1);
+        updateActionConfigPanel();
     }
 }
 
@@ -455,11 +597,71 @@ void DefaultPetPage::onRemove()
     }
 
     refreshCurrentCategoryList();
+    clearCategorySelection();
 }
 
 void DefaultPetPage::onTabChanged(int)
 {
     refreshCurrentCategoryList();
+    clearCategorySelection();
+}
+
+void DefaultPetPage::onCategorySelectionChanged()
+{
+    updateActionConfigPanel();
+}
+
+void DefaultPetPage::onLoopChanged(int state)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    bool loopChecked = (state == Qt::Checked);
+    ref.loop = loopChecked;
+
+    if (loopChecked && ref.repeat == 1) {
+        ref.repeat = 0;
+        QSignalBlocker blocker(m_repeatSpinBox);
+        m_repeatSpinBox->setValue(0);
+    } else if (!loopChecked && ref.repeat == 0) {
+        ref.repeat = 1;
+        QSignalBlocker blocker(m_repeatSpinBox);
+        m_repeatSpinBox->setValue(1);
+    }
+
+    updateCurrentSelectedRef(ref);
+    refreshCurrentCategoryList();
+    list->setCurrentRow(row);
+}
+
+void DefaultPetPage::onRepeatChanged(int value)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    ref.repeat = value;
+
+    if (value == 0) {
+        ref.loop = true;
+        QSignalBlocker blocker(m_loopCheckBox);
+        m_loopCheckBox->setChecked(true);
+    }
+
+    updateCurrentSelectedRef(ref);
+    refreshCurrentCategoryList();
+    list->setCurrentRow(row);
 }
 
 void DefaultPetPage::refreshTheme()
@@ -516,4 +718,14 @@ void DefaultPetPage::applyTheme()
     m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+
+    m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
+    m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                              .arg(theme.textPrimaryColor()));
+    m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                   .arg(theme.textSecondaryColor()));
+    m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
+    m_repeatHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                       .arg(theme.textSecondaryColor()));
 }
