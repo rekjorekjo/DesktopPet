@@ -6,7 +6,10 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QScrollArea>
+#include <QSpinBox>
 #include <QWidget>
+
+class QFrame;
 
 class DisplaySettingsPage : public QWidget
 {

@@ -89,6 +89,8 @@ public:
     QString comboBoxStyleSheet() const;
     QString spinBoxStyleSheet() const;
     QString listWidgetStyleSheet() const;
+    QString splitterStyleSheet() const;
+    QString tabWidgetStyleSheet() const;
 
 signals:
     void themeChanged();

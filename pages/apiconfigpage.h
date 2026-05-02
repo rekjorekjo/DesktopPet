@@ -9,6 +9,8 @@
 #include <QScrollArea>
 #include <QWidget>
 
+class QFrame;
+
 struct ApiConfig
 {
     QString apiKey;

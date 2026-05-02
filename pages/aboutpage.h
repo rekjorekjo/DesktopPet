@@ -6,6 +6,8 @@
 #include <QScrollArea>
 #include <QWidget>
 
+class QFrame;
+
 class AboutPage : public QWidget
 {
     Q_OBJECT
@@ -21,10 +23,10 @@ private:
     void setupUi();
     void applyTheme();
 
-    QLabel *m_titleLabel;
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
 
+    QLabel *m_titleLabel;
     QFrame *m_infoCard;
     QLabel *m_infoCardTitle;
     QLabel *m_appNameLabel;

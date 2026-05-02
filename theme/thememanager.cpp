@@ -583,3 +583,42 @@ QString ThemeManager::listWidgetStyleSheet() const
         "}"
     ).arg(p.inputBackground, p.textPrimary, p.border, p.sidebarSelectedBg, p.sidebarSelectedText, p.pageBackground);
 }
+
+QString ThemeManager::splitterStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QSplitter::handle {"
+        "  background-color: %1;"
+        "}"
+    ).arg(p.border);
+}
+
+QString ThemeManager::tabWidgetStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QTabWidget::pane {"
+        "  border: 1px solid %1;"
+        "  border-radius: 6px;"
+        "  background-color: %2;"
+        "}"
+        "QTabBar::tab {"
+        "  background-color: %3;"
+        "  color: %4;"
+        "  padding: 8px 16px;"
+        "  border-top-left-radius: 6px;"
+        "  border-top-right-radius: 6px;"
+        "  margin-right: 2px;"
+        "}"
+        "QTabBar::tab:selected {"
+        "  background-color: %2;"
+        "  color: %5;"
+        "  border: 1px solid %1;"
+        "  border-bottom: none;"
+        "}"
+        "QTabBar::tab:hover:!selected {"
+        "  background-color: %6;"
+        "}"
+    ).arg(p.border, p.inputBackground, p.pageBackground, p.textSecondary, p.textPrimary, p.secondaryHover);
+}
