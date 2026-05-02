@@ -1,0 +1,11 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>icons/checkbox_checked.svg</file>
+        <file>icons/checkbox_unchecked.svg</file>
+        <file>icons/spin_up.svg</file>
+        <file>icons/spin_down.svg</file>
+        <file>icons/combo_down.svg</file>
+        <file>themes/themes.json</file>
+    </qresource>
+</RCC>
