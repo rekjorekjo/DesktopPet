@@ -7,7 +7,11 @@
 #include <QTabWidget>
 #include <QWidget>
 
+#include "core/petaction.h"
+#include "core/petplaylist.h"
+
 class QFrame;
+class QPushButton;
 
 class DefaultPetPage : public QWidget
 {
@@ -23,8 +27,27 @@ public slots:
 private:
     void setupUi();
     void applyTheme();
-    void loadMockData();
+    void initData();
+    void connectSignals();
 
+    void refreshActionLibraryList();
+    void refreshCurrentCategoryList();
+    void refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions);
+
+    QString formatActionDisplay(const PetActionRef &ref) const;
+    QString getActionName(const QString &actionId) const;
+
+    QListWidget* currentCategoryList() const;
+    QList<PetActionRef> currentCategoryActions() const;
+
+private slots:
+    void onAddToCategory();
+    void onMoveUp();
+    void onMoveDown();
+    void onRemove();
+    void onTabChanged(int index);
+
+private:
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
 
@@ -37,6 +60,7 @@ private:
 
     QLabel *m_libraryTitleLabel;
     QListWidget *m_actionLibraryList;
+    QPushButton *m_addToCategoryButton;
 
     QLabel *m_configTitleLabel;
     QTabWidget *m_categoryTabs;
@@ -44,6 +68,13 @@ private:
     QListWidget *m_randomActionList;
     QListWidget *m_scheduledActionList;
     QListWidget *m_emotionActionList;
+
+    QPushButton *m_moveUpButton;
+    QPushButton *m_moveDownButton;
+    QPushButton *m_removeButton;
+
+    QList<PetAction> m_actionLibrary;
+    PetPlaylist m_playlist;
 };
 
 #endif // DEFAULTPETPAGE_H

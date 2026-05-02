@@ -6,6 +6,7 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QPushButton>
 #include <QSplitter>
 #include <QVBoxLayout>
 
@@ -21,15 +22,22 @@ DefaultPetPage::DefaultPetPage(QWidget *parent)
     , m_petDirLabel(nullptr)
     , m_libraryTitleLabel(nullptr)
     , m_actionLibraryList(nullptr)
+    , m_addToCategoryButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
     , m_dailyActionList(nullptr)
     , m_randomActionList(nullptr)
     , m_scheduledActionList(nullptr)
     , m_emotionActionList(nullptr)
+    , m_moveUpButton(nullptr)
+    , m_moveDownButton(nullptr)
+    , m_removeButton(nullptr)
 {
     setupUi();
-    loadMockData();
+    initData();
+    connectSignals();
+    refreshActionLibraryList();
+    refreshCurrentCategoryList();
 }
 
 DefaultPetPage::~DefaultPetPage() {}
@@ -136,6 +144,11 @@ void DefaultPetPage::setupUi()
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     leftLayout->addWidget(m_actionLibraryList, 1);
 
+    m_addToCategoryButton = new QPushButton(tr("添加到当前分类"), leftPanel);
+    m_addToCategoryButton->setMinimumHeight(32);
+    m_addToCategoryButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    leftLayout->addWidget(m_addToCategoryButton);
+
     splitter->addWidget(leftPanel);
 
     QWidget *rightPanel = new QWidget(splitter);
@@ -173,6 +186,27 @@ void DefaultPetPage::setupUi()
 
     rightLayout->addWidget(m_categoryTabs, 1);
 
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(12);
+
+    m_moveUpButton = new QPushButton(tr("上移"), rightPanel);
+    m_moveUpButton->setMinimumHeight(32);
+    m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    buttonLayout->addWidget(m_moveUpButton);
+
+    m_moveDownButton = new QPushButton(tr("下移"), rightPanel);
+    m_moveDownButton->setMinimumHeight(32);
+    m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    buttonLayout->addWidget(m_moveDownButton);
+
+    m_removeButton = new QPushButton(tr("移除"), rightPanel);
+    m_removeButton->setMinimumHeight(32);
+    m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    buttonLayout->addWidget(m_removeButton);
+
+    buttonLayout->addStretch();
+    rightLayout->addLayout(buttonLayout);
+
     splitter->addWidget(rightPanel);
     splitter->setSizes({250, 500});
 
@@ -182,48 +216,250 @@ void DefaultPetPage::setupUi()
     outerLayout->addWidget(m_scrollArea, 1);
 }
 
-void DefaultPetPage::loadMockData()
+void DefaultPetPage::initData()
 {
-    QStringList actionLibrary = {
-        tr("idle_01 - 默认待机"),
-        tr("idle_02 - 眨眼待机"),
-        tr("wave - 挥手"),
-        tr("happy - 开心"),
-        tr("sad - 难过"),
-        tr("sleepy - 困倦"),
-        tr("thinking - 思考"),
-        tr("comfort - 安慰"),
-        tr("drink_water - 喝水提醒"),
-        tr("rest_reminder - 休息提醒")
-    };
-    m_actionLibraryList->addItems(actionLibrary);
+    m_actionLibrary.append(PetAction("idle_01", tr("默认待机"), "/resources/pets/cat/idle_01", 24, 60));
+    m_actionLibrary.append(PetAction("idle_02", tr("眨眼待机"), "/resources/pets/cat/idle_02", 24, 48));
+    m_actionLibrary.append(PetAction("wave", tr("挥手"), "/resources/pets/cat/wave", 24, 36));
+    m_actionLibrary.append(PetAction("happy", tr("开心"), "/resources/pets/cat/happy", 24, 40));
+    m_actionLibrary.append(PetAction("sad", tr("难过"), "/resources/pets/cat/sad", 24, 40));
+    m_actionLibrary.append(PetAction("sleepy", tr("困倦"), "/resources/pets/cat/sleepy", 24, 50));
+    m_actionLibrary.append(PetAction("thinking", tr("思考"), "/resources/pets/cat/thinking", 24, 45));
+    m_actionLibrary.append(PetAction("comfort", tr("安慰"), "/resources/pets/cat/comfort", 24, 42));
+    m_actionLibrary.append(PetAction("drink_water", tr("喝水提醒"), "/resources/pets/cat/drink_water", 24, 60));
+    m_actionLibrary.append(PetAction("rest_reminder", tr("休息提醒"), "/resources/pets/cat/rest_reminder", 24, 60));
 
-    QStringList dailyActions = {
-        tr("idle_01 - 默认待机"),
-        tr("idle_02 - 眨眼待机"),
-        tr("wave - 挥手")
-    };
-    m_dailyActionList->addItems(dailyActions);
+    PetActionRef idle01("idle_01");
+    m_playlist.addIdleAction(idle01);
+    PetActionRef idle02("idle_02");
+    m_playlist.addIdleAction(idle02);
 
-    QStringList randomActions = {
-        tr("happy - 开心"),
-        tr("thinking - 思考"),
-        tr("comfort - 安慰")
-    };
-    m_randomActionList->addItems(randomActions);
+    PetActionRef wave("wave");
+    m_playlist.addRandomAction(wave);
+    PetActionRef sleepy("sleepy");
+    m_playlist.addRandomAction(sleepy);
+    PetActionRef thinking("thinking");
+    m_playlist.addRandomAction(thinking);
 
-    QStringList scheduledActions = {
-        tr("drink_water - 喝水提醒 / 每 30 分钟"),
-        tr("rest_reminder - 休息提醒 / 每 60 分钟")
-    };
-    m_scheduledActionList->addItems(scheduledActions);
+    PetActionRef drinkWater("drink_water");
+    drinkWater.intervalSeconds = 1800;
+    m_playlist.addTimedAction(drinkWater);
+    PetActionRef restReminder("rest_reminder");
+    restReminder.intervalSeconds = 3600;
+    m_playlist.addTimedAction(restReminder);
 
-    QStringList emotionActions = {
-        tr("happy - 开心"),
-        tr("sad - 难过"),
-        tr("sleepy - 困倦")
-    };
-    m_emotionActionList->addItems(emotionActions);
+    PetActionRef happyRef("happy");
+    m_playlist.addEmotionAction("happy", happyRef);
+    PetActionRef waveRef("wave");
+    m_playlist.addEmotionAction("happy", waveRef);
+
+    PetActionRef comfortRef("comfort");
+    m_playlist.addEmotionAction("sad", comfortRef);
+    PetActionRef sadRef("sad");
+    m_playlist.addEmotionAction("sad", sadRef);
+}
+
+void DefaultPetPage::connectSignals()
+{
+    connect(m_addToCategoryButton, &QPushButton::clicked, this, &DefaultPetPage::onAddToCategory);
+    connect(m_moveUpButton, &QPushButton::clicked, this, &DefaultPetPage::onMoveUp);
+    connect(m_moveDownButton, &QPushButton::clicked, this, &DefaultPetPage::onMoveDown);
+    connect(m_removeButton, &QPushButton::clicked, this, &DefaultPetPage::onRemove);
+    connect(m_categoryTabs, &QTabWidget::currentChanged, this, &DefaultPetPage::onTabChanged);
+}
+
+void DefaultPetPage::refreshActionLibraryList()
+{
+    m_actionLibraryList->clear();
+    for (const PetAction &action : m_actionLibrary) {
+        QString display = QString("%1 - %2").arg(action.id, action.name);
+        m_actionLibraryList->addItem(display);
+    }
+    m_actionCountLabel->setText(QString("%1 个").arg(m_actionLibrary.size()));
+}
+
+void DefaultPetPage::refreshCurrentCategoryList()
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0:
+            refreshCategoryList(m_dailyActionList, m_playlist.idleActions());
+            break;
+        case 1:
+            refreshCategoryList(m_randomActionList, m_playlist.randomActions());
+            break;
+        case 2:
+            refreshCategoryList(m_scheduledActionList, m_playlist.timedActions());
+            break;
+        case 3:
+            refreshCategoryList(m_emotionActionList, m_playlist.emotionActions("happy"));
+            break;
+    }
+}
+
+void DefaultPetPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
+{
+    list->clear();
+    for (const PetActionRef &ref : actions) {
+        list->addItem(formatActionDisplay(ref));
+    }
+}
+
+QString DefaultPetPage::formatActionDisplay(const PetActionRef &ref) const
+{
+    QString name = getActionName(ref.actionId);
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 2) {
+        int minutes = ref.intervalSeconds / 60;
+        return QString("%1 (%2) - 每 %3 分钟").arg(name, ref.actionId).arg(minutes);
+    } else if (tabIndex == 3) {
+        return QString("%1 (%2) - %3").arg(name, ref.actionId, ref.emotion);
+    } else {
+        return QString("%1 (%2) - 播放 %3 次").arg(name, ref.actionId).arg(ref.repeat);
+    }
+}
+
+QString DefaultPetPage::getActionName(const QString &actionId) const
+{
+    for (const PetAction &action : m_actionLibrary) {
+        if (action.id == actionId) {
+            return action.name;
+        }
+    }
+    return actionId;
+}
+
+QListWidget* DefaultPetPage::currentCategoryList() const
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_dailyActionList;
+        case 1: return m_randomActionList;
+        case 2: return m_scheduledActionList;
+        case 3: return m_emotionActionList;
+        default: return nullptr;
+    }
+}
+
+QList<PetActionRef> DefaultPetPage::currentCategoryActions() const
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_playlist.idleActions();
+        case 1: return m_playlist.randomActions();
+        case 2: return m_playlist.timedActions();
+        case 3: return m_playlist.emotionActions("happy");
+        default: return QList<PetActionRef>();
+    }
+}
+
+void DefaultPetPage::onAddToCategory()
+{
+    int row = m_actionLibraryList->currentRow();
+    if (row < 0 || row >= m_actionLibrary.size()) {
+        return;
+    }
+
+    const PetAction &action = m_actionLibrary[row];
+    PetActionRef ref(action.id);
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    bool success = false;
+
+    switch (tabIndex) {
+        case 0:
+            success = m_playlist.addIdleAction(ref);
+            break;
+        case 1:
+            success = m_playlist.addRandomAction(ref);
+            break;
+        case 2:
+            ref.intervalSeconds = 1800;
+            success = m_playlist.addTimedAction(ref);
+            break;
+        case 3:
+            ref.emotion = "happy";
+            success = m_playlist.addEmotionAction("happy", ref);
+            break;
+    }
+
+    if (success) {
+        refreshCurrentCategoryList();
+    }
+}
+
+void DefaultPetPage::onMoveUp()
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row <= 0) return;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    bool success = false;
+
+    switch (tabIndex) {
+        case 0: success = m_playlist.moveIdleActionUp(row); break;
+        case 1: success = m_playlist.moveRandomActionUp(row); break;
+        case 2: success = m_playlist.moveTimedActionUp(row); break;
+        case 3: success = m_playlist.moveEmotionActionUp("happy", row); break;
+    }
+
+    if (success) {
+        refreshCurrentCategoryList();
+        list->setCurrentRow(row - 1);
+    }
+}
+
+void DefaultPetPage::onMoveDown()
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    bool success = false;
+
+    switch (tabIndex) {
+        case 0: success = m_playlist.moveIdleActionDown(row); break;
+        case 1: success = m_playlist.moveRandomActionDown(row); break;
+        case 2: success = m_playlist.moveTimedActionDown(row); break;
+        case 3: success = m_playlist.moveEmotionActionDown("happy", row); break;
+    }
+
+    if (success) {
+        refreshCurrentCategoryList();
+        list->setCurrentRow(row + 1);
+    }
+}
+
+void DefaultPetPage::onRemove()
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    switch (tabIndex) {
+        case 0: m_playlist.removeIdleActionAt(row); break;
+        case 1: m_playlist.removeRandomActionAt(row); break;
+        case 2: m_playlist.removeTimedActionAt(row); break;
+        case 3: m_playlist.removeEmotionActionAt("happy", row); break;
+    }
+
+    refreshCurrentCategoryList();
+}
+
+void DefaultPetPage::onTabChanged(int)
+{
+    refreshCurrentCategoryList();
 }
 
 void DefaultPetPage::refreshTheme()
@@ -267,6 +503,7 @@ void DefaultPetPage::applyTheme()
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_addToCategoryButton->setStyleSheet(theme.primaryButtonStyleSheet());
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textPrimaryColor()));
@@ -275,4 +512,8 @@ void DefaultPetPage::applyTheme()
     m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
+
+    m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
 }

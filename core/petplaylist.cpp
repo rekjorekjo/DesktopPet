@@ -36,7 +36,7 @@ bool PetPlaylist::containsAction(const QList<PetActionRef> &list, const QString 
 
 bool PetPlaylist::addIdleAction(const PetActionRef &ref)
 {
-    if (!ref.isValid() || containsAction(m_idleActions, ref.actionId)) {
+    if (!ref.isValid()) {
         return false;
     }
     m_idleActions.append(ref);
@@ -45,7 +45,7 @@ bool PetPlaylist::addIdleAction(const PetActionRef &ref)
 
 bool PetPlaylist::addRandomAction(const PetActionRef &ref)
 {
-    if (!ref.isValid() || containsAction(m_randomActions, ref.actionId)) {
+    if (!ref.isValid()) {
         return false;
     }
     m_randomActions.append(ref);
@@ -54,7 +54,7 @@ bool PetPlaylist::addRandomAction(const PetActionRef &ref)
 
 bool PetPlaylist::addTimedAction(const PetActionRef &ref)
 {
-    if (!ref.isValid() || containsAction(m_timedActions, ref.actionId)) {
+    if (!ref.isValid()) {
         return false;
     }
     m_timedActions.append(ref);
@@ -69,51 +69,106 @@ bool PetPlaylist::addEmotionAction(const QString &emotion, const PetActionRef &r
     if (!m_emotionActions.contains(emotion)) {
         m_emotionActions[emotion] = QList<PetActionRef>();
     }
-    if (containsAction(m_emotionActions[emotion], ref.actionId)) {
-        return false;
-    }
-    m_emotionActions[emotion].append(ref);
+    PetActionRef newRef = ref;
+    newRef.emotion = emotion;
+    m_emotionActions[emotion].append(newRef);
     return true;
 }
 
-void PetPlaylist::removeIdleAction(const QString &actionId)
+void PetPlaylist::removeIdleActionAt(int index)
 {
-    for (int i = m_idleActions.size() - 1; i >= 0; --i) {
-        if (m_idleActions[i].actionId == actionId) {
-            m_idleActions.removeAt(i);
-        }
+    if (index >= 0 && index < m_idleActions.size()) {
+        m_idleActions.removeAt(index);
     }
 }
 
-void PetPlaylist::removeRandomAction(const QString &actionId)
+void PetPlaylist::removeRandomActionAt(int index)
 {
-    for (int i = m_randomActions.size() - 1; i >= 0; --i) {
-        if (m_randomActions[i].actionId == actionId) {
-            m_randomActions.removeAt(i);
-        }
+    if (index >= 0 && index < m_randomActions.size()) {
+        m_randomActions.removeAt(index);
     }
 }
 
-void PetPlaylist::removeTimedAction(const QString &actionId)
+void PetPlaylist::removeTimedActionAt(int index)
 {
-    for (int i = m_timedActions.size() - 1; i >= 0; --i) {
-        if (m_timedActions[i].actionId == actionId) {
-            m_timedActions.removeAt(i);
-        }
+    if (index >= 0 && index < m_timedActions.size()) {
+        m_timedActions.removeAt(index);
     }
 }
 
-void PetPlaylist::removeEmotionAction(const QString &emotion, const QString &actionId)
+void PetPlaylist::removeEmotionActionAt(const QString &emotion, int index)
 {
     if (!m_emotionActions.contains(emotion)) {
         return;
     }
     QList<PetActionRef> &list = m_emotionActions[emotion];
-    for (int i = list.size() - 1; i >= 0; --i) {
-        if (list[i].actionId == actionId) {
-            list.removeAt(i);
-        }
+    if (index >= 0 && index < list.size()) {
+        list.removeAt(index);
     }
+}
+
+bool PetPlaylist::moveActionUp(QList<PetActionRef> &list, int index)
+{
+    if (index <= 0 || index >= list.size()) {
+        return false;
+    }
+    list.swapItemsAt(index, index - 1);
+    return true;
+}
+
+bool PetPlaylist::moveActionDown(QList<PetActionRef> &list, int index)
+{
+    if (index < 0 || index >= list.size() - 1) {
+        return false;
+    }
+    list.swapItemsAt(index, index + 1);
+    return true;
+}
+
+bool PetPlaylist::moveIdleActionUp(int index)
+{
+    return moveActionUp(m_idleActions, index);
+}
+
+bool PetPlaylist::moveIdleActionDown(int index)
+{
+    return moveActionDown(m_idleActions, index);
+}
+
+bool PetPlaylist::moveRandomActionUp(int index)
+{
+    return moveActionUp(m_randomActions, index);
+}
+
+bool PetPlaylist::moveRandomActionDown(int index)
+{
+    return moveActionDown(m_randomActions, index);
+}
+
+bool PetPlaylist::moveTimedActionUp(int index)
+{
+    return moveActionUp(m_timedActions, index);
+}
+
+bool PetPlaylist::moveTimedActionDown(int index)
+{
+    return moveActionDown(m_timedActions, index);
+}
+
+bool PetPlaylist::moveEmotionActionUp(const QString &emotion, int index)
+{
+    if (!m_emotionActions.contains(emotion)) {
+        return false;
+    }
+    return moveActionUp(m_emotionActions[emotion], index);
+}
+
+bool PetPlaylist::moveEmotionActionDown(const QString &emotion, int index)
+{
+    if (!m_emotionActions.contains(emotion)) {
+        return false;
+    }
+    return moveActionDown(m_emotionActions[emotion], index);
 }
 
 void PetPlaylist::clearIdleActions()
