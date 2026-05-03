@@ -10,6 +10,8 @@
 #include "core/petconfigmanager.h"
 #include "core/petplaylist.h"
 
+class QContextMenuEvent;
+
 class PetWidget : public QWidget
 {
     Q_OBJECT
@@ -24,6 +26,11 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
+
+signals:
+    void openSettingsRequested();
+    void quitRequested();
 
 private slots:
     void onFrameChanged(const QPixmap &pixmap);

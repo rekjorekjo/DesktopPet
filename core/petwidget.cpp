@@ -1,6 +1,9 @@
 #include "petwidget.h"
 
+#include <QContextMenuEvent>
+#include <QDebug>
 #include <QDir>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
@@ -31,6 +34,7 @@ void PetWidget::setupUi()
     setAttribute(Qt::WA_ShowWithoutActivating);
 
     setFixedSize(200, 200);
+    move(200, 200);
 
     m_displayLabel = new QLabel(this);
     m_displayLabel->setObjectName("petDisplayLabel");
@@ -144,6 +148,24 @@ void PetWidget::mouseMoveEvent(QMouseEvent *event)
     if (event->buttons() & Qt::LeftButton) {
         move(event->globalPosition().toPoint() - m_dragPosition);
         event->accept();
+    }
+}
+
+void PetWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu menu(this);
+    QAction *settingsAction = menu.addAction(tr("打开设置"));
+    menu.addSeparator();
+    QAction *quitAction = menu.addAction(tr("退出"));
+
+    QAction *selectedAction = menu.exec(event->globalPos());
+
+    if (selectedAction == settingsAction) {
+        qDebug() << "Open settings requested";
+        emit openSettingsRequested();
+    } else if (selectedAction == quitAction) {
+        qDebug() << "Quit requested";
+        emit quitRequested();
     }
 }
 
