@@ -1,3 +1,4 @@
+#include "core/appsettings.h"
 #include "core/petwidget.h"
 #include "core/settingswindow.h"
 #include "core/traymanager.h"
@@ -34,6 +35,9 @@ int main(int argc, char *argv[])
     QObject::connect(&settings, &SettingsWindow::applyPetConfigRequested,
                      &pet, &PetWidget::reloadPet);
 
+    QObject::connect(&settings, &SettingsWindow::petOpacityChanged,
+                     &pet, &PetWidget::setPetOpacity);
+
     QObject::connect(&tray, &TrayManager::showPetRequested, &pet, &PetWidget::show);
 
     QObject::connect(&tray, &TrayManager::hidePetRequested, &pet, &PetWidget::hide);
@@ -53,6 +57,15 @@ int main(int argc, char *argv[])
     QObject::connect(&tray, &TrayManager::quitRequested, &app, &QApplication::quit);
 
     pet.show();
+
+    if (!AppSettings::autoPlayOnLaunch()) {
+        pet.pausePet();
+    }
+
+    if (AppSettings::openSettingsOnLaunch()) {
+        settings.show();
+    }
+
     tray.show();
 
     return app.exec();

@@ -68,6 +68,21 @@ void TrayManager::createMenu()
 {
     m_menu = new QMenu();
 
+    m_menu->setStyleSheet(
+        "QMenu {"
+        "  padding: 8px;"
+        "  min-width: 180px;"
+        "}"
+        "QMenu::item {"
+        "  padding: 8px 28px 8px 18px;"
+        "  min-height: 28px;"
+        "}"
+        "QMenu::separator {"
+        "  height: 1px;"
+        "  margin: 6px 8px;"
+        "}"
+    );
+
     QAction *showAction = m_menu->addAction(tr("显示桌宠"));
     QAction *hideAction = m_menu->addAction(tr("隐藏桌宠"));
     m_menu->addSeparator();

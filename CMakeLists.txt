@@ -33,8 +33,8 @@ qt_add_executable(DesktopPet
     pages/actionsettingspage.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
-    pages/displaysettingspage.cpp
-    pages/displaysettingspage.h
+    pages/personalizationpage.cpp
+    pages/personalizationpage.h
     pages/aboutpage.cpp
     pages/aboutpage.h
     theme/thememanager.cpp

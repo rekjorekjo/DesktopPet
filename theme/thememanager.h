@@ -88,6 +88,7 @@ public:
     QString titleLabelStyleSheet() const;
     QString comboBoxStyleSheet() const;
     QString spinBoxStyleSheet() const;
+    QString sliderStyleSheet() const;
     QString listWidgetStyleSheet() const;
     QString splitterStyleSheet() const;
     QString tabWidgetStyleSheet() const;

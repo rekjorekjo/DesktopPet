@@ -1,5 +1,6 @@
 #include "petwidget.h"
 
+#include "core/appsettings.h"
 #include "core/petpaths.h"
 
 #include <QContextMenuEvent>
@@ -33,6 +34,8 @@ PetWidget::PetWidget(QWidget *parent)
 
     m_timedCheckTimer = new QTimer(this);
     connect(m_timedCheckTimer, &QTimer::timeout, this, &PetWidget::checkTimedActions);
+
+    setWindowOpacity(AppSettings::petOpacity());
 
     loadPet(PetPaths::defaultPetDirectory());
 }
@@ -270,6 +273,17 @@ void PetWidget::setPetScaleFactor(double scale)
             m_player->pause();
         }
     }
+}
+
+void PetWidget::setPetOpacity(double opacity)
+{
+    if (opacity < 0.2) {
+        opacity = 0.2;
+    } else if (opacity > 1.0) {
+        opacity = 1.0;
+    }
+
+    setWindowOpacity(opacity);
 }
 
 PetAction PetWidget::findActionById(const QString &actionId) const

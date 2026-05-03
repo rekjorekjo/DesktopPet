@@ -38,6 +38,7 @@ public slots:
     void pausePet();
     void reloadPet();
     void setPetScaleFactor(double scale);
+    void setPetOpacity(double opacity);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

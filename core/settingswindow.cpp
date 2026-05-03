@@ -3,7 +3,7 @@
 #include "pages/aboutpage.h"
 #include "pages/actionsettingspage.h"
 #include "pages/apiconfigpage.h"
-#include "pages/displaysettingspage.h"
+#include "pages/personalizationpage.h"
 #include "pages/petmanagepage.h"
 #include "theme/thememanager.h"
 
@@ -18,7 +18,7 @@ SettingsWindow::SettingsWindow(QWidget *parent)
     , m_petManagePage(nullptr)
     , m_actionSettingsPage(nullptr)
     , m_apiConfigPage(nullptr)
-    , m_displaySettingsPage(nullptr)
+    , m_personalizationPage(nullptr)
     , m_aboutPage(nullptr)
 {
     setupUi();
@@ -58,7 +58,7 @@ void SettingsWindow::setupSidebar()
     m_sidebar->addItem(tr("宠物管理"));
     m_sidebar->addItem(tr("动作设置"));
     m_sidebar->addItem(tr("API配置"));
-    m_sidebar->addItem(tr("显示设置"));
+    m_sidebar->addItem(tr("个性化"));
     m_sidebar->addItem(tr("关于"));
     m_sidebar->setCurrentRow(0);
 }
@@ -70,13 +70,13 @@ void SettingsWindow::setupPages()
     m_petManagePage = new PetManagePage(this);
     m_actionSettingsPage = new ActionSettingsPage(this);
     m_apiConfigPage = new ApiConfigPage(this);
-    m_displaySettingsPage = new DisplaySettingsPage(this);
+    m_personalizationPage = new PersonalizationPage(this);
     m_aboutPage = new AboutPage(this);
 
     m_stackedWidget->addWidget(m_petManagePage);
     m_stackedWidget->addWidget(m_actionSettingsPage);
     m_stackedWidget->addWidget(m_apiConfigPage);
-    m_stackedWidget->addWidget(m_displaySettingsPage);
+    m_stackedWidget->addWidget(m_personalizationPage);
     m_stackedWidget->addWidget(m_aboutPage);
 }
 
@@ -98,6 +98,9 @@ void SettingsWindow::connectSignals()
 
     connect(m_actionSettingsPage, &ActionSettingsPage::applyConfigRequested,
             this, &SettingsWindow::applyPetConfigRequested);
+
+    connect(m_personalizationPage, &PersonalizationPage::petOpacityChanged,
+            this, &SettingsWindow::petOpacityChanged);
 }
 
 void SettingsWindow::applyTheme()
@@ -118,8 +121,8 @@ void SettingsWindow::applyTheme()
     if (m_apiConfigPage) {
         m_apiConfigPage->refreshTheme();
     }
-    if (m_displaySettingsPage) {
-        m_displaySettingsPage->refreshTheme();
+    if (m_personalizationPage) {
+        m_personalizationPage->refreshTheme();
     }
     if (m_aboutPage) {
         m_aboutPage->refreshTheme();

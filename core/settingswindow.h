@@ -8,7 +8,7 @@
 class PetManagePage;
 class ActionSettingsPage;
 class ApiConfigPage;
-class DisplaySettingsPage;
+class PersonalizationPage;
 class AboutPage;
 
 class SettingsWindow : public QMainWindow
@@ -23,6 +23,7 @@ signals:
     void startPetRequested();
     void pausePetRequested();
     void applyPetConfigRequested();
+    void petOpacityChanged(double opacity);
 
 private:
     void setupUi();
@@ -38,7 +39,7 @@ private:
     PetManagePage *m_petManagePage;
     ActionSettingsPage *m_actionSettingsPage;
     ApiConfigPage *m_apiConfigPage;
-    DisplaySettingsPage *m_displaySettingsPage;
+    PersonalizationPage *m_personalizationPage;
     AboutPage *m_aboutPage;
 };
 

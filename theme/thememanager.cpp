@@ -560,6 +560,32 @@ QString ThemeManager::spinBoxStyleSheet() const
     );
 }
 
+QString ThemeManager::sliderStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QSlider::groove:horizontal {"
+        "  background: %1;"
+        "  height: 6px;"
+        "  border-radius: 3px;"
+        "}"
+        "QSlider::handle:horizontal {"
+        "  background: %2;"
+        "  width: 18px;"
+        "  height: 18px;"
+        "  margin: -6px 0;"
+        "  border-radius: 9px;"
+        "}"
+        "QSlider::handle:horizontal:hover {"
+        "  background: %3;"
+        "}"
+        "QSlider::sub-page:horizontal {"
+        "  background: %2;"
+        "  border-radius: 3px;"
+        "}"
+    ).arg(p.border, p.buttonPrimary, p.buttonHover);
+}
+
 QString ThemeManager::listWidgetStyleSheet() const
 {
     ThemePalette p = currentPalette();
