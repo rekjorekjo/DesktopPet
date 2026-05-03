@@ -26,6 +26,7 @@ public:
     double speedMultiplier() const;
 
     bool isPlaying() const;
+    bool isPaused() const;
     bool isLoaded() const;
 
 signals:

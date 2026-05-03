@@ -9,6 +9,8 @@ qt_standard_project_setup()
 qt_add_executable(DesktopPet
     WIN32
     main.cpp
+    core/appsettings.cpp
+    core/appsettings.h
     core/petaction.cpp
     core/petaction.h
     core/petanimationplayer.cpp
@@ -23,6 +25,8 @@ qt_add_executable(DesktopPet
     core/petwidget.h
     core/settingswindow.cpp
     core/settingswindow.h
+    core/traymanager.cpp
+    core/traymanager.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp

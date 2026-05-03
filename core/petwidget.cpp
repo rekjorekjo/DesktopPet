@@ -1,5 +1,7 @@
 #include "petwidget.h"
 
+#include "core/petpaths.h"
+
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDir>
@@ -9,8 +11,6 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "core/petpaths.h"
-
 PetWidget::PetWidget(QWidget *parent)
     : QWidget(parent)
     , m_displayLabel(nullptr)
@@ -19,6 +19,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_timedCheckTimer(nullptr)
     , m_currentMode(PetPlayMode::Idle)
     , m_petRunning(true)
+    , m_petScaleFactor(1.0)
 {
     setupUi();
 
@@ -61,6 +62,19 @@ void PetWidget::setupUi()
     setLayout(layout);
 }
 
+QSize PetWidget::currentDisplaySize() const
+{
+    QSize baseSize = m_petInfo.displaySize;
+    if (!baseSize.isValid() || baseSize.isEmpty()) {
+        baseSize = QSize(200, 200);
+    }
+
+    return QSize(
+        qRound(baseSize.width() * m_petScaleFactor),
+        qRound(baseSize.height() * m_petScaleFactor)
+    );
+}
+
 bool PetWidget::loadPet(const QString &petDirPath)
 {
     if (!PetConfigManager::loadPetFromDirectory(petDirPath, m_petInfo, m_actions, m_playlist)) {
@@ -75,8 +89,9 @@ bool PetWidget::loadPet(const QString &petDirPath)
         return false;
     }
 
-    setFixedSize(m_petInfo.displaySize);
-    m_displayLabel->setFixedSize(m_petInfo.displaySize);
+    QSize displaySize = currentDisplaySize();
+    setFixedSize(displaySize);
+    m_displayLabel->setFixedSize(displaySize);
 
     playIdleAction();
 
@@ -94,7 +109,7 @@ bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
         return false;
     }
 
-    if (!m_player->loadAction(action, m_petInfo.displaySize)) {
+    if (!m_player->loadAction(action, currentDisplaySize())) {
         m_displayLabel->setText("动作加载失败");
         m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
         return false;
@@ -159,14 +174,15 @@ void PetWidget::startPet()
     }
 
     m_petRunning = true;
-    m_randomTimer->start(30000);
-    m_timedCheckTimer->start(1000);
 
-    if (m_player->isPlaying()) {
+    if (m_player->isPaused()) {
         m_player->resume();
     } else {
         playIdleAction();
     }
+
+    m_randomTimer->start(30000);
+    m_timedCheckTimer->start(1000);
 }
 
 void PetWidget::pausePet()
@@ -209,8 +225,9 @@ void PetWidget::reloadPet()
         return;
     }
 
-    setFixedSize(m_petInfo.displaySize);
-    m_displayLabel->setFixedSize(m_petInfo.displaySize);
+    QSize displaySize = currentDisplaySize();
+    setFixedSize(displaySize);
+    m_displayLabel->setFixedSize(displaySize);
 
     if (wasRunning) {
         m_petRunning = true;
@@ -221,6 +238,37 @@ void PetWidget::reloadPet()
         m_petRunning = false;
         m_displayLabel->setText("已暂停");
         m_displayLabel->setStyleSheet("color: gray; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+    }
+}
+
+void PetWidget::setPetScaleFactor(double scale)
+{
+    if (scale < 0.5) {
+        scale = 0.5;
+    } else if (scale > 2.0) {
+        scale = 2.0;
+    }
+
+    if (qFuzzyCompare(m_petScaleFactor, scale)) {
+        return;
+    }
+
+    m_petScaleFactor = scale;
+
+    if (m_actions.isEmpty()) {
+        return;
+    }
+
+    QSize displaySize = currentDisplaySize();
+    setFixedSize(displaySize);
+    m_displayLabel->setFixedSize(displaySize);
+
+    if (m_currentAction.isValid() && m_currentActionRef.isValid()) {
+        m_player->loadAction(m_currentAction, displaySize);
+        if (m_player->isPaused()) {
+            m_player->resume();
+            m_player->pause();
+        }
     }
 }
 
@@ -256,6 +304,7 @@ void PetWidget::contextMenuEvent(QContextMenuEvent *event)
     QAction *startAction = menu.addAction(tr("开始"));
     QAction *pauseAction = menu.addAction(tr("暂停"));
     menu.addSeparator();
+    QAction *hideAction = menu.addAction(tr("隐藏桌宠"));
     QAction *settingsAction = menu.addAction(tr("打开设置"));
     menu.addSeparator();
     QAction *quitAction = menu.addAction(tr("退出"));
@@ -266,6 +315,8 @@ void PetWidget::contextMenuEvent(QContextMenuEvent *event)
         startPet();
     } else if (selectedAction == pauseAction) {
         pausePet();
+    } else if (selectedAction == hideAction) {
+        emit hidePetRequested();
     } else if (selectedAction == settingsAction) {
         qDebug() << "Open settings requested";
         emit openSettingsRequested();

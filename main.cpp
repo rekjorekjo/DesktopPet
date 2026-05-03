@@ -1,14 +1,17 @@
 #include "core/petwidget.h"
 #include "core/settingswindow.h"
+#include "core/traymanager.h"
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setQuitOnLastWindowClosed(false);
 
     PetWidget pet;
     SettingsWindow settings;
+    TrayManager tray;
 
     QObject::connect(&pet, &PetWidget::openSettingsRequested, [&settings]() {
         if (!settings.isVisible()) {
@@ -17,6 +20,8 @@ int main(int argc, char *argv[])
         settings.raise();
         settings.activateWindow();
     });
+
+    QObject::connect(&pet, &PetWidget::hidePetRequested, &pet, &PetWidget::hide);
 
     QObject::connect(&pet, &PetWidget::quitRequested, &app, &QApplication::quit);
 
@@ -29,7 +34,26 @@ int main(int argc, char *argv[])
     QObject::connect(&settings, &SettingsWindow::applyPetConfigRequested,
                      &pet, &PetWidget::reloadPet);
 
+    QObject::connect(&tray, &TrayManager::showPetRequested, &pet, &PetWidget::show);
+
+    QObject::connect(&tray, &TrayManager::hidePetRequested, &pet, &PetWidget::hide);
+
+    QObject::connect(&tray, &TrayManager::startPetRequested, &pet, &PetWidget::startPet);
+
+    QObject::connect(&tray, &TrayManager::pausePetRequested, &pet, &PetWidget::pausePet);
+
+    QObject::connect(&tray, &TrayManager::openSettingsRequested, [&settings]() {
+        if (!settings.isVisible()) {
+            settings.show();
+        }
+        settings.raise();
+        settings.activateWindow();
+    });
+
+    QObject::connect(&tray, &TrayManager::quitRequested, &app, &QApplication::quit);
+
     pet.show();
+    tray.show();
 
     return app.exec();
 }

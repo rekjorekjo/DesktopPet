@@ -151,6 +151,11 @@ bool PetAnimationPlayer::isPlaying() const
     return m_playing && !m_paused;
 }
 
+bool PetAnimationPlayer::isPaused() const
+{
+    return m_paused;
+}
+
 bool PetAnimationPlayer::isLoaded() const
 {
     return !m_frames.isEmpty();

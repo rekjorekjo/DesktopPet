@@ -37,6 +37,7 @@ public slots:
     void startPet();
     void pausePet();
     void reloadPet();
+    void setPetScaleFactor(double scale);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -45,6 +46,7 @@ protected:
 
 signals:
     void openSettingsRequested();
+    void hidePetRequested();
     void quitRequested();
 
 private slots:
@@ -56,6 +58,7 @@ private slots:
 
 private:
     void setupUi();
+    QSize currentDisplaySize() const;
     PetAction findActionById(const QString &actionId) const;
     bool playAction(const PetAction &action, const PetActionRef &ref);
     bool playActionByRef(const PetActionRef &ref);
@@ -75,6 +78,7 @@ private:
     QString m_currentActionId;
     PetPlayMode m_currentMode;
     bool m_petRunning;
+    double m_petScaleFactor;
 
     QPoint m_dragPosition;
 };
