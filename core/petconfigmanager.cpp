@@ -95,12 +95,17 @@ bool PetConfigManager::savePetJson(const QString &filePath, const PetBasicInfo &
     QJsonDocument doc(root);
 
     QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         return false;
     }
 
-    file.write(doc.toJson(QJsonDocument::Indented));
+    QByteArray jsonData = doc.toJson(QJsonDocument::Indented);
+    qint64 bytesWritten = file.write(jsonData);
     file.close();
+
+    if (bytesWritten != jsonData.size()) {
+        return false;
+    }
 
     return true;
 }
@@ -223,12 +228,17 @@ bool PetConfigManager::savePlaylistToJson(const QString &filePath, const PetPlay
     QJsonDocument doc(root);
 
     QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         return false;
     }
 
-    file.write(doc.toJson(QJsonDocument::Indented));
+    QByteArray jsonData = doc.toJson(QJsonDocument::Indented);
+    qint64 bytesWritten = file.write(jsonData);
     file.close();
+
+    if (bytesWritten != jsonData.size()) {
+        return false;
+    }
 
     return true;
 }

@@ -113,7 +113,7 @@ void AboutPage::setupUi()
                                         .arg(theme.textPrimaryColor()));
     versionLayout->addWidget(m_versionCardTitle);
 
-    m_versionLabel = new QLabel(tr("当前版本：v0.14.0(beta)"), m_versionCard);
+    m_versionLabel = new QLabel(tr("当前版本：v0.15.0(beta)"), m_versionCard);
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
     versionLayout->addWidget(m_versionLabel);

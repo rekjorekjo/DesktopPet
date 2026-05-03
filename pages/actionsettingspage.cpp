@@ -6,9 +6,11 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSpinBox>
@@ -32,6 +34,7 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_moveUpButton(nullptr)
     , m_moveDownButton(nullptr)
     , m_removeButton(nullptr)
+    , m_saveConfigButton(nullptr)
     , m_actionConfigPanel(nullptr)
     , m_actionConfigTitleLabel(nullptr)
     , m_loopCheckBox(nullptr)
@@ -169,6 +172,13 @@ void ActionSettingsPage::setupUi()
     m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     buttonLayout->addWidget(m_removeButton);
 
+    buttonLayout->addSpacing(20);
+
+    m_saveConfigButton = new QPushButton(tr("保存配置"), rightPanel);
+    m_saveConfigButton->setMinimumHeight(32);
+    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    buttonLayout->addWidget(m_saveConfigButton);
+
     buttonLayout->addStretch();
     rightLayout->addLayout(buttonLayout);
 
@@ -285,6 +295,7 @@ void ActionSettingsPage::initData()
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
+        m_saveConfigButton->setEnabled(false);
         m_categoryTabs->setEnabled(false);
         m_actionConfigPanel->setEnabled(false);
     }
@@ -296,6 +307,7 @@ void ActionSettingsPage::connectSignals()
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
     connect(m_removeButton, &QPushButton::clicked, this, &ActionSettingsPage::onRemove);
+    connect(m_saveConfigButton, &QPushButton::clicked, this, &ActionSettingsPage::onSaveConfig);
     connect(m_categoryTabs, &QTabWidget::currentChanged, this, &ActionSettingsPage::onTabChanged);
 
     connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
@@ -757,6 +769,23 @@ void ActionSettingsPage::onAnimationSpeedChanged(int index)
     updateCurrentSelectedRef(ref);
 }
 
+void ActionSettingsPage::onSaveConfig()
+{
+    if (!m_loadedSuccessfully) {
+        QMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
+        return;
+    }
+
+    QString petDir = PetPaths::defaultPetDirectory();
+    QString playlistPath = QDir(petDir).filePath("playlist.json");
+
+    if (PetConfigManager::savePlaylistToJson(playlistPath, m_playlist)) {
+        QMessageBox::information(this, tr("保存成功"), tr("配置已保存"));
+    } else {
+        QMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
+    }
+}
+
 void ActionSettingsPage::refreshTheme()
 {
     applyTheme();
@@ -787,6 +816,7 @@ void ActionSettingsPage::applyTheme()
     m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
 
     m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")

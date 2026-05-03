@@ -62,6 +62,7 @@ private slots:
     void onMoveEnabledChanged(int state);
     void onSpeedChanged(int index);
     void onAnimationSpeedChanged(int index);
+    void onSaveConfig();
 
 private:
     QScrollArea *m_scrollArea;
@@ -83,6 +84,7 @@ private:
     QPushButton *m_moveUpButton;
     QPushButton *m_moveDownButton;
     QPushButton *m_removeButton;
+    QPushButton *m_saveConfigButton;
 
     QFrame *m_actionConfigPanel;
     QLabel *m_actionConfigTitleLabel;
