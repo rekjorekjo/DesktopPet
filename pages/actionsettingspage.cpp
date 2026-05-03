@@ -1,11 +1,10 @@
-#include "defaultpetpage.h"
+#include "actionsettingspage.h"
 
 #include "theme/thememanager.h"
 
 #include <QCheckBox>
 #include <QFont>
 #include <QFrame>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -13,16 +12,11 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
-DefaultPetPage::DefaultPetPage(QWidget *parent)
+ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     : QWidget(parent)
     , m_scrollArea(nullptr)
     , m_contentWidget(nullptr)
     , m_titleLabel(nullptr)
-    , m_infoCard(nullptr)
-    , m_petNameLabel(nullptr)
-    , m_canvasSizeLabel(nullptr)
-    , m_actionCountLabel(nullptr)
-    , m_petDirLabel(nullptr)
     , m_libraryTitleLabel(nullptr)
     , m_actionLibraryList(nullptr)
     , m_addToCategoryButton(nullptr)
@@ -50,9 +44,9 @@ DefaultPetPage::DefaultPetPage(QWidget *parent)
     setActionConfigPanelEnabled(false);
 }
 
-DefaultPetPage::~DefaultPetPage() {}
+ActionSettingsPage::~ActionSettingsPage() {}
 
-void DefaultPetPage::setupUi()
+void ActionSettingsPage::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
 
@@ -72,7 +66,7 @@ void DefaultPetPage::setupUi()
     contentLayout->setContentsMargins(28, 20, 28, 28);
     contentLayout->setSpacing(20);
 
-    m_titleLabel = new QLabel(tr("默认宠物"), m_contentWidget);
+    m_titleLabel = new QLabel(tr("动作设置"), m_contentWidget);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -80,57 +74,6 @@ void DefaultPetPage::setupUi()
     m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     contentLayout->addWidget(m_titleLabel);
-
-    m_infoCard = new QFrame(m_contentWidget);
-    m_infoCard->setObjectName("infoCard");
-    m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
-    QGridLayout *infoLayout = new QGridLayout(m_infoCard);
-    infoLayout->setContentsMargins(24, 20, 24, 20);
-    infoLayout->setSpacing(16);
-
-    QLabel *nameTitleLabel = new QLabel(tr("宠物名称"), m_infoCard);
-    nameTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                     .arg(theme.textSecondaryColor()));
-    m_petNameLabel = new QLabel(tr("小白猫"), m_infoCard);
-    m_petNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textPrimaryColor()));
-    QFont nameFont = m_petNameLabel->font();
-    nameFont.setBold(true);
-    m_petNameLabel->setFont(nameFont);
-
-    QLabel *sizeTitleLabel = new QLabel(tr("画布尺寸"), m_infoCard);
-    sizeTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                      .arg(theme.textSecondaryColor()));
-    m_canvasSizeLabel = new QLabel(tr("400 x 400"), m_infoCard);
-    m_canvasSizeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textPrimaryColor()));
-
-    QLabel *countTitleLabel = new QLabel(tr("动作数量"), m_infoCard);
-    countTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textSecondaryColor()));
-    m_actionCountLabel = new QLabel(tr("10 个"), m_infoCard);
-    m_actionCountLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
-
-    QLabel *dirTitleLabel = new QLabel(tr("宠物目录"), m_infoCard);
-    dirTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                     .arg(theme.textSecondaryColor()));
-    m_petDirLabel = new QLabel(tr("/resources/pets/cat"), m_infoCard);
-    m_petDirLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textPrimaryColor()));
-
-    infoLayout->addWidget(nameTitleLabel, 0, 0);
-    infoLayout->addWidget(m_petNameLabel, 0, 1);
-    infoLayout->addWidget(sizeTitleLabel, 0, 2);
-    infoLayout->addWidget(m_canvasSizeLabel, 0, 3);
-    infoLayout->addWidget(countTitleLabel, 1, 0);
-    infoLayout->addWidget(m_actionCountLabel, 1, 1);
-    infoLayout->addWidget(dirTitleLabel, 1, 2);
-    infoLayout->addWidget(m_petDirLabel, 1, 3);
-    infoLayout->setColumnStretch(1, 1);
-    infoLayout->setColumnStretch(3, 2);
-
-    contentLayout->addWidget(m_infoCard);
 
     QSplitter *splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
     splitter->setStyleSheet(theme.splitterStyleSheet());
@@ -265,7 +208,7 @@ void DefaultPetPage::setupUi()
     outerLayout->addWidget(m_scrollArea, 1);
 }
 
-void DefaultPetPage::initData()
+void ActionSettingsPage::initData()
 {
     m_actionLibrary.append(PetAction("idle_01", tr("默认待机"), "/resources/pets/cat/idle_01", 24, 60));
     m_actionLibrary.append(PetAction("idle_02", tr("眨眼待机"), "/resources/pets/cat/idle_02", 24, 48));
@@ -308,34 +251,33 @@ void DefaultPetPage::initData()
     m_playlist.addEmotionAction("sad", sadRef);
 }
 
-void DefaultPetPage::connectSignals()
+void ActionSettingsPage::connectSignals()
 {
-    connect(m_addToCategoryButton, &QPushButton::clicked, this, &DefaultPetPage::onAddToCategory);
-    connect(m_moveUpButton, &QPushButton::clicked, this, &DefaultPetPage::onMoveUp);
-    connect(m_moveDownButton, &QPushButton::clicked, this, &DefaultPetPage::onMoveDown);
-    connect(m_removeButton, &QPushButton::clicked, this, &DefaultPetPage::onRemove);
-    connect(m_categoryTabs, &QTabWidget::currentChanged, this, &DefaultPetPage::onTabChanged);
+    connect(m_addToCategoryButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddToCategory);
+    connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
+    connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
+    connect(m_removeButton, &QPushButton::clicked, this, &ActionSettingsPage::onRemove);
+    connect(m_categoryTabs, &QTabWidget::currentChanged, this, &ActionSettingsPage::onTabChanged);
 
-    connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
-    connect(m_randomActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
-    connect(m_scheduledActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
-    connect(m_emotionActionList, &QListWidget::itemSelectionChanged, this, &DefaultPetPage::onCategorySelectionChanged);
+    connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
+    connect(m_randomActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
+    connect(m_scheduledActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
+    connect(m_emotionActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
 
-    connect(m_loopCheckBox, &QCheckBox::stateChanged, this, &DefaultPetPage::onLoopChanged);
-    connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &DefaultPetPage::onRepeatChanged);
+    connect(m_loopCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onLoopChanged);
+    connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onRepeatChanged);
 }
 
-void DefaultPetPage::refreshActionLibraryList()
+void ActionSettingsPage::refreshActionLibraryList()
 {
     m_actionLibraryList->clear();
     for (const PetAction &action : m_actionLibrary) {
         QString display = QString("%1 - %2").arg(action.id, action.name);
         m_actionLibraryList->addItem(display);
     }
-    m_actionCountLabel->setText(QString("%1 个").arg(m_actionLibrary.size()));
 }
 
-void DefaultPetPage::refreshCurrentCategoryList()
+void ActionSettingsPage::refreshCurrentCategoryList()
 {
     int tabIndex = m_categoryTabs->currentIndex();
     switch (tabIndex) {
@@ -354,7 +296,7 @@ void DefaultPetPage::refreshCurrentCategoryList()
     }
 }
 
-void DefaultPetPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
+void ActionSettingsPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
 {
     int savedRow = list->currentRow();
     list->clear();
@@ -366,7 +308,7 @@ void DefaultPetPage::refreshCategoryList(QListWidget *list, const QList<PetActio
     }
 }
 
-QString DefaultPetPage::formatActionDisplay(const PetActionRef &ref) const
+QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
 {
     QString name = getActionName(ref.actionId);
     int tabIndex = m_categoryTabs->currentIndex();
@@ -388,7 +330,7 @@ QString DefaultPetPage::formatActionDisplay(const PetActionRef &ref) const
     }
 }
 
-QString DefaultPetPage::getActionName(const QString &actionId) const
+QString ActionSettingsPage::getActionName(const QString &actionId) const
 {
     for (const PetAction &action : m_actionLibrary) {
         if (action.id == actionId) {
@@ -398,7 +340,7 @@ QString DefaultPetPage::getActionName(const QString &actionId) const
     return actionId;
 }
 
-QListWidget* DefaultPetPage::currentCategoryList() const
+QListWidget* ActionSettingsPage::currentCategoryList() const
 {
     int tabIndex = m_categoryTabs->currentIndex();
     switch (tabIndex) {
@@ -410,7 +352,7 @@ QListWidget* DefaultPetPage::currentCategoryList() const
     }
 }
 
-QList<PetActionRef> DefaultPetPage::currentCategoryActions() const
+QList<PetActionRef> ActionSettingsPage::currentCategoryActions() const
 {
     int tabIndex = m_categoryTabs->currentIndex();
     switch (tabIndex) {
@@ -422,7 +364,7 @@ QList<PetActionRef> DefaultPetPage::currentCategoryActions() const
     }
 }
 
-PetActionRef DefaultPetPage::currentSelectedRef() const
+PetActionRef ActionSettingsPage::currentSelectedRef() const
 {
     QListWidget *list = currentCategoryList();
     if (!list) return PetActionRef();
@@ -436,7 +378,7 @@ PetActionRef DefaultPetPage::currentSelectedRef() const
     return actions[row];
 }
 
-bool DefaultPetPage::updateCurrentSelectedRef(const PetActionRef &ref)
+bool ActionSettingsPage::updateCurrentSelectedRef(const PetActionRef &ref)
 {
     QListWidget *list = currentCategoryList();
     if (!list) return false;
@@ -454,7 +396,7 @@ bool DefaultPetPage::updateCurrentSelectedRef(const PetActionRef &ref)
     }
 }
 
-void DefaultPetPage::updateActionConfigPanel()
+void ActionSettingsPage::updateActionConfigPanel()
 {
     PetActionRef ref = currentSelectedRef();
     if (!ref.isValid()) {
@@ -471,7 +413,7 @@ void DefaultPetPage::updateActionConfigPanel()
     m_repeatSpinBox->setValue(ref.repeat);
 }
 
-void DefaultPetPage::setActionConfigPanelEnabled(bool enabled)
+void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
 {
     m_actionConfigPanel->setEnabled(enabled);
     m_loopCheckBox->setEnabled(enabled);
@@ -485,7 +427,7 @@ void DefaultPetPage::setActionConfigPanelEnabled(bool enabled)
     }
 }
 
-void DefaultPetPage::clearCategorySelection()
+void ActionSettingsPage::clearCategorySelection()
 {
     QListWidget *list = currentCategoryList();
     if (list) {
@@ -494,7 +436,7 @@ void DefaultPetPage::clearCategorySelection()
     setActionConfigPanelEnabled(false);
 }
 
-void DefaultPetPage::onAddToCategory()
+void ActionSettingsPage::onAddToCategory()
 {
     int row = m_actionLibraryList->currentRow();
     if (row < 0 || row >= m_actionLibrary.size()) {
@@ -529,7 +471,7 @@ void DefaultPetPage::onAddToCategory()
     }
 }
 
-void DefaultPetPage::onMoveUp()
+void ActionSettingsPage::onMoveUp()
 {
     QListWidget *list = currentCategoryList();
     if (!list) return;
@@ -541,20 +483,59 @@ void DefaultPetPage::onMoveUp()
     bool success = false;
 
     switch (tabIndex) {
-        case 0: success = m_playlist.moveIdleActionUp(row); break;
-        case 1: success = m_playlist.moveRandomActionUp(row); break;
-        case 2: success = m_playlist.moveTimedActionUp(row); break;
-        case 3: success = m_playlist.moveEmotionActionUp("happy", row); break;
+        case 0:
+            success = m_playlist.moveIdleActionUp(row);
+            break;
+        case 1:
+            success = m_playlist.moveRandomActionUp(row);
+            break;
+        case 2:
+            success = m_playlist.moveTimedActionUp(row);
+            break;
+        case 3:
+            success = m_playlist.moveEmotionActionUp("happy", row);
+            break;
     }
 
     if (success) {
         refreshCurrentCategoryList();
         list->setCurrentRow(row - 1);
-        updateActionConfigPanel();
     }
 }
 
-void DefaultPetPage::onMoveDown()
+void ActionSettingsPage::onMoveDown()
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0 || row >= list->count() - 1) return;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    bool success = false;
+
+    switch (tabIndex) {
+        case 0:
+            success = m_playlist.moveIdleActionDown(row);
+            break;
+        case 1:
+            success = m_playlist.moveRandomActionDown(row);
+            break;
+        case 2:
+            success = m_playlist.moveTimedActionDown(row);
+            break;
+        case 3:
+            success = m_playlist.moveEmotionActionDown("happy", row);
+            break;
+    }
+
+    if (success) {
+        refreshCurrentCategoryList();
+        list->setCurrentRow(row + 1);
+    }
+}
+
+void ActionSettingsPage::onRemove()
 {
     QListWidget *list = currentCategoryList();
     if (!list) return;
@@ -566,52 +547,38 @@ void DefaultPetPage::onMoveDown()
     bool success = false;
 
     switch (tabIndex) {
-        case 0: success = m_playlist.moveIdleActionDown(row); break;
-        case 1: success = m_playlist.moveRandomActionDown(row); break;
-        case 2: success = m_playlist.moveTimedActionDown(row); break;
-        case 3: success = m_playlist.moveEmotionActionDown("happy", row); break;
+        case 0:
+            success = m_playlist.removeIdleActionAt(row);
+            break;
+        case 1:
+            success = m_playlist.removeRandomActionAt(row);
+            break;
+        case 2:
+            success = m_playlist.removeTimedActionAt(row);
+            break;
+        case 3:
+            success = m_playlist.removeEmotionActionAt("happy", row);
+            break;
     }
 
     if (success) {
         refreshCurrentCategoryList();
-        list->setCurrentRow(row + 1);
-        updateActionConfigPanel();
+        clearCategorySelection();
     }
 }
 
-void DefaultPetPage::onRemove()
-{
-    QListWidget *list = currentCategoryList();
-    if (!list) return;
-
-    int row = list->currentRow();
-    if (row < 0) return;
-
-    int tabIndex = m_categoryTabs->currentIndex();
-
-    switch (tabIndex) {
-        case 0: m_playlist.removeIdleActionAt(row); break;
-        case 1: m_playlist.removeRandomActionAt(row); break;
-        case 2: m_playlist.removeTimedActionAt(row); break;
-        case 3: m_playlist.removeEmotionActionAt("happy", row); break;
-    }
-
-    refreshCurrentCategoryList();
-    clearCategorySelection();
-}
-
-void DefaultPetPage::onTabChanged(int)
+void ActionSettingsPage::onTabChanged(int)
 {
     refreshCurrentCategoryList();
     clearCategorySelection();
 }
 
-void DefaultPetPage::onCategorySelectionChanged()
+void ActionSettingsPage::onCategorySelectionChanged()
 {
     updateActionConfigPanel();
 }
 
-void DefaultPetPage::onLoopChanged(int state)
+void ActionSettingsPage::onLoopChanged(int state)
 {
     QListWidget *list = currentCategoryList();
     if (!list) return;
@@ -640,7 +607,7 @@ void DefaultPetPage::onLoopChanged(int state)
     list->setCurrentRow(row);
 }
 
-void DefaultPetPage::onRepeatChanged(int value)
+void ActionSettingsPage::onRepeatChanged(int value)
 {
     QListWidget *list = currentCategoryList();
     if (!list) return;
@@ -664,12 +631,12 @@ void DefaultPetPage::onRepeatChanged(int value)
     list->setCurrentRow(row);
 }
 
-void DefaultPetPage::refreshTheme()
+void ActionSettingsPage::refreshTheme()
 {
     applyTheme();
 }
 
-void DefaultPetPage::applyTheme()
+void ActionSettingsPage::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
 
@@ -677,30 +644,6 @@ void DefaultPetPage::applyTheme()
     m_contentWidget->setStyleSheet(theme.pageStyleSheet());
 
     m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
-
-    m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
-
-    QGridLayout *infoLayout = qobject_cast<QGridLayout *>(m_infoCard->layout());
-    if (infoLayout) {
-        for (int i = 0; i < infoLayout->rowCount(); ++i) {
-            for (int j = 0; j < infoLayout->columnCount(); ++j) {
-                QLayoutItem *item = infoLayout->itemAtPosition(i, j);
-                if (item && item->widget()) {
-                    QLabel *label = qobject_cast<QLabel *>(item->widget());
-                    if (label) {
-                        if (label == m_petNameLabel || label == m_canvasSizeLabel ||
-                            label == m_actionCountLabel || label == m_petDirLabel) {
-                            label->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                                   .arg(theme.textPrimaryColor()));
-                        } else {
-                            label->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                                   .arg(theme.textSecondaryColor()));
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));

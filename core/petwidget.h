@@ -11,6 +11,7 @@
 #include "core/petplaylist.h"
 
 class QContextMenuEvent;
+class QTimer;
 
 enum class PetPlayMode
 {

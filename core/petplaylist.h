@@ -36,10 +36,10 @@ public:
     bool addTimedAction(const PetActionRef &ref);
     bool addEmotionAction(const QString &emotion, const PetActionRef &ref);
 
-    void removeIdleActionAt(int index);
-    void removeRandomActionAt(int index);
-    void removeTimedActionAt(int index);
-    void removeEmotionActionAt(const QString &emotion, int index);
+    bool removeIdleActionAt(int index);
+    bool removeRandomActionAt(int index);
+    bool removeTimedActionAt(int index);
+    bool removeEmotionActionAt(const QString &emotion, int index);
 
     bool updateIdleActionAt(int index, const PetActionRef &ref);
     bool updateRandomActionAt(int index, const PetActionRef &ref);

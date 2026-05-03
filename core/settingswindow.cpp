@@ -1,9 +1,10 @@
 #include "settingswindow.h"
 
 #include "pages/aboutpage.h"
+#include "pages/actionsettingspage.h"
 #include "pages/apiconfigpage.h"
-#include "pages/defaultpetpage.h"
 #include "pages/displaysettingspage.h"
+#include "pages/petmanagepage.h"
 #include "theme/thememanager.h"
 
 #include <QHBoxLayout>
@@ -14,7 +15,8 @@ SettingsWindow::SettingsWindow(QWidget *parent)
     , m_centralWidget(nullptr)
     , m_sidebar(nullptr)
     , m_stackedWidget(nullptr)
-    , m_defaultPetPage(nullptr)
+    , m_petManagePage(nullptr)
+    , m_actionSettingsPage(nullptr)
     , m_apiConfigPage(nullptr)
     , m_displaySettingsPage(nullptr)
     , m_aboutPage(nullptr)
@@ -53,7 +55,8 @@ void SettingsWindow::setupSidebar()
     m_sidebar = new QListWidget(this);
     m_sidebar->setFixedWidth(200);
     m_sidebar->setFocusPolicy(Qt::NoFocus);
-    m_sidebar->addItem(tr("默认宠物"));
+    m_sidebar->addItem(tr("宠物管理"));
+    m_sidebar->addItem(tr("动作设置"));
     m_sidebar->addItem(tr("API配置"));
     m_sidebar->addItem(tr("显示设置"));
     m_sidebar->addItem(tr("关于"));
@@ -64,12 +67,14 @@ void SettingsWindow::setupPages()
 {
     m_stackedWidget = new QStackedWidget(this);
 
-    m_defaultPetPage = new DefaultPetPage(this);
+    m_petManagePage = new PetManagePage(this);
+    m_actionSettingsPage = new ActionSettingsPage(this);
     m_apiConfigPage = new ApiConfigPage(this);
     m_displaySettingsPage = new DisplaySettingsPage(this);
     m_aboutPage = new AboutPage(this);
 
-    m_stackedWidget->addWidget(m_defaultPetPage);
+    m_stackedWidget->addWidget(m_petManagePage);
+    m_stackedWidget->addWidget(m_actionSettingsPage);
     m_stackedWidget->addWidget(m_apiConfigPage);
     m_stackedWidget->addWidget(m_displaySettingsPage);
     m_stackedWidget->addWidget(m_aboutPage);
@@ -95,8 +100,11 @@ void SettingsWindow::applyTheme()
 
     m_sidebar->setStyleSheet(theme.sidebarStyleSheet());
 
-    if (m_defaultPetPage) {
-        m_defaultPetPage->refreshTheme();
+    if (m_petManagePage) {
+        m_petManagePage->refreshTheme();
+    }
+    if (m_actionSettingsPage) {
+        m_actionSettingsPage->refreshTheme();
     }
     if (m_apiConfigPage) {
         m_apiConfigPage->refreshTheme();

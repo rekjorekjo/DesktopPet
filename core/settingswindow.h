@@ -5,7 +5,8 @@
 #include <QMainWindow>
 #include <QStackedWidget>
 
-class DefaultPetPage;
+class PetManagePage;
+class ActionSettingsPage;
 class ApiConfigPage;
 class DisplaySettingsPage;
 class AboutPage;
@@ -29,7 +30,8 @@ private:
     QListWidget *m_sidebar;
     QStackedWidget *m_stackedWidget;
 
-    DefaultPetPage *m_defaultPetPage;
+    PetManagePage *m_petManagePage;
+    ActionSettingsPage *m_actionSettingsPage;
     ApiConfigPage *m_apiConfigPage;
     DisplaySettingsPage *m_displaySettingsPage;
     AboutPage *m_aboutPage;

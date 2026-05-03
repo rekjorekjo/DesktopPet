@@ -1,5 +1,5 @@
-#ifndef DEFAULTPETPAGE_H
-#define DEFAULTPETPAGE_H
+#ifndef ACTIONSETTINGSPAGE_H
+#define ACTIONSETTINGSPAGE_H
 
 #include <QLabel>
 #include <QListWidget>
@@ -15,13 +15,13 @@ class QFrame;
 class QPushButton;
 class QSpinBox;
 
-class DefaultPetPage : public QWidget
+class ActionSettingsPage : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit DefaultPetPage(QWidget *parent = nullptr);
-    ~DefaultPetPage();
+    explicit ActionSettingsPage(QWidget *parent = nullptr);
+    ~ActionSettingsPage();
 
 public slots:
     void refreshTheme();
@@ -63,11 +63,6 @@ private:
     QWidget *m_contentWidget;
 
     QLabel *m_titleLabel;
-    QFrame *m_infoCard;
-    QLabel *m_petNameLabel;
-    QLabel *m_canvasSizeLabel;
-    QLabel *m_actionCountLabel;
-    QLabel *m_petDirLabel;
 
     QLabel *m_libraryTitleLabel;
     QListWidget *m_actionLibraryList;
@@ -95,4 +90,4 @@ private:
     PetPlaylist m_playlist;
 };
 
-#endif // DEFAULTPETPAGE_H
+#endif // ACTIONSETTINGSPAGE_H
