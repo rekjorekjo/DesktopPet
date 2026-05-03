@@ -27,6 +27,9 @@ public:
 public slots:
     void refreshTheme();
 
+signals:
+    void applyConfigRequested();
+
 private:
     void setupUi();
     void applyTheme();
@@ -49,6 +52,7 @@ private:
     void setActionConfigPanelEnabled(bool enabled);
     void clearCategorySelection();
     int findSpeedIndex(double speed) const;
+    bool saveCurrentPlaylist();
 
 private slots:
     void onAddToCategory();
@@ -63,6 +67,7 @@ private slots:
     void onSpeedChanged(int index);
     void onAnimationSpeedChanged(int index);
     void onSaveConfig();
+    void onSaveAndApplyConfig();
 
 private:
     QScrollArea *m_scrollArea;
@@ -85,6 +90,7 @@ private:
     QPushButton *m_moveDownButton;
     QPushButton *m_removeButton;
     QPushButton *m_saveConfigButton;
+    QPushButton *m_saveAndApplyButton;
 
     QFrame *m_actionConfigPanel;
     QLabel *m_actionConfigTitleLabel;

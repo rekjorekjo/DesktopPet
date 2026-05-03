@@ -33,6 +33,7 @@ public:
 public slots:
     void startPet();
     void pausePet();
+    void reloadPet();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

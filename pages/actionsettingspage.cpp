@@ -35,6 +35,7 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_moveDownButton(nullptr)
     , m_removeButton(nullptr)
     , m_saveConfigButton(nullptr)
+    , m_saveAndApplyButton(nullptr)
     , m_actionConfigPanel(nullptr)
     , m_actionConfigTitleLabel(nullptr)
     , m_loopCheckBox(nullptr)
@@ -179,6 +180,11 @@ void ActionSettingsPage::setupUi()
     m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
     buttonLayout->addWidget(m_saveConfigButton);
 
+    m_saveAndApplyButton = new QPushButton(tr("保存并应用"), rightPanel);
+    m_saveAndApplyButton->setMinimumHeight(32);
+    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    buttonLayout->addWidget(m_saveAndApplyButton);
+
     buttonLayout->addStretch();
     rightLayout->addLayout(buttonLayout);
 
@@ -296,6 +302,7 @@ void ActionSettingsPage::initData()
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
         m_saveConfigButton->setEnabled(false);
+        m_saveAndApplyButton->setEnabled(false);
         m_categoryTabs->setEnabled(false);
         m_actionConfigPanel->setEnabled(false);
     }
@@ -308,6 +315,7 @@ void ActionSettingsPage::connectSignals()
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
     connect(m_removeButton, &QPushButton::clicked, this, &ActionSettingsPage::onRemove);
     connect(m_saveConfigButton, &QPushButton::clicked, this, &ActionSettingsPage::onSaveConfig);
+    connect(m_saveAndApplyButton, &QPushButton::clicked, this, &ActionSettingsPage::onSaveAndApplyConfig);
     connect(m_categoryTabs, &QTabWidget::currentChanged, this, &ActionSettingsPage::onTabChanged);
 
     connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
@@ -769,6 +777,18 @@ void ActionSettingsPage::onAnimationSpeedChanged(int index)
     updateCurrentSelectedRef(ref);
 }
 
+bool ActionSettingsPage::saveCurrentPlaylist()
+{
+    if (!m_loadedSuccessfully) {
+        return false;
+    }
+
+    QString petDir = PetPaths::defaultPetDirectory();
+    QString playlistPath = QDir(petDir).filePath("playlist.json");
+
+    return PetConfigManager::savePlaylistToJson(playlistPath, m_playlist);
+}
+
 void ActionSettingsPage::onSaveConfig()
 {
     if (!m_loadedSuccessfully) {
@@ -776,11 +796,23 @@ void ActionSettingsPage::onSaveConfig()
         return;
     }
 
-    QString petDir = PetPaths::defaultPetDirectory();
-    QString playlistPath = QDir(petDir).filePath("playlist.json");
-
-    if (PetConfigManager::savePlaylistToJson(playlistPath, m_playlist)) {
+    if (saveCurrentPlaylist()) {
         QMessageBox::information(this, tr("保存成功"), tr("配置已保存"));
+    } else {
+        QMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
+    }
+}
+
+void ActionSettingsPage::onSaveAndApplyConfig()
+{
+    if (!m_loadedSuccessfully) {
+        QMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
+        return;
+    }
+
+    if (saveCurrentPlaylist()) {
+        QMessageBox::information(this, tr("保存成功"), tr("配置已保存并应用"));
+        emit applyConfigRequested();
     } else {
         QMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
     }
@@ -817,6 +849,7 @@ void ActionSettingsPage::applyTheme()
     m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
 
     m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")

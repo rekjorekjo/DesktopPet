@@ -26,6 +26,9 @@ int main(int argc, char *argv[])
     QObject::connect(&settings, &SettingsWindow::pausePetRequested,
                      &pet, &PetWidget::pausePet);
 
+    QObject::connect(&settings, &SettingsWindow::applyPetConfigRequested,
+                     &pet, &PetWidget::reloadPet);
+
     pet.show();
 
     return app.exec();

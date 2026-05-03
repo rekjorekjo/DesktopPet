@@ -95,6 +95,9 @@ void SettingsWindow::connectSignals()
 
     connect(m_petManagePage, &PetManagePage::pausePetRequested,
             this, &SettingsWindow::pausePetRequested);
+
+    connect(m_actionSettingsPage, &ActionSettingsPage::applyConfigRequested,
+            this, &SettingsWindow::applyPetConfigRequested);
 }
 
 void SettingsWindow::applyTheme()

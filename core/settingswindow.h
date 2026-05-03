@@ -22,6 +22,7 @@ public:
 signals:
     void startPetRequested();
     void pausePetRequested();
+    void applyPetConfigRequested();
 
 private:
     void setupUi();

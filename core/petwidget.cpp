@@ -174,6 +174,46 @@ void PetWidget::pausePet()
     m_player->pause();
 }
 
+void PetWidget::reloadPet()
+{
+    m_randomTimer->stop();
+    m_player->stop();
+
+    m_currentAction = PetAction();
+    m_currentActionRef = PetActionRef();
+    m_currentActionId.clear();
+    m_currentMode = PetPlayMode::Idle;
+
+    bool wasRunning = m_petRunning;
+
+    if (!PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), m_petInfo, m_actions, m_playlist)) {
+        m_petRunning = false;
+        m_displayLabel->setText("宠物资源加载失败");
+        m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        return;
+    }
+
+    if (m_actions.isEmpty()) {
+        m_petRunning = false;
+        m_displayLabel->setText("没有可用动作");
+        m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        return;
+    }
+
+    setFixedSize(m_petInfo.displaySize);
+    m_displayLabel->setFixedSize(m_petInfo.displaySize);
+
+    if (wasRunning) {
+        m_petRunning = true;
+        playIdleAction();
+        m_randomTimer->start(30000);
+    } else {
+        m_petRunning = false;
+        m_displayLabel->setText("已暂停");
+        m_displayLabel->setStyleSheet("color: gray; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+    }
+}
+
 PetAction PetWidget::findActionById(const QString &actionId) const
 {
     for (const PetAction &action : m_actions) {
