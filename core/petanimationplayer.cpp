@@ -10,6 +10,8 @@ PetAnimationPlayer::PetAnimationPlayer(QObject *parent)
     , m_playing(false)
     , m_paused(false)
     , m_intervalMs(42)
+    , m_speedMultiplier(1.0)
+    , m_baseFps(24)
 {
     connect(m_timer, &QTimer::timeout, this, &PetAnimationPlayer::nextFrame);
 }
@@ -53,8 +55,10 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
     if (fps <= 0) {
         fps = 24;
     }
+    m_baseFps = fps;
 
-    m_intervalMs = 1000 / fps;
+    double effectiveFps = fps * m_speedMultiplier;
+    m_intervalMs = static_cast<int>(1000.0 / effectiveFps);
     if (m_intervalMs < 16) {
         m_intervalMs = 16;
     }
@@ -114,6 +118,32 @@ void PetAnimationPlayer::resume()
 
     m_paused = false;
     m_timer->start(m_intervalMs);
+}
+
+void PetAnimationPlayer::setSpeedMultiplier(double multiplier)
+{
+    if (multiplier < 0.1) {
+        multiplier = 0.1;
+    } else if (multiplier > 3.0) {
+        multiplier = 3.0;
+    }
+
+    m_speedMultiplier = multiplier;
+
+    double effectiveFps = m_baseFps * m_speedMultiplier;
+    m_intervalMs = static_cast<int>(1000.0 / effectiveFps);
+    if (m_intervalMs < 16) {
+        m_intervalMs = 16;
+    }
+
+    if (m_playing && !m_paused && m_timer->isActive()) {
+        m_timer->setInterval(m_intervalMs);
+    }
+}
+
+double PetAnimationPlayer::speedMultiplier() const
+{
+    return m_speedMultiplier;
 }
 
 bool PetAnimationPlayer::isPlaying() const

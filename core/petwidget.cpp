@@ -15,6 +15,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_player(nullptr)
     , m_randomTimer(nullptr)
     , m_currentMode(PetPlayMode::Idle)
+    , m_petRunning(true)
 {
     setupUi();
 
@@ -93,6 +94,8 @@ bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
         return false;
     }
 
+    m_player->setSpeedMultiplier(ref.animationSpeed);
+
     m_currentAction = action;
     m_currentActionRef = ref;
     m_currentActionId = action.id;
@@ -117,6 +120,10 @@ bool PetWidget::playActionByRef(const PetActionRef &ref)
 
 void PetWidget::playIdleAction()
 {
+    if (!m_petRunning) {
+        return;
+    }
+
     m_currentMode = PetPlayMode::Idle;
 
     QList<PetActionRef> idleRefs = m_playlist.idleActions();
@@ -137,6 +144,33 @@ void PetWidget::playIdleAction()
 
     m_displayLabel->setText("没有可用动作");
     m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+}
+
+void PetWidget::startPet()
+{
+    if (m_petRunning) {
+        return;
+    }
+
+    m_petRunning = true;
+    m_randomTimer->start(30000);
+
+    if (m_player->isPlaying()) {
+        m_player->resume();
+    } else {
+        playIdleAction();
+    }
+}
+
+void PetWidget::pausePet()
+{
+    if (!m_petRunning) {
+        return;
+    }
+
+    m_petRunning = false;
+    m_randomTimer->stop();
+    m_player->pause();
 }
 
 PetAction PetWidget::findActionById(const QString &actionId) const
@@ -168,13 +202,20 @@ void PetWidget::mouseMoveEvent(QMouseEvent *event)
 void PetWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
+    QAction *startAction = menu.addAction(tr("开始"));
+    QAction *pauseAction = menu.addAction(tr("暂停"));
+    menu.addSeparator();
     QAction *settingsAction = menu.addAction(tr("打开设置"));
     menu.addSeparator();
     QAction *quitAction = menu.addAction(tr("退出"));
 
     QAction *selectedAction = menu.exec(event->globalPos());
 
-    if (selectedAction == settingsAction) {
+    if (selectedAction == startAction) {
+        startPet();
+    } else if (selectedAction == pauseAction) {
+        pausePet();
+    } else if (selectedAction == settingsAction) {
         qDebug() << "Open settings requested";
         emit openSettingsRequested();
     } else if (selectedAction == quitAction) {
@@ -190,12 +231,16 @@ void PetWidget::onFrameChanged(const QPixmap &pixmap)
 
 void PetWidget::onActionFinished()
 {
+    if (!m_petRunning) {
+        return;
+    }
+
     playIdleAction();
 }
 
 void PetWidget::triggerRandomAction()
 {
-    if (m_currentMode != PetPlayMode::Idle) {
+    if (!m_petRunning || m_currentMode != PetPlayMode::Idle) {
         return;
     }
 

@@ -29,6 +29,8 @@ public:
 
     bool loadPet(const QString &petDirPath);
     void playIdleAction();
+    void startPet();
+    void pausePet();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -63,6 +65,7 @@ private:
     PetActionRef m_currentActionRef;
     QString m_currentActionId;
     PetPlayMode m_currentMode;
+    bool m_petRunning;
 
     QPoint m_dragPosition;
 };

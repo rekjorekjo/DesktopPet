@@ -20,6 +20,8 @@ struct PetActionRef
     // 移动配置
     bool moveEnabled;
     double movementSpeed;
+    // 动画播放速度
+    double animationSpeed;
 
     PetActionRef();
     explicit PetActionRef(const QString &id);

@@ -6,6 +6,7 @@ PetActionRef::PetActionRef()
     , intervalSeconds(0)
     , moveEnabled(false)
     , movementSpeed(1.0)
+    , animationSpeed(1.0)
 {
 }
 
@@ -16,6 +17,7 @@ PetActionRef::PetActionRef(const QString &id)
     , intervalSeconds(0)
     , moveEnabled(false)
     , movementSpeed(1.0)
+    , animationSpeed(1.0)
 {
 }
 

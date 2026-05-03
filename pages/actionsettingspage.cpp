@@ -39,6 +39,8 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_moveEnabledCheckBox(nullptr)
     , m_speedLabel(nullptr)
     , m_speedComboBox(nullptr)
+    , m_animationSpeedLabel(nullptr)
+    , m_animationSpeedComboBox(nullptr)
 {
     setupUi();
     initData();
@@ -202,6 +204,29 @@ void ActionSettingsPage::setupUi()
 
     configPanelLayout->addSpacing(20);
 
+    m_animationSpeedLabel = new QLabel(tr("播放速度"), m_actionConfigPanel);
+    m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                             .arg(theme.textSecondaryColor()));
+    configPanelLayout->addWidget(m_animationSpeedLabel);
+
+    m_animationSpeedComboBox = new QComboBox(m_actionConfigPanel);
+    m_animationSpeedComboBox->addItem("0.1x", 0.1);
+    m_animationSpeedComboBox->addItem("0.2x", 0.2);
+    m_animationSpeedComboBox->addItem("0.5x", 0.5);
+    m_animationSpeedComboBox->addItem("0.8x", 0.8);
+    m_animationSpeedComboBox->addItem("1.0x", 1.0);
+    m_animationSpeedComboBox->addItem("1.2x", 1.2);
+    m_animationSpeedComboBox->addItem("1.5x", 1.5);
+    m_animationSpeedComboBox->addItem("2.0x", 2.0);
+    m_animationSpeedComboBox->addItem("2.5x", 2.5);
+    m_animationSpeedComboBox->addItem("3.0x", 3.0);
+    m_animationSpeedComboBox->setCurrentIndex(4);
+    m_animationSpeedComboBox->setMinimumWidth(80);
+    m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    configPanelLayout->addWidget(m_animationSpeedComboBox);
+
+    configPanelLayout->addSpacing(20);
+
     m_moveEnabledCheckBox = new QCheckBox(tr("播放时移动"), m_actionConfigPanel);
     m_moveEnabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     configPanelLayout->addWidget(m_moveEnabledCheckBox);
@@ -299,6 +324,7 @@ void ActionSettingsPage::connectSignals()
     connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onRepeatChanged);
     connect(m_moveEnabledCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onMoveEnabledChanged);
     connect(m_speedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onSpeedChanged);
+    connect(m_animationSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onAnimationSpeedChanged);
 }
 
 void ActionSettingsPage::refreshActionLibraryList()
@@ -443,6 +469,7 @@ void ActionSettingsPage::updateActionConfigPanel()
     QSignalBlocker repeatBlocker(m_repeatSpinBox);
     QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
     QSignalBlocker speedBlocker(m_speedComboBox);
+    QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
 
     m_loopCheckBox->setChecked(ref.loop);
     m_repeatSpinBox->setValue(ref.repeat);
@@ -450,6 +477,9 @@ void ActionSettingsPage::updateActionConfigPanel()
 
     int speedIndex = findSpeedIndex(ref.movementSpeed);
     m_speedComboBox->setCurrentIndex(speedIndex);
+
+    int animSpeedIndex = findSpeedIndex(ref.animationSpeed);
+    m_animationSpeedComboBox->setCurrentIndex(animSpeedIndex);
 }
 
 void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
@@ -459,16 +489,19 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
     m_repeatSpinBox->setEnabled(enabled);
     m_moveEnabledCheckBox->setEnabled(enabled);
     m_speedComboBox->setEnabled(enabled);
+    m_animationSpeedComboBox->setEnabled(enabled);
 
     if (!enabled) {
         QSignalBlocker loopBlocker(m_loopCheckBox);
         QSignalBlocker repeatBlocker(m_repeatSpinBox);
         QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
         QSignalBlocker speedBlocker(m_speedComboBox);
+        QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
         m_loopCheckBox->setChecked(false);
         m_repeatSpinBox->setValue(1);
         m_moveEnabledCheckBox->setChecked(false);
         m_speedComboBox->setCurrentIndex(4);
+        m_animationSpeedComboBox->setCurrentIndex(4);
     }
 }
 
@@ -725,6 +758,22 @@ void ActionSettingsPage::onSpeedChanged(int index)
     updateCurrentSelectedRef(ref);
 }
 
+void ActionSettingsPage::onAnimationSpeedChanged(int index)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    double speed = m_animationSpeedComboBox->itemData(index).toDouble();
+    ref.animationSpeed = speed;
+    updateCurrentSelectedRef(ref);
+}
+
 void ActionSettingsPage::refreshTheme()
 {
     applyTheme();
@@ -769,4 +818,7 @@ void ActionSettingsPage::applyTheme()
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                             .arg(theme.textSecondaryColor()));
+    m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
 }

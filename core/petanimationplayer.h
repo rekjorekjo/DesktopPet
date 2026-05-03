@@ -22,6 +22,9 @@ public:
     void pause();
     void resume();
 
+    void setSpeedMultiplier(double multiplier);
+    double speedMultiplier() const;
+
     bool isPlaying() const;
     bool isLoaded() const;
 
@@ -43,6 +46,8 @@ private:
     bool m_playing;
     bool m_paused;
     int m_intervalMs;
+    double m_speedMultiplier;
+    int m_baseFps;
 };
 
 #endif // PETANIMATIONPLAYER_H

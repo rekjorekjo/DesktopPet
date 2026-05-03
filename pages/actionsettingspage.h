@@ -61,6 +61,7 @@ private slots:
     void onRepeatChanged(int value);
     void onMoveEnabledChanged(int state);
     void onSpeedChanged(int index);
+    void onAnimationSpeedChanged(int index);
 
 private:
     QScrollArea *m_scrollArea;
@@ -92,6 +93,8 @@ private:
     QCheckBox *m_moveEnabledCheckBox;
     QLabel *m_speedLabel;
     QComboBox *m_speedComboBox;
+    QLabel *m_animationSpeedLabel;
+    QComboBox *m_animationSpeedComboBox;
 
     QList<PetAction> m_actionLibrary;
     PetPlaylist m_playlist;
