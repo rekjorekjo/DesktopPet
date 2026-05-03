@@ -5,12 +5,16 @@
 #include <QDir>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QRandomGenerator>
+#include <QTimer>
 #include <QVBoxLayout>
 
 PetWidget::PetWidget(QWidget *parent)
     : QWidget(parent)
     , m_displayLabel(nullptr)
     , m_player(nullptr)
+    , m_randomTimer(nullptr)
+    , m_currentMode(PetPlayMode::Idle)
 {
     setupUi();
 
@@ -18,6 +22,9 @@ PetWidget::PetWidget(QWidget *parent)
     connect(m_player, &PetAnimationPlayer::frameChanged, this, &PetWidget::onFrameChanged);
     connect(m_player, &PetAnimationPlayer::finished, this, &PetWidget::onActionFinished);
     connect(m_player, &PetAnimationPlayer::errorOccurred, this, &PetWidget::onErrorOccurred);
+
+    m_randomTimer = new QTimer(this);
+    connect(m_randomTimer, &QTimer::timeout, this, &PetWidget::triggerRandomAction);
 
     QString defaultPetDir = QDir::currentPath() + "/pets/default_pet";
     loadPet(defaultPetDir);
@@ -67,21 +74,23 @@ bool PetWidget::loadPet(const QString &petDirPath)
 
     playIdleAction();
 
+    m_randomTimer->start(30000);
+
     return true;
 }
 
-void PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
+bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
 {
     if (!action.isValid()) {
         m_displayLabel->setText("动作无效");
         m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
-        return;
+        return false;
     }
 
     if (!m_player->loadAction(action, m_petInfo.displaySize)) {
         m_displayLabel->setText("动作加载失败");
         m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
-        return;
+        return false;
     }
 
     m_currentAction = action;
@@ -91,34 +100,39 @@ void PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
     m_displayLabel->setStyleSheet("background-color: rgba(0, 0, 0, 50); border-radius: 10px;");
 
     m_player->play(ref.loop, ref.repeat);
+    return true;
 }
 
-void PetWidget::playActionByRef(const PetActionRef &ref)
+bool PetWidget::playActionByRef(const PetActionRef &ref)
 {
     PetAction action = findActionById(ref.actionId);
     if (!action.isValid()) {
         m_displayLabel->setText("找不到动作: " + ref.actionId);
         m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
-        return;
+        return false;
     }
 
-    playAction(action, ref);
+    return playAction(action, ref);
 }
 
 void PetWidget::playIdleAction()
 {
+    m_currentMode = PetPlayMode::Idle;
+
     QList<PetActionRef> idleRefs = m_playlist.idleActions();
     if (!idleRefs.isEmpty()) {
-        playActionByRef(idleRefs.first());
-        return;
+        if (playActionByRef(idleRefs.first())) {
+            return;
+        }
     }
 
     if (!m_actions.isEmpty()) {
         PetActionRef defaultRef(m_actions.first().id);
         defaultRef.loop = true;
         defaultRef.repeat = 0;
-        playAction(m_actions.first(), defaultRef);
-        return;
+        if (playAction(m_actions.first(), defaultRef)) {
+            return;
+        }
     }
 
     m_displayLabel->setText("没有可用动作");
@@ -177,6 +191,27 @@ void PetWidget::onFrameChanged(const QPixmap &pixmap)
 void PetWidget::onActionFinished()
 {
     playIdleAction();
+}
+
+void PetWidget::triggerRandomAction()
+{
+    if (m_currentMode != PetPlayMode::Idle) {
+        return;
+    }
+
+    QList<PetActionRef> randomRefs = m_playlist.randomActions();
+    if (randomRefs.isEmpty()) {
+        return;
+    }
+
+    int index = QRandomGenerator::global()->bounded(randomRefs.size());
+    PetActionRef ref = randomRefs.at(index);
+
+    if (playActionByRef(ref)) {
+        m_currentMode = PetPlayMode::Random;
+    } else {
+        m_currentMode = PetPlayMode::Idle;
+    }
 }
 
 void PetWidget::onErrorOccurred(const QString &message)

@@ -12,6 +12,12 @@
 
 class QContextMenuEvent;
 
+enum class PetPlayMode
+{
+    Idle,
+    Random
+};
+
 class PetWidget : public QWidget
 {
     Q_OBJECT
@@ -36,15 +42,17 @@ private slots:
     void onFrameChanged(const QPixmap &pixmap);
     void onActionFinished();
     void onErrorOccurred(const QString &message);
+    void triggerRandomAction();
 
 private:
     void setupUi();
     PetAction findActionById(const QString &actionId) const;
-    void playAction(const PetAction &action, const PetActionRef &ref);
-    void playActionByRef(const PetActionRef &ref);
+    bool playAction(const PetAction &action, const PetActionRef &ref);
+    bool playActionByRef(const PetActionRef &ref);
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
+    QTimer *m_randomTimer;
 
     PetBasicInfo m_petInfo;
     QList<PetAction> m_actions;
@@ -53,6 +61,7 @@ private:
     PetAction m_currentAction;
     PetActionRef m_currentActionRef;
     QString m_currentActionId;
+    PetPlayMode m_currentMode;
 
     QPoint m_dragPosition;
 };
