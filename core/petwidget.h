@@ -1,7 +1,9 @@
 #ifndef PETWIDGET_H
 #define PETWIDGET_H
 
+#include <QDateTime>
 #include <QLabel>
+#include <QMap>
 #include <QPoint>
 #include <QWidget>
 
@@ -16,7 +18,8 @@ class QTimer;
 enum class PetPlayMode
 {
     Idle,
-    Random
+    Random,
+    Timed
 };
 
 class PetWidget : public QWidget
@@ -49,6 +52,7 @@ private slots:
     void onActionFinished();
     void onErrorOccurred(const QString &message);
     void triggerRandomAction();
+    void checkTimedActions();
 
 private:
     void setupUi();
@@ -59,6 +63,8 @@ private:
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
     QTimer *m_randomTimer;
+    QTimer *m_timedCheckTimer;
+    QMap<int, QDateTime> m_lastTimedTriggerTimes;
 
     PetBasicInfo m_petInfo;
     QList<PetAction> m_actions;

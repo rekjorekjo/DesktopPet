@@ -16,6 +16,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_displayLabel(nullptr)
     , m_player(nullptr)
     , m_randomTimer(nullptr)
+    , m_timedCheckTimer(nullptr)
     , m_currentMode(PetPlayMode::Idle)
     , m_petRunning(true)
 {
@@ -28,6 +29,9 @@ PetWidget::PetWidget(QWidget *parent)
 
     m_randomTimer = new QTimer(this);
     connect(m_randomTimer, &QTimer::timeout, this, &PetWidget::triggerRandomAction);
+
+    m_timedCheckTimer = new QTimer(this);
+    connect(m_timedCheckTimer, &QTimer::timeout, this, &PetWidget::checkTimedActions);
 
     loadPet(PetPaths::defaultPetDirectory());
 }
@@ -77,6 +81,7 @@ bool PetWidget::loadPet(const QString &petDirPath)
     playIdleAction();
 
     m_randomTimer->start(30000);
+    m_timedCheckTimer->start(1000);
 
     return true;
 }
@@ -155,6 +160,7 @@ void PetWidget::startPet()
 
     m_petRunning = true;
     m_randomTimer->start(30000);
+    m_timedCheckTimer->start(1000);
 
     if (m_player->isPlaying()) {
         m_player->resume();
@@ -171,18 +177,21 @@ void PetWidget::pausePet()
 
     m_petRunning = false;
     m_randomTimer->stop();
+    m_timedCheckTimer->stop();
     m_player->pause();
 }
 
 void PetWidget::reloadPet()
 {
     m_randomTimer->stop();
+    m_timedCheckTimer->stop();
     m_player->stop();
 
     m_currentAction = PetAction();
     m_currentActionRef = PetActionRef();
     m_currentActionId.clear();
     m_currentMode = PetPlayMode::Idle;
+    m_lastTimedTriggerTimes.clear();
 
     bool wasRunning = m_petRunning;
 
@@ -207,6 +216,7 @@ void PetWidget::reloadPet()
         m_petRunning = true;
         playIdleAction();
         m_randomTimer->start(30000);
+        m_timedCheckTimer->start(1000);
     } else {
         m_petRunning = false;
         m_displayLabel->setText("已暂停");
@@ -297,6 +307,46 @@ void PetWidget::triggerRandomAction()
         m_currentMode = PetPlayMode::Random;
     } else {
         m_currentMode = PetPlayMode::Idle;
+    }
+}
+
+void PetWidget::checkTimedActions()
+{
+    if (!m_petRunning || m_currentMode != PetPlayMode::Idle) {
+        return;
+    }
+
+    QList<PetActionRef> timedRefs = m_playlist.timedActions();
+    if (timedRefs.isEmpty()) {
+        return;
+    }
+
+    QDateTime now = QDateTime::currentDateTime();
+
+    for (int i = 0; i < timedRefs.size(); ++i) {
+        const PetActionRef &ref = timedRefs.at(i);
+
+        if (ref.intervalSeconds <= 0) {
+            continue;
+        }
+
+        if (!m_lastTimedTriggerTimes.contains(i)) {
+            m_lastTimedTriggerTimes[i] = now;
+            continue;
+        }
+
+        QDateTime lastTrigger = m_lastTimedTriggerTimes[i];
+        qint64 elapsedSeconds = lastTrigger.secsTo(now);
+
+        if (elapsedSeconds >= ref.intervalSeconds) {
+            if (playActionByRef(ref)) {
+                m_currentMode = PetPlayMode::Timed;
+                m_lastTimedTriggerTimes[i] = now;
+                return;
+            } else {
+                m_lastTimedTriggerTimes[i] = now;
+            }
+        }
     }
 }
 
