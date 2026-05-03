@@ -15,6 +15,8 @@ qt_add_executable(DesktopPet
     core/petanimationplayer.h
     core/petconfigmanager.cpp
     core/petconfigmanager.h
+    core/petpaths.cpp
+    core/petpaths.h
     core/petplaylist.cpp
     core/petplaylist.h
     core/petwidget.cpp

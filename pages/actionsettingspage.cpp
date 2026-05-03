@@ -1,5 +1,7 @@
 #include "actionsettingspage.h"
 
+#include "core/petconfigmanager.h"
+#include "core/petpaths.h"
 #include "theme/thememanager.h"
 
 #include <QCheckBox>
@@ -41,12 +43,16 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_speedComboBox(nullptr)
     , m_animationSpeedLabel(nullptr)
     , m_animationSpeedComboBox(nullptr)
+    , m_loadedSuccessfully(false)
 {
     setupUi();
     initData();
     connectSignals();
-    refreshActionLibraryList();
-    refreshCurrentCategoryList();
+
+    if (m_loadedSuccessfully) {
+        refreshActionLibraryList();
+        refreshCurrentCategoryList();
+    }
     setActionConfigPanelEnabled(false);
 }
 
@@ -266,45 +272,22 @@ void ActionSettingsPage::setupUi()
 
 void ActionSettingsPage::initData()
 {
-    m_actionLibrary.append(PetAction("idle_01", tr("默认待机"), "/resources/pets/cat/idle_01", 24, 60));
-    m_actionLibrary.append(PetAction("idle_02", tr("眨眼待机"), "/resources/pets/cat/idle_02", 24, 48));
-    m_actionLibrary.append(PetAction("wave", tr("挥手"), "/resources/pets/cat/wave", 24, 36));
-    m_actionLibrary.append(PetAction("happy", tr("开心"), "/resources/pets/cat/happy", 24, 40));
-    m_actionLibrary.append(PetAction("sad", tr("难过"), "/resources/pets/cat/sad", 24, 40));
-    m_actionLibrary.append(PetAction("sleepy", tr("困倦"), "/resources/pets/cat/sleepy", 24, 50));
-    m_actionLibrary.append(PetAction("thinking", tr("思考"), "/resources/pets/cat/thinking", 24, 45));
-    m_actionLibrary.append(PetAction("comfort", tr("安慰"), "/resources/pets/cat/comfort", 24, 42));
-    m_actionLibrary.append(PetAction("drink_water", tr("喝水提醒"), "/resources/pets/cat/drink_water", 24, 60));
-    m_actionLibrary.append(PetAction("rest_reminder", tr("休息提醒"), "/resources/pets/cat/rest_reminder", 24, 60));
+    PetBasicInfo petInfo;
+    if (PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), petInfo, m_actionLibrary, m_playlist)) {
+        m_loadedSuccessfully = true;
+    } else {
+        m_loadedSuccessfully = false;
+        m_actionLibraryList->clear();
+        m_actionLibraryList->addItem(tr("宠物配置加载失败"));
+        m_actionLibraryList->setEnabled(false);
 
-    PetActionRef idle01("idle_01");
-    m_playlist.addIdleAction(idle01);
-    PetActionRef idle02("idle_02");
-    m_playlist.addIdleAction(idle02);
-
-    PetActionRef wave("wave");
-    m_playlist.addRandomAction(wave);
-    PetActionRef sleepy("sleepy");
-    m_playlist.addRandomAction(sleepy);
-    PetActionRef thinking("thinking");
-    m_playlist.addRandomAction(thinking);
-
-    PetActionRef drinkWater("drink_water");
-    drinkWater.intervalSeconds = 1800;
-    m_playlist.addTimedAction(drinkWater);
-    PetActionRef restReminder("rest_reminder");
-    restReminder.intervalSeconds = 3600;
-    m_playlist.addTimedAction(restReminder);
-
-    PetActionRef happyRef("happy");
-    m_playlist.addEmotionAction("happy", happyRef);
-    PetActionRef waveRef("wave");
-    m_playlist.addEmotionAction("happy", waveRef);
-
-    PetActionRef comfortRef("comfort");
-    m_playlist.addEmotionAction("sad", comfortRef);
-    PetActionRef sadRef("sad");
-    m_playlist.addEmotionAction("sad", sadRef);
+        m_addToCategoryButton->setEnabled(false);
+        m_moveUpButton->setEnabled(false);
+        m_moveDownButton->setEnabled(false);
+        m_removeButton->setEnabled(false);
+        m_categoryTabs->setEnabled(false);
+        m_actionConfigPanel->setEnabled(false);
+    }
 }
 
 void ActionSettingsPage::connectSignals()

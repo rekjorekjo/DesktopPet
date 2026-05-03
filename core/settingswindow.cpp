@@ -89,6 +89,12 @@ void SettingsWindow::connectSignals()
 
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
             this, &SettingsWindow::applyTheme);
+
+    connect(m_petManagePage, &PetManagePage::startPetRequested,
+            this, &SettingsWindow::startPetRequested);
+
+    connect(m_petManagePage, &PetManagePage::pausePetRequested,
+            this, &SettingsWindow::pausePetRequested);
 }
 
 void SettingsWindow::applyTheme()

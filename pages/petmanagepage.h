@@ -22,11 +22,17 @@ public:
 public slots:
     void refreshTheme();
 
+signals:
+    void startPetRequested();
+    void pausePetRequested();
+
 private:
     void setupUi();
     void applyTheme();
     void loadPetInfo();
     void updateInfoDisplay();
+    void setRunningStatus(bool running);
+    void connectSignals();
 
 private:
     QLabel *m_titleLabel;

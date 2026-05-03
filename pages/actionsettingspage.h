@@ -98,6 +98,7 @@ private:
 
     QList<PetAction> m_actionLibrary;
     PetPlaylist m_playlist;
+    bool m_loadedSuccessfully;
 };
 
 #endif // ACTIONSETTINGSPAGE_H

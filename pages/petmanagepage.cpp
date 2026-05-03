@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "core/petpaths.h"
 #include "theme/thememanager.h"
 
 PetManagePage::PetManagePage(QWidget *parent)
@@ -14,10 +15,24 @@ PetManagePage::PetManagePage(QWidget *parent)
     setupUi();
     loadPetInfo();
     applyTheme();
+    connectSignals();
 }
 
 PetManagePage::~PetManagePage()
 {
+}
+
+void PetManagePage::connectSignals()
+{
+    connect(m_startButton, &QPushButton::clicked, this, [this]() {
+        setRunningStatus(true);
+        emit startPetRequested();
+    });
+
+    connect(m_pauseButton, &QPushButton::clicked, this, [this]() {
+        setRunningStatus(false);
+        emit pausePetRequested();
+    });
 }
 
 void PetManagePage::setupUi()
@@ -115,13 +130,15 @@ void PetManagePage::applyTheme()
 
 void PetManagePage::loadPetInfo()
 {
-    QString defaultPetDir = QDir::currentPath() + "/pets/default_pet";
+    QString petDir = PetPaths::defaultPetDirectory();
 
-    if (PetConfigManager::loadPetFromDirectory(defaultPetDir, m_petInfo, m_actions, m_playlist)) {
+    if (PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actions, m_playlist)) {
         updateInfoDisplay();
+        m_startButton->setEnabled(true);
+        m_pauseButton->setEnabled(true);
     } else {
         m_petNameLabel->setText("宠物名称: 加载失败");
-        m_petDirLabel->setText("宠物目录: " + defaultPetDir);
+        m_petDirLabel->setText("宠物目录: " + petDir);
         m_canvasSizeLabel->setText("画布尺寸: -");
         m_displaySizeLabel->setText("显示尺寸: -");
         m_actionCountLabel->setText("动作数量: 0");
@@ -132,7 +149,7 @@ void PetManagePage::loadPetInfo()
 void PetManagePage::updateInfoDisplay()
 {
     m_petNameLabel->setText("宠物名称: " + m_petInfo.name);
-    m_petDirLabel->setText("宠物目录: " + QDir::currentPath() + "/pets/default_pet");
+    m_petDirLabel->setText("宠物目录: " + PetPaths::defaultPetDirectory());
     m_canvasSizeLabel->setText(QString("画布尺寸: %1 x %2")
                                    .arg(m_petInfo.canvasSize.width())
                                    .arg(m_petInfo.canvasSize.height()));
@@ -140,10 +157,19 @@ void PetManagePage::updateInfoDisplay()
                                     .arg(m_petInfo.displaySize.width())
                                     .arg(m_petInfo.displaySize.height()));
     m_actionCountLabel->setText(QString("动作数量: %1").arg(m_actions.size()));
-    m_statusLabel->setText("运行状态: 配置已加载（暂未联动）");
+    m_statusLabel->setText("运行状态: 已加载");
 }
 
 void PetManagePage::refreshTheme()
 {
     applyTheme();
+}
+
+void PetManagePage::setRunningStatus(bool running)
+{
+    if (running) {
+        m_statusLabel->setText("运行状态: 运行中");
+    } else {
+        m_statusLabel->setText("运行状态: 已暂停");
+    }
 }

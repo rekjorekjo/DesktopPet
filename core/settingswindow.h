@@ -19,6 +19,10 @@ public:
     SettingsWindow(QWidget *parent = nullptr);
     ~SettingsWindow();
 
+signals:
+    void startPetRequested();
+    void pausePetRequested();
+
 private:
     void setupUi();
     void setupSidebar();

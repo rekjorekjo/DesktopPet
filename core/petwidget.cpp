@@ -9,6 +9,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "core/petpaths.h"
+
 PetWidget::PetWidget(QWidget *parent)
     : QWidget(parent)
     , m_displayLabel(nullptr)
@@ -27,8 +29,7 @@ PetWidget::PetWidget(QWidget *parent)
     m_randomTimer = new QTimer(this);
     connect(m_randomTimer, &QTimer::timeout, this, &PetWidget::triggerRandomAction);
 
-    QString defaultPetDir = QDir::currentPath() + "/pets/default_pet";
-    loadPet(defaultPetDir);
+    loadPet(PetPaths::defaultPetDirectory());
 }
 
 PetWidget::~PetWidget()

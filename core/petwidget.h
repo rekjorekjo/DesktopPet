@@ -29,6 +29,8 @@ public:
 
     bool loadPet(const QString &petDirPath);
     void playIdleAction();
+
+public slots:
     void startPet();
     void pausePet();
 
