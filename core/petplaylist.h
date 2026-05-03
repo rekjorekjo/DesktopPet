@@ -17,6 +17,9 @@ struct PetActionRef
     int repeat;
     int intervalSeconds;
     QString emotion;
+    // 移动配置
+    bool moveEnabled;
+    double movementSpeed;
 
     PetActionRef();
     explicit PetActionRef(const QString &id);

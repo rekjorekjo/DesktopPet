@@ -358,6 +358,8 @@ QJsonObject PetConfigManager::actionRefToJson(const PetActionRef &ref)
     obj["repeat"] = ref.repeat;
     obj["intervalSeconds"] = ref.intervalSeconds;
     obj["emotion"] = ref.emotion;
+    obj["moveEnabled"] = ref.moveEnabled;
+    obj["movementSpeed"] = ref.movementSpeed;
     return obj;
 }
 
@@ -369,5 +371,15 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
     ref.repeat = obj.value("repeat").toInt(1);
     ref.intervalSeconds = obj.value("intervalSeconds").toInt(0);
     ref.emotion = obj.value("emotion").toString();
+    ref.moveEnabled = obj.value("moveEnabled").toBool(false);
+
+    double speed = obj.value("movementSpeed").toDouble(1.0);
+    if (speed < 0.1) {
+        speed = 0.1;
+    } else if (speed > 3.0) {
+        speed = 3.0;
+    }
+    ref.movementSpeed = speed;
+
     return ref;
 }

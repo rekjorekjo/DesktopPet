@@ -4,6 +4,8 @@ PetActionRef::PetActionRef()
     : loop(false)
     , repeat(1)
     , intervalSeconds(0)
+    , moveEnabled(false)
+    , movementSpeed(1.0)
 {
 }
 
@@ -12,6 +14,8 @@ PetActionRef::PetActionRef(const QString &id)
     , loop(false)
     , repeat(1)
     , intervalSeconds(0)
+    , moveEnabled(false)
+    , movementSpeed(1.0)
 {
 }
 

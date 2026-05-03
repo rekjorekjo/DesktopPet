@@ -11,6 +11,7 @@
 #include "core/petplaylist.h"
 
 class QCheckBox;
+class QComboBox;
 class QFrame;
 class QPushButton;
 class QSpinBox;
@@ -47,6 +48,7 @@ private:
     void updateActionConfigPanel();
     void setActionConfigPanelEnabled(bool enabled);
     void clearCategorySelection();
+    int findSpeedIndex(double speed) const;
 
 private slots:
     void onAddToCategory();
@@ -57,6 +59,8 @@ private slots:
     void onCategorySelectionChanged();
     void onLoopChanged(int state);
     void onRepeatChanged(int value);
+    void onMoveEnabledChanged(int state);
+    void onSpeedChanged(int index);
 
 private:
     QScrollArea *m_scrollArea;
@@ -85,6 +89,9 @@ private:
     QLabel *m_repeatLabel;
     QSpinBox *m_repeatSpinBox;
     QLabel *m_repeatHintLabel;
+    QCheckBox *m_moveEnabledCheckBox;
+    QLabel *m_speedLabel;
+    QComboBox *m_speedComboBox;
 
     QList<PetAction> m_actionLibrary;
     PetPlaylist m_playlist;
