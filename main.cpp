@@ -4,11 +4,15 @@
 #include "core/traymanager.h"
 
 #include <QApplication>
+#include <QIcon>
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    QIcon appIcon(":/icons/app_icon.ico");
+    QApplication::setWindowIcon(appIcon);
 
     PetWidget pet;
     SettingsWindow settings;
@@ -56,11 +60,10 @@ int main(int argc, char *argv[])
 
     QObject::connect(&tray, &TrayManager::quitRequested, &app, &QApplication::quit);
 
-    pet.show();
+    QObject::connect(&tray, &TrayManager::emotionRequested,
+                     &pet, &PetWidget::playEmotion);
 
-    if (!AppSettings::autoPlayOnLaunch()) {
-        pet.pausePet();
-    }
+    pet.show();
 
     if (AppSettings::openSettingsOnLaunch()) {
         settings.show();

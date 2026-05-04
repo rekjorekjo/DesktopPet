@@ -19,7 +19,8 @@ enum class PetPlayMode
 {
     Idle,
     Random,
-    Timed
+    Timed,
+    Emotion
 };
 
 class PetWidget : public QWidget
@@ -39,6 +40,7 @@ public slots:
     void reloadPet();
     void setPetScaleFactor(double scale);
     void setPetOpacity(double opacity);
+    void playEmotion(const QString &emotion);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

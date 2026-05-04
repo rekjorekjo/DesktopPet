@@ -1,9 +1,16 @@
 #include "aboutpage.h"
 
+#include "core/appversion.h"
+#include "core/updatemanager.h"
 #include "theme/thememanager.h"
 
+#include <QDesktopServices>
 #include <QFont>
 #include <QFrame>
+#include <QHBoxLayout>
+#include <QMessageBox>
+#include <QPixmap>
+#include <QUrl>
 #include <QVBoxLayout>
 
 AboutPage::AboutPage(QWidget *parent)
@@ -13,19 +20,26 @@ AboutPage::AboutPage(QWidget *parent)
     , m_contentWidget(nullptr)
     , m_infoCard(nullptr)
     , m_infoCardTitle(nullptr)
+    , m_iconLabel(nullptr)
     , m_appNameLabel(nullptr)
-    , m_techStackLabel(nullptr)
     , m_descriptionLabel(nullptr)
     , m_versionCard(nullptr)
     , m_versionCardTitle(nullptr)
     , m_versionLabel(nullptr)
-    , m_statusLabel(nullptr)
     , m_updateCard(nullptr)
     , m_updateCardTitle(nullptr)
-    , m_updateNoteLabel(nullptr)
+    , m_updateStatusLabel(nullptr)
     , m_checkUpdateButton(nullptr)
+    , m_updateManager(nullptr)
 {
     setupUi();
+    m_updateManager = new UpdateManager(this);
+    connect(m_updateManager, &UpdateManager::updateAvailable,
+            this, &AboutPage::onUpdateAvailable);
+    connect(m_updateManager, &UpdateManager::noUpdateAvailable,
+            this, &AboutPage::onNoUpdateAvailable);
+    connect(m_updateManager, &UpdateManager::checkFailed,
+            this, &AboutPage::onCheckFailed);
 }
 
 AboutPage::~AboutPage() {}
@@ -75,6 +89,19 @@ void AboutPage::setupUi()
                                      .arg(theme.textPrimaryColor()));
     infoLayout->addWidget(m_infoCardTitle);
 
+    QHBoxLayout *iconTextLayout = new QHBoxLayout();
+    iconTextLayout->setSpacing(16);
+
+    m_iconLabel = new QLabel(m_infoCard);
+    QPixmap iconPixmap(":/icons/app_icon.png");
+    m_iconLabel->setPixmap(iconPixmap.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_iconLabel->setFixedSize(64, 64);
+    m_iconLabel->setScaledContents(true);
+    iconTextLayout->addWidget(m_iconLabel, 0, Qt::AlignTop);
+
+    QVBoxLayout *textLayout = new QVBoxLayout();
+    textLayout->setSpacing(8);
+
     m_appNameLabel = new QLabel(tr("DesktopPet"), m_infoCard);
     QFont appNameFont = m_appNameLabel->font();
     appNameFont.setPointSize(14);
@@ -82,18 +109,16 @@ void AboutPage::setupUi()
     m_appNameLabel->setFont(appNameFont);
     m_appNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.buttonPrimaryColor()));
-    infoLayout->addWidget(m_appNameLabel);
+    textLayout->addWidget(m_appNameLabel);
 
-    m_descriptionLabel = new QLabel(tr("一个可爱的桌面宠物应用，让你的桌面更加生动有趣。"), m_infoCard);
+    m_descriptionLabel = new QLabel(tr("一个可爱的桌面宠物应用，让你的桌面更生动有趣。"), m_infoCard);
     m_descriptionLabel->setWordWrap(true);
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textSecondaryColor()));
-    infoLayout->addWidget(m_descriptionLabel);
+    textLayout->addWidget(m_descriptionLabel);
 
-    m_techStackLabel = new QLabel(tr("技术栈：Qt 6 / C++ / CMake"), m_infoCard);
-    m_techStackLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                      .arg(theme.textSecondaryColor()));
-    infoLayout->addWidget(m_techStackLabel);
+    iconTextLayout->addLayout(textLayout, 1);
+    infoLayout->addLayout(iconTextLayout);
 
     contentLayout->addWidget(m_infoCard);
 
@@ -113,15 +138,10 @@ void AboutPage::setupUi()
                                         .arg(theme.textPrimaryColor()));
     versionLayout->addWidget(m_versionCardTitle);
 
-    m_versionLabel = new QLabel(tr("当前版本：v0.20.1(beta)"), m_versionCard);
+    m_versionLabel = new QLabel(tr("当前版本：") + QString::fromUtf8(APP_VERSION), m_versionCard);
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
     versionLayout->addWidget(m_versionLabel);
-
-    m_statusLabel = new QLabel(tr("开发状态：实验版"), m_versionCard);
-    m_statusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.buttonPrimaryColor()));
-    versionLayout->addWidget(m_statusLabel);
 
     contentLayout->addWidget(m_versionCard);
 
@@ -141,15 +161,15 @@ void AboutPage::setupUi()
                                        .arg(theme.textPrimaryColor()));
     updateLayout->addWidget(m_updateCardTitle);
 
-    m_updateNoteLabel = new QLabel(tr("当前阶段更新功能为占位实现，后续版本将支持 GitHub Release 或自定义更新源。"), m_updateCard);
-    m_updateNoteLabel->setWordWrap(true);
-    m_updateNoteLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textSecondaryColor()));
-    updateLayout->addWidget(m_updateNoteLabel);
+    m_updateStatusLabel = new QLabel(m_updateCard);
+    m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                         .arg(theme.textSecondaryColor()));
+    updateLayout->addWidget(m_updateStatusLabel);
 
     m_checkUpdateButton = new QPushButton(tr("检查更新"), m_updateCard);
     m_checkUpdateButton->setMinimumHeight(36);
     m_checkUpdateButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    connect(m_checkUpdateButton, &QPushButton::clicked, this, &AboutPage::onCheckUpdateClicked);
     updateLayout->addWidget(m_checkUpdateButton);
 
     contentLayout->addWidget(m_updateCard);
@@ -179,21 +199,52 @@ void AboutPage::applyTheme()
                                     .arg(theme.buttonPrimaryColor()));
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textSecondaryColor()));
-    m_techStackLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                      .arg(theme.textSecondaryColor()));
 
     m_versionCard->setStyleSheet(theme.cardStyleSheet("versionCard"));
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textPrimaryColor()));
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
-    m_statusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.buttonPrimaryColor()));
 
     m_updateCard->setStyleSheet(theme.cardStyleSheet("updateCard"));
     m_updateCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                        .arg(theme.textPrimaryColor()));
-    m_updateNoteLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textSecondaryColor()));
+    m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                         .arg(theme.textSecondaryColor()));
     m_checkUpdateButton->setStyleSheet(theme.primaryButtonStyleSheet());
+}
+
+void AboutPage::onCheckUpdateClicked()
+{
+    m_checkUpdateButton->setEnabled(false);
+    m_updateStatusLabel->setText(tr("正在检查更新..."));
+    m_updateManager->checkForUpdates();
+}
+
+void AboutPage::onUpdateAvailable(const QString &latestVersion, const QString &releaseUrl)
+{
+    m_checkUpdateButton->setEnabled(true);
+    m_updateStatusLabel->setText(tr("发现新版本：%1").arg(latestVersion));
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("发现新版本"),
+        tr("发现新版本 %1，是否打开下载页面？").arg(latestVersion),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        QDesktopServices::openUrl(QUrl(releaseUrl));
+    }
+}
+
+void AboutPage::onNoUpdateAvailable(const QString &latestVersion)
+{
+    m_checkUpdateButton->setEnabled(true);
+    m_updateStatusLabel->setText(tr("已是最新版本：%1").arg(latestVersion));
+}
+
+void AboutPage::onCheckFailed(const QString &errorMessage)
+{
+    m_checkUpdateButton->setEnabled(true);
+    m_updateStatusLabel->setText(tr("检查更新失败：%1").arg(errorMessage));
 }

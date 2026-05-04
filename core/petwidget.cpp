@@ -19,7 +19,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_randomTimer(nullptr)
     , m_timedCheckTimer(nullptr)
     , m_currentMode(PetPlayMode::Idle)
-    , m_petRunning(true)
+    , m_petRunning(AppSettings::autoPlayOnLaunch())
     , m_petScaleFactor(1.0)
 {
     setupUi();
@@ -81,12 +81,14 @@ QSize PetWidget::currentDisplaySize() const
 bool PetWidget::loadPet(const QString &petDirPath)
 {
     if (!PetConfigManager::loadPetFromDirectory(petDirPath, m_petInfo, m_actions, m_playlist)) {
+        m_petRunning = false;
         m_displayLabel->setText("宠物资源加载失败");
         m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
         return false;
     }
 
     if (m_actions.isEmpty()) {
+        m_petRunning = false;
         m_displayLabel->setText("没有可用动作");
         m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
         return false;
@@ -96,10 +98,14 @@ bool PetWidget::loadPet(const QString &petDirPath)
     setFixedSize(displaySize);
     m_displayLabel->setFixedSize(displaySize);
 
-    playIdleAction();
-
-    m_randomTimer->start(30000);
-    m_timedCheckTimer->start(1000);
+    if (m_petRunning) {
+        playIdleAction();
+        m_randomTimer->start(30000);
+        m_timedCheckTimer->start(1000);
+    } else {
+        m_displayLabel->setText("已暂停");
+        m_displayLabel->setStyleSheet("color: gray; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+    }
 
     return true;
 }
@@ -284,6 +290,29 @@ void PetWidget::setPetOpacity(double opacity)
     }
 
     setWindowOpacity(opacity);
+}
+
+void PetWidget::playEmotion(const QString &emotion)
+{
+    if (!m_petRunning) {
+        return;
+    }
+
+    if (emotion.isEmpty()) {
+        return;
+    }
+
+    QList<PetActionRef> emotionRefs = m_playlist.emotionActions(emotion);
+    if (emotionRefs.isEmpty()) {
+        return;
+    }
+
+    int index = QRandomGenerator::global()->bounded(emotionRefs.size());
+    PetActionRef ref = emotionRefs.at(index);
+
+    if (playActionByRef(ref)) {
+        m_currentMode = PetPlayMode::Emotion;
+    }
 }
 
 PetAction PetWidget::findActionById(const QString &actionId) const

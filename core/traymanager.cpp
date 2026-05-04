@@ -19,7 +19,10 @@ TrayManager::TrayManager(QObject *parent)
     m_trayIcon = new QSystemTrayIcon(this);
     m_trayIcon->setToolTip(tr("Desktop Pet"));
 
-    QIcon icon = QApplication::windowIcon();
+    QIcon icon(":/icons/app_icon.png");
+    if (icon.isNull()) {
+        icon = QApplication::windowIcon();
+    }
     if (icon.isNull()) {
         icon = QIcon::fromTheme("application-x-executable");
     }
@@ -88,6 +91,21 @@ void TrayManager::createMenu()
     m_menu->addSeparator();
     QAction *startAction = m_menu->addAction(tr("开始"));
     QAction *pauseAction = m_menu->addAction(tr("暂停"));
+    m_menu->addSeparator();
+
+    QMenu *emotionMenu = m_menu->addMenu(tr("测试情绪"));
+    QAction *happyAction = emotionMenu->addAction("happy");
+    QAction *sadAction = emotionMenu->addAction("sad");
+    QAction *angryAction = emotionMenu->addAction("angry");
+    QAction *confusedAction = emotionMenu->addAction("confused");
+    QAction *comfortAction = emotionMenu->addAction("comfort");
+
+    connect(happyAction, &QAction::triggered, this, [this]() { emit emotionRequested("happy"); });
+    connect(sadAction, &QAction::triggered, this, [this]() { emit emotionRequested("sad"); });
+    connect(angryAction, &QAction::triggered, this, [this]() { emit emotionRequested("angry"); });
+    connect(confusedAction, &QAction::triggered, this, [this]() { emit emotionRequested("confused"); });
+    connect(comfortAction, &QAction::triggered, this, [this]() { emit emotionRequested("comfort"); });
+
     m_menu->addSeparator();
     QAction *settingsAction = m_menu->addAction(tr("打开设置"));
     m_menu->addSeparator();

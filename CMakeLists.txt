@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 
 project(DesktopPet LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Network)
 
 qt_standard_project_setup()
 
@@ -11,6 +11,7 @@ qt_add_executable(DesktopPet
     main.cpp
     core/appsettings.cpp
     core/appsettings.h
+    core/appversion.h
     core/petaction.cpp
     core/petaction.h
     core/petanimationplayer.cpp
@@ -27,6 +28,8 @@ qt_add_executable(DesktopPet
     core/settingswindow.h
     core/traymanager.cpp
     core/traymanager.h
+    core/updatemanager.cpp
+    core/updatemanager.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
@@ -45,6 +48,8 @@ qt_add_resources(DesktopPet "app_resources"
     PREFIX "/"
     BASE resources
     FILES
+        resources/icons/app_icon.ico
+        resources/icons/app_icon.png
         resources/icons/checkmark_white.svg
         resources/icons/combo_down_white.svg
         resources/icons/spin_up_white.svg
@@ -57,6 +62,10 @@ qt_add_resources(DesktopPet "app_resources"
         resources/themes/themes.json
 )
 
+if(WIN32)
+    target_sources(DesktopPet PRIVATE resources/appicon.rc)
+endif()
+
 target_include_directories(DesktopPet
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -67,6 +76,7 @@ target_link_libraries(DesktopPet
         Qt6::Core
         Qt6::Widgets
         Qt6::Svg
+        Qt6::Network
 )
 
 include(GNUInstallDirs)
