@@ -20,7 +20,6 @@ ImportGifDialog::ImportGifDialog(const QString &petDirPath, QWidget *parent)
     , m_gifPathEdit(nullptr)
     , m_browseButton(nullptr)
     , m_idEdit(nullptr)
-    , m_nameEdit(nullptr)
     , m_fpsSpinBox(nullptr)
     , m_frameCountLabel(nullptr)
     , m_categoryComboBox(nullptr)
@@ -46,11 +45,6 @@ QString ImportGifDialog::gifPath() const
 QString ImportGifDialog::actionId() const
 {
     return m_idEdit->text().trimmed();
-}
-
-QString ImportGifDialog::actionName() const
-{
-    return m_nameEdit->text().trimmed();
 }
 
 int ImportGifDialog::fps() const
@@ -85,7 +79,6 @@ void ImportGifDialog::clearForm()
 {
     m_gifPathEdit->clear();
     m_idEdit->clear();
-    m_nameEdit->clear();
     m_fpsSpinBox->setValue(12);
     m_frameCountLabel->clear();
     m_categoryComboBox->setCurrentIndex(0);
@@ -132,17 +125,6 @@ void ImportGifDialog::setupUi()
     idLayout->addWidget(idLabel);
     idLayout->addWidget(m_idEdit);
     mainLayout->addLayout(idLayout);
-
-    QHBoxLayout *nameLayout = new QHBoxLayout();
-    QLabel *nameLabel = new QLabel(tr("动作名称:"), this);
-    nameLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
-    nameLabel->setFixedWidth(80);
-    m_nameEdit = new QLineEdit(this);
-    m_nameEdit->setPlaceholderText(tr("例如: 挥手, 默认待机, 开心"));
-    m_nameEdit->setStyleSheet(theme.lineEditStyleSheet());
-    nameLayout->addWidget(nameLabel);
-    nameLayout->addWidget(m_nameEdit);
-    mainLayout->addLayout(nameLayout);
 
     QHBoxLayout *fpsLayout = new QHBoxLayout();
     QLabel *fpsLabel = new QLabel(tr("FPS:"), this);
@@ -341,10 +323,6 @@ void ImportGifDialog::autoFillFromGifFileName(const QString &gifPath)
     if (m_idEdit->text().isEmpty()) {
         m_idEdit->setText(sanitizedId);
     }
-
-    if (m_nameEdit->text().isEmpty()) {
-        m_nameEdit->setText(baseName);
-    }
 }
 
 void ImportGifDialog::onConfirm()
@@ -377,12 +355,6 @@ bool ImportGifDialog::validateInput()
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     if (!re.match(id).hasMatch()) {
         QMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
-        return false;
-    }
-
-    QString name = actionName();
-    if (name.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作名称不能为空。"));
         return false;
     }
 

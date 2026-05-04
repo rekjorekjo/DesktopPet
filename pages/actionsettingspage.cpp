@@ -146,12 +146,12 @@ void ActionSettingsPage::setupUi()
     libraryTitleLayout->addWidget(m_libraryTitleLabel);
 
     m_addActionButton = new QPushButton(tr("添加"), leftPanel);
-    m_addActionButton->setFixedHeight(28);
+    m_addActionButton->setMinimumSize(96, 40);
     m_addActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     libraryTitleLayout->addWidget(m_addActionButton);
 
     m_importActionButton = new QPushButton(tr("导入"), leftPanel);
-    m_importActionButton->setFixedHeight(28);
+    m_importActionButton->setMinimumSize(96, 40);
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     libraryTitleLayout->addWidget(m_importActionButton);
 
@@ -382,8 +382,8 @@ void ActionSettingsPage::initData()
 
 void ActionSettingsPage::connectSignals()
 {
-    connect(m_addActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddAction);
-    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
+    connect(m_addActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
+    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddAction);
     connect(m_addToCategoryButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddToCategory);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
@@ -419,8 +419,7 @@ void ActionSettingsPage::refreshActionLibraryList()
 {
     m_actionLibraryList->clear();
     for (const PetAction &action : m_actionLibrary) {
-        QString display = QString("%1 - %2").arg(action.id, action.name);
-        m_actionLibraryList->addItem(display);
+        m_actionLibraryList->addItem(action.id);
     }
 }
 
@@ -1091,7 +1090,7 @@ void ActionSettingsPage::onAddAction()
 
     PetAction newAction;
     newAction.id = actionId;
-    newAction.name = dialog.actionName();
+    newAction.name = actionId;
 
     QDir petDirObj(petDir);
     QString relativePath = petDirObj.relativeFilePath(dialog.actionFolderPath());
@@ -1203,7 +1202,7 @@ void ActionSettingsPage::onImportGif()
 
     PetAction newAction;
     newAction.id = actionId;
-    newAction.name = dialog.actionName();
+    newAction.name = actionId;
     newAction.folderPath = "actions/" + actionId;
     newAction.fps = dialog.fps();
     newAction.frameCount = result.frameCount;

@@ -19,7 +19,6 @@ public:
 
     QString gifPath() const;
     QString actionId() const;
-    QString actionName() const;
     int fps() const;
 
     TargetCategory targetCategory() const;
@@ -45,7 +44,6 @@ private:
     QLineEdit *m_gifPathEdit;
     QPushButton *m_browseButton;
     QLineEdit *m_idEdit;
-    QLineEdit *m_nameEdit;
     QSpinBox *m_fpsSpinBox;
     QLabel *m_frameCountLabel;
 

@@ -27,7 +27,6 @@ public:
     explicit AddActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
 
     QString actionId() const;
-    QString actionName() const;
     QString actionFolderPath() const;
     int fps() const;
 
@@ -53,7 +52,6 @@ private:
     QString m_petDirPath;
 
     QLineEdit *m_idEdit;
-    QLineEdit *m_nameEdit;
     QLineEdit *m_folderEdit;
     QPushButton *m_browseButton;
     QSpinBox *m_fpsSpinBox;

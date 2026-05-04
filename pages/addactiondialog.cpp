@@ -14,7 +14,6 @@ AddActionDialog::AddActionDialog(const QString &petDirPath, QWidget *parent)
     : QDialog(parent)
     , m_petDirPath(petDirPath)
     , m_idEdit(nullptr)
-    , m_nameEdit(nullptr)
     , m_folderEdit(nullptr)
     , m_browseButton(nullptr)
     , m_fpsSpinBox(nullptr)
@@ -35,11 +34,6 @@ AddActionDialog::AddActionDialog(const QString &petDirPath, QWidget *parent)
 QString AddActionDialog::actionId() const
 {
     return m_idEdit->text().trimmed();
-}
-
-QString AddActionDialog::actionName() const
-{
-    return m_nameEdit->text().trimmed();
 }
 
 QString AddActionDialog::actionFolderPath() const
@@ -78,7 +72,6 @@ QString AddActionDialog::emotionName() const
 void AddActionDialog::clearForm()
 {
     m_idEdit->clear();
-    m_nameEdit->clear();
     m_folderEdit->clear();
     m_fpsSpinBox->setValue(12);
     m_frameCountLabel->clear();
@@ -110,17 +103,6 @@ void AddActionDialog::setupUi()
     idLayout->addWidget(idLabel);
     idLayout->addWidget(m_idEdit);
     mainLayout->addLayout(idLayout);
-
-    QHBoxLayout *nameLayout = new QHBoxLayout();
-    QLabel *nameLabel = new QLabel(tr("动作名称:"), this);
-    nameLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
-    nameLabel->setFixedWidth(80);
-    m_nameEdit = new QLineEdit(this);
-    m_nameEdit->setPlaceholderText(tr("例如: 挥手, 默认待机, 开心"));
-    m_nameEdit->setStyleSheet(theme.lineEditStyleSheet());
-    nameLayout->addWidget(nameLabel);
-    nameLayout->addWidget(m_nameEdit);
-    mainLayout->addLayout(nameLayout);
 
     QHBoxLayout *folderLayout = new QHBoxLayout();
     QLabel *folderLabel = new QLabel(tr("动作文件夹:"), this);
@@ -320,12 +302,6 @@ bool AddActionDialog::validateInput()
 
     if (!validateActionId(id)) {
         QMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
-        return false;
-    }
-
-    QString name = actionName();
-    if (name.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作名称不能为空。"));
         return false;
     }
 
