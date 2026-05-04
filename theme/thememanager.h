@@ -92,6 +92,7 @@ public:
     QString listWidgetStyleSheet() const;
     QString splitterStyleSheet() const;
     QString tabWidgetStyleSheet() const;
+    QString dialogStyleSheet() const;
 
 signals:
     void themeChanged();

@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "pages/addactiondialog.h"
 #include "theme/thememanager.h"
 
 #include <QAbstractItemView>
@@ -29,6 +30,8 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_titleLabel(nullptr)
     , m_libraryTitleLabel(nullptr)
     , m_actionLibraryList(nullptr)
+    , m_addActionButton(nullptr)
+    , m_importActionButton(nullptr)
     , m_addToCategoryButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
@@ -128,6 +131,9 @@ void ActionSettingsPage::setupUi()
     leftLayout->setContentsMargins(0, 0, 0, 0);
     leftLayout->setSpacing(12);
 
+    QHBoxLayout *libraryTitleLayout = new QHBoxLayout();
+    libraryTitleLayout->setSpacing(12);
+
     m_libraryTitleLabel = new QLabel(tr("动作库"), leftPanel);
     QFont libTitleFont = m_libraryTitleLabel->font();
     libTitleFont.setPointSize(12);
@@ -135,7 +141,22 @@ void ActionSettingsPage::setupUi()
     m_libraryTitleLabel->setFont(libTitleFont);
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));
-    leftLayout->addWidget(m_libraryTitleLabel);
+    libraryTitleLayout->addWidget(m_libraryTitleLabel);
+
+    m_addActionButton = new QPushButton(tr("添加"), leftPanel);
+    m_addActionButton->setFixedHeight(28);
+    m_addActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    libraryTitleLayout->addWidget(m_addActionButton);
+
+    m_importActionButton = new QPushButton(tr("导入"), leftPanel);
+    m_importActionButton->setFixedHeight(28);
+    m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_importActionButton->setEnabled(false);
+    m_importActionButton->setToolTip(tr("后续版本支持 GIF 导入"));
+    libraryTitleLayout->addWidget(m_importActionButton);
+
+    libraryTitleLayout->addStretch();
+    leftLayout->addLayout(libraryTitleLayout);
 
     m_actionLibraryList = new QListWidget(leftPanel);
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
@@ -339,8 +360,7 @@ void ActionSettingsPage::setupUi()
 
 void ActionSettingsPage::initData()
 {
-    PetBasicInfo petInfo;
-    if (PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), petInfo, m_actionLibrary, m_playlist)) {
+    if (PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), m_petInfo, m_actionLibrary, m_playlist)) {
         m_loadedSuccessfully = true;
     } else {
         m_loadedSuccessfully = false;
@@ -348,6 +368,7 @@ void ActionSettingsPage::initData()
         m_actionLibraryList->addItem(tr("宠物配置加载失败"));
         m_actionLibraryList->setEnabled(false);
 
+        m_addActionButton->setEnabled(false);
         m_addToCategoryButton->setEnabled(false);
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
@@ -361,6 +382,7 @@ void ActionSettingsPage::initData()
 
 void ActionSettingsPage::connectSignals()
 {
+    connect(m_addActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddAction);
     connect(m_addToCategoryButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddToCategory);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
@@ -1047,4 +1069,59 @@ void ActionSettingsPage::applyTheme()
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                              .arg(theme.textSecondaryColor()));
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+}
+
+void ActionSettingsPage::onAddAction()
+{
+    QString petDir = PetPaths::defaultPetDirectory();
+    AddActionDialog dialog(petDir, this);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    QString actionId = dialog.actionId();
+    for (const PetAction &existing : m_actionLibrary) {
+        if (existing.id == actionId) {
+            QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在，请使用其他 ID。"));
+            return;
+        }
+    }
+
+    PetAction newAction;
+    newAction.id = actionId;
+    newAction.name = dialog.actionName();
+
+    QDir petDirObj(petDir);
+    QString relativePath = petDirObj.relativeFilePath(dialog.actionFolderPath());
+    newAction.folderPath = relativePath;
+
+    newAction.fps = dialog.fps();
+
+    QStringList frameFiles;
+    QDir actionDir(dialog.actionFolderPath());
+    QStringList filters;
+    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
+    actionDir.setNameFilters(filters);
+    actionDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+    frameFiles = actionDir.entryList();
+    newAction.frameCount = frameFiles.size();
+
+    QList<PetAction> updatedActions = m_actionLibrary;
+    updatedActions.append(newAction);
+
+    QString petJsonPath = petDir + "/pet.json";
+    if (!PetConfigManager::savePetJson(petJsonPath, m_petInfo, updatedActions)) {
+        QMessageBox::warning(this, tr("提示"), tr("保存 pet.json 失败。"));
+        return;
+    }
+
+    m_actionLibrary.clear();
+    m_playlist.clearAll();
+    if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
+        QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
+        return;
+    }
+
+    refreshActionLibraryList();
 }

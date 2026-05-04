@@ -8,6 +8,7 @@
 #include <QWidget>
 
 #include "core/petaction.h"
+#include "core/petconfigmanager.h"
 #include "core/petplaylist.h"
 
 class QCheckBox;
@@ -71,6 +72,7 @@ private slots:
     void onSaveAndApplyConfig();
     void onCategoryListRowsMoved();
     void onCategoryListContextMenu(const QPoint &pos);
+    void onAddAction();
 
 private:
     QScrollArea *m_scrollArea;
@@ -80,6 +82,8 @@ private:
 
     QLabel *m_libraryTitleLabel;
     QListWidget *m_actionLibraryList;
+    QPushButton *m_addActionButton;
+    QPushButton *m_importActionButton;
     QPushButton *m_addToCategoryButton;
 
     QLabel *m_configTitleLabel;
@@ -108,6 +112,7 @@ private:
     QComboBox *m_speedComboBox;
 
     QList<PetAction> m_actionLibrary;
+    PetBasicInfo m_petInfo;
     PetPlaylist m_playlist;
     bool m_loadedSuccessfully;
     bool m_updatingCategoryList = false;

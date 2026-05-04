@@ -648,3 +648,16 @@ QString ThemeManager::tabWidgetStyleSheet() const
         "}"
     ).arg(p.border, p.inputBackground, p.pageBackground, p.textSecondary, p.textPrimary, p.secondaryHover);
 }
+
+QString ThemeManager::dialogStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QDialog {"
+        "  background-color: %1;"
+        "}"
+        "QLabel {"
+        "  background-color: transparent;"
+        "}"
+    ).arg(p.pageBackground);
+}
