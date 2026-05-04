@@ -82,6 +82,7 @@ private:
     PetPlayMode m_currentMode;
     bool m_petRunning;
     double m_petScaleFactor;
+    int m_idleActionIndex;
 
     QPoint m_dragPosition;
 };

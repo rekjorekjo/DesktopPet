@@ -3,6 +3,14 @@
 
 #include <QString>
 
+struct GifProbeResult
+{
+    bool success;
+    QString errorMessage;
+    int frameCount;
+    int fps;
+};
+
 struct GifExtractResult
 {
     bool success;
@@ -14,6 +22,8 @@ struct GifExtractResult
 class GifFrameExtractor
 {
 public:
+    static GifProbeResult probeGif(const QString &gifPath);
+
     static GifExtractResult extractGifToFrames(
         const QString &gifPath,
         const QString &outputDir

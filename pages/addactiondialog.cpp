@@ -125,7 +125,8 @@ void AddActionDialog::setupUi()
     m_fpsSpinBox = new QSpinBox(this);
     m_fpsSpinBox->setRange(1, 60);
     m_fpsSpinBox->setValue(12);
-    m_fpsSpinBox->setFixedWidth(80);
+    m_fpsSpinBox->setMinimumWidth(130);
+    m_fpsSpinBox->setFixedWidth(130);
     m_fpsSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     fpsLayout->addWidget(fpsLabel);
     fpsLayout->addWidget(m_fpsSpinBox);

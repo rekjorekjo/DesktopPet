@@ -21,6 +21,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_currentMode(PetPlayMode::Idle)
     , m_petRunning(AppSettings::autoPlayOnLaunch())
     , m_petScaleFactor(1.0)
+    , m_idleActionIndex(0)
 {
     setupUi();
 
@@ -158,8 +159,17 @@ void PetWidget::playIdleAction()
 
     QList<PetActionRef> idleRefs = m_playlist.idleActions();
     if (!idleRefs.isEmpty()) {
-        if (playActionByRef(idleRefs.first())) {
-            return;
+        int startIndex = m_idleActionIndex % idleRefs.size();
+        int tried = 0;
+
+        while (tried < idleRefs.size()) {
+            const PetActionRef &ref = idleRefs.at(startIndex);
+            if (playActionByRef(ref)) {
+                m_idleActionIndex = (startIndex + 1) % idleRefs.size();
+                return;
+            }
+            startIndex = (startIndex + 1) % idleRefs.size();
+            ++tried;
         }
     }
 
@@ -217,6 +227,7 @@ void PetWidget::reloadPet()
     m_currentActionId.clear();
     m_currentMode = PetPlayMode::Idle;
     m_lastTimedTriggerTimes.clear();
+    m_idleActionIndex = 0;
 
     bool wasRunning = m_petRunning;
 

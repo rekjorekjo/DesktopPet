@@ -68,17 +68,20 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
 
 void PetAnimationPlayer::play(bool loop, int repeat)
 {
+    Q_UNUSED(loop);
+
     if (m_frames.isEmpty()) {
         emit errorOccurred("Cannot play: no frames loaded");
         return;
     }
 
-    m_loop = loop;
     m_targetRepeat = repeat;
 
-    if (m_loop || m_targetRepeat == 0 || m_targetRepeat > 10) {
+    if (m_targetRepeat == 0 || m_targetRepeat > 10) {
         m_loop = true;
         m_targetRepeat = 0;
+    } else {
+        m_loop = false;
     }
 
     m_currentFrameIndex = 0;

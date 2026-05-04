@@ -10,7 +10,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
-#include <QMovie>
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
@@ -133,7 +132,8 @@ void ImportGifDialog::setupUi()
     m_fpsSpinBox = new QSpinBox(this);
     m_fpsSpinBox->setRange(1, 60);
     m_fpsSpinBox->setValue(12);
-    m_fpsSpinBox->setFixedWidth(80);
+    m_fpsSpinBox->setMinimumWidth(130);
+    m_fpsSpinBox->setFixedWidth(130);
     m_fpsSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     fpsLayout->addWidget(fpsLabel);
     fpsLayout->addWidget(m_fpsSpinBox);
@@ -257,57 +257,19 @@ void ImportGifDialog::onBrowseGif()
 
     m_gifPathEdit->setText(selectedFile);
 
-    QMovie movie(selectedFile);
-    if (!movie.isValid()) {
-        QMessageBox::warning(this, tr("提示"), tr("无法读取 GIF 文件。"));
-        return;
-    }
-
-    QList<int> delays;
-    int frameCount = 0;
-    const int maxFrames = 2000;
-
-    if (!movie.jumpToFrame(0)) {
+    GifProbeResult probeResult = GifFrameExtractor::probeGif(selectedFile);
+    if (!probeResult.success) {
+        QMessageBox::warning(this, tr("提示"), probeResult.errorMessage);
         m_detectedFrameCount = 0;
         m_frameCountLabel->setText("0");
         autoFillFromGifFileName(selectedFile);
         return;
     }
 
-    do {
-        int delay = movie.nextFrameDelay();
-        if (delay <= 0) {
-            delay = 100;
-        }
-        delays.append(delay);
-        ++frameCount;
-
-        if (frameCount >= maxFrames) {
-            break;
-        }
-    } while (movie.jumpToNextFrame());
-
-    m_detectedFrameCount = frameCount;
-    m_frameCountLabel->setText(QString::number(frameCount));
-
-    if (!delays.isEmpty()) {
-        double totalDelay = 0;
-        for (int d : delays) {
-            totalDelay += d;
-        }
-        double avgDelay = totalDelay / delays.size();
-
-        if (avgDelay > 0) {
-            int calculatedFps = qRound(1000.0 / avgDelay);
-            if (calculatedFps < 1) {
-                calculatedFps = 1;
-            } else if (calculatedFps > 60) {
-                calculatedFps = 60;
-            }
-            m_detectedFps = calculatedFps;
-            m_fpsSpinBox->setValue(calculatedFps);
-        }
-    }
+    m_detectedFrameCount = probeResult.frameCount;
+    m_frameCountLabel->setText(QString::number(probeResult.frameCount));
+    m_detectedFps = probeResult.fps;
+    m_fpsSpinBox->setValue(probeResult.fps);
 
     autoFillFromGifFileName(selectedFile);
 }
