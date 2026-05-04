@@ -4,17 +4,22 @@
 #include "core/petpaths.h"
 #include "theme/thememanager.h"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QListWidgetItem>
+#include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QtGlobal>
 #include <QVBoxLayout>
 
 ActionSettingsPage::ActionSettingsPage(QWidget *parent)
@@ -41,12 +46,12 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_loopCheckBox(nullptr)
     , m_repeatLabel(nullptr)
     , m_repeatSpinBox(nullptr)
-    , m_repeatHintLabel(nullptr)
+    , m_animationSpeedCheckBox(nullptr)
+    , m_animationSpeedLabel(nullptr)
+    , m_animationSpeedComboBox(nullptr)
     , m_moveEnabledCheckBox(nullptr)
     , m_speedLabel(nullptr)
     , m_speedComboBox(nullptr)
-    , m_animationSpeedLabel(nullptr)
-    , m_animationSpeedComboBox(nullptr)
     , m_loadedSuccessfully(false)
 {
     setupUi();
@@ -79,23 +84,46 @@ void ActionSettingsPage::setupUi()
     m_contentWidget->setStyleSheet(theme.pageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
-    contentLayout->setContentsMargins(28, 20, 28, 28);
-    contentLayout->setSpacing(20);
+    contentLayout->setContentsMargins(24, 10, 24, 20);
+    contentLayout->setSpacing(12);
+
+    QHBoxLayout *titleLayout = new QHBoxLayout();
+    titleLayout->setSpacing(24);
 
     m_titleLabel = new QLabel(tr("动作设置"), m_contentWidget);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(QString(
+        "color: %1;"
+        "background-color: transparent;"
+        "padding: 0;"
+        "margin: 0;"
+    ).arg(theme.textPrimaryColor()));
     m_titleLabel->setMargin(0);
-    contentLayout->addWidget(m_titleLabel);
+    titleLayout->addWidget(m_titleLabel);
+
+    m_saveConfigButton = new QPushButton(tr("保存配置"), m_contentWidget);
+    m_saveConfigButton->setMinimumHeight(32);
+    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    titleLayout->addWidget(m_saveConfigButton);
+
+    m_saveAndApplyButton = new QPushButton(tr("保存并应用"), m_contentWidget);
+    m_saveAndApplyButton->setMinimumHeight(32);
+    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    titleLayout->addWidget(m_saveAndApplyButton);
+
+    titleLayout->addStretch();
+
+    contentLayout->addLayout(titleLayout);
 
     QSplitter *splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
     splitter->setStyleSheet(theme.splitterStyleSheet());
     splitter->setHandleWidth(1);
 
     QWidget *leftPanel = new QWidget(splitter);
+    leftPanel->setMinimumWidth(240);
     QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
     leftLayout->setContentsMargins(0, 0, 0, 0);
     leftLayout->setSpacing(12);
@@ -111,6 +139,8 @@ void ActionSettingsPage::setupUi()
 
     m_actionLibraryList = new QListWidget(leftPanel);
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_actionLibraryList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_actionLibraryList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     leftLayout->addWidget(m_actionLibraryList, 1);
 
     m_addToCategoryButton = new QPushButton(tr("添加到当前分类"), leftPanel);
@@ -139,61 +169,67 @@ void ActionSettingsPage::setupUi()
 
     m_dailyActionList = new QListWidget(m_categoryTabs);
     m_dailyActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_dailyActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_dailyActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_dailyActionList->setDragDropMode(QAbstractItemView::InternalMove);
+    m_dailyActionList->setDefaultDropAction(Qt::MoveAction);
+    m_dailyActionList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_dailyActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_dailyActionList, tr("日常动作"));
 
     m_randomActionList = new QListWidget(m_categoryTabs);
     m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_randomActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_randomActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_randomActionList->setDragDropMode(QAbstractItemView::InternalMove);
+    m_randomActionList->setDefaultDropAction(Qt::MoveAction);
+    m_randomActionList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_randomActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_randomActionList, tr("随机动作"));
 
     m_scheduledActionList = new QListWidget(m_categoryTabs);
     m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_scheduledActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_scheduledActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scheduledActionList->setDragDropMode(QAbstractItemView::InternalMove);
+    m_scheduledActionList->setDefaultDropAction(Qt::MoveAction);
+    m_scheduledActionList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_scheduledActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_scheduledActionList, tr("定时动作"));
 
     m_emotionActionList = new QListWidget(m_categoryTabs);
     m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_emotionActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_emotionActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_emotionActionList->setDragDropMode(QAbstractItemView::InternalMove);
+    m_emotionActionList->setDefaultDropAction(Qt::MoveAction);
+    m_emotionActionList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_emotionActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_emotionActionList, tr("情绪动作"));
 
     rightLayout->addWidget(m_categoryTabs, 1);
 
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
-
     m_moveUpButton = new QPushButton(tr("上移"), rightPanel);
     m_moveUpButton->setMinimumHeight(32);
     m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    buttonLayout->addWidget(m_moveUpButton);
+    m_moveUpButton->hide();
 
     m_moveDownButton = new QPushButton(tr("下移"), rightPanel);
     m_moveDownButton->setMinimumHeight(32);
     m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    buttonLayout->addWidget(m_moveDownButton);
+    m_moveDownButton->hide();
 
     m_removeButton = new QPushButton(tr("移除"), rightPanel);
     m_removeButton->setMinimumHeight(32);
     m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    buttonLayout->addWidget(m_removeButton);
-
-    buttonLayout->addSpacing(20);
-
-    m_saveConfigButton = new QPushButton(tr("保存配置"), rightPanel);
-    m_saveConfigButton->setMinimumHeight(32);
-    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
-    buttonLayout->addWidget(m_saveConfigButton);
-
-    m_saveAndApplyButton = new QPushButton(tr("保存并应用"), rightPanel);
-    m_saveAndApplyButton->setMinimumHeight(32);
-    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
-    buttonLayout->addWidget(m_saveAndApplyButton);
-
-    buttonLayout->addStretch();
-    rightLayout->addLayout(buttonLayout);
+    m_removeButton->hide();
 
     m_actionConfigPanel = new QFrame(rightPanel);
     m_actionConfigPanel->setObjectName("actionConfigPanel");
     m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
-    QHBoxLayout *configPanelLayout = new QHBoxLayout(m_actionConfigPanel);
-    configPanelLayout->setContentsMargins(16, 12, 16, 12);
-    configPanelLayout->setSpacing(16);
+    QVBoxLayout *configPanelOuterLayout = new QVBoxLayout(m_actionConfigPanel);
+    configPanelOuterLayout->setContentsMargins(16, 10, 16, 10);
+    configPanelOuterLayout->setSpacing(8);
 
     m_actionConfigTitleLabel = new QLabel(tr("当前动作配置"), m_actionConfigPanel);
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
@@ -201,80 +237,95 @@ void ActionSettingsPage::setupUi()
     QFont configPanelTitleFont = m_actionConfigTitleLabel->font();
     configPanelTitleFont.setBold(true);
     m_actionConfigTitleLabel->setFont(configPanelTitleFont);
-    configPanelLayout->addWidget(m_actionConfigTitleLabel);
+    configPanelOuterLayout->addWidget(m_actionConfigTitleLabel);
+
+    QHBoxLayout *row1Layout = new QHBoxLayout();
+    row1Layout->setSpacing(16);
 
     m_loopCheckBox = new QCheckBox(tr("循环播放"), m_actionConfigPanel);
     m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
-    configPanelLayout->addWidget(m_loopCheckBox);
+    row1Layout->addWidget(m_loopCheckBox);
 
     m_repeatLabel = new QLabel(tr("循环次数"), m_actionConfigPanel);
     m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                    .arg(theme.textSecondaryColor()));
-    configPanelLayout->addWidget(m_repeatLabel);
+    row1Layout->addWidget(m_repeatLabel);
 
     m_repeatSpinBox = new QSpinBox(m_actionConfigPanel);
     m_repeatSpinBox->setRange(0, 10);
     m_repeatSpinBox->setValue(1);
-    m_repeatSpinBox->setMinimumWidth(80);
+    m_repeatSpinBox->setMinimumWidth(120);
+    m_repeatSpinBox->setFixedWidth(120);
+    m_repeatSpinBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    m_repeatSpinBox->setToolTip(tr("0 表示无限循环"));
     m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    configPanelLayout->addWidget(m_repeatSpinBox);
+    row1Layout->addWidget(m_repeatSpinBox);
 
-    m_repeatHintLabel = new QLabel(tr("0 表示无限循环"), m_actionConfigPanel);
-    m_repeatHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textSecondaryColor()));
-    configPanelLayout->addWidget(m_repeatHintLabel);
+    row1Layout->addStretch();
+    configPanelOuterLayout->addLayout(row1Layout);
 
-    configPanelLayout->addSpacing(20);
+    QHBoxLayout *row2Layout = new QHBoxLayout();
+    row2Layout->setSpacing(16);
+
+    m_animationSpeedCheckBox = new QCheckBox(tr("倍速播放"), m_actionConfigPanel);
+    m_animationSpeedCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    row2Layout->addWidget(m_animationSpeedCheckBox);
 
     m_animationSpeedLabel = new QLabel(tr("播放速度"), m_actionConfigPanel);
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                              .arg(theme.textSecondaryColor()));
-    configPanelLayout->addWidget(m_animationSpeedLabel);
+    row2Layout->addWidget(m_animationSpeedLabel);
 
     m_animationSpeedComboBox = new QComboBox(m_actionConfigPanel);
     m_animationSpeedComboBox->addItem("0.1x", 0.1);
-    m_animationSpeedComboBox->addItem("0.2x", 0.2);
     m_animationSpeedComboBox->addItem("0.5x", 0.5);
     m_animationSpeedComboBox->addItem("0.8x", 0.8);
     m_animationSpeedComboBox->addItem("1.0x", 1.0);
-    m_animationSpeedComboBox->addItem("1.2x", 1.2);
     m_animationSpeedComboBox->addItem("1.5x", 1.5);
     m_animationSpeedComboBox->addItem("2.0x", 2.0);
     m_animationSpeedComboBox->addItem("2.5x", 2.5);
     m_animationSpeedComboBox->addItem("3.0x", 3.0);
-    m_animationSpeedComboBox->setCurrentIndex(4);
-    m_animationSpeedComboBox->setMinimumWidth(80);
+    m_animationSpeedComboBox->addItem("4.0x", 4.0);
+    m_animationSpeedComboBox->addItem("5.0x", 5.0);
+    m_animationSpeedComboBox->setCurrentIndex(3);
+    m_animationSpeedComboBox->setFixedWidth(100);
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
-    configPanelLayout->addWidget(m_animationSpeedComboBox);
+    row2Layout->addWidget(m_animationSpeedComboBox);
 
-    configPanelLayout->addSpacing(20);
+    row2Layout->addStretch();
+    configPanelOuterLayout->addLayout(row2Layout);
 
-    m_moveEnabledCheckBox = new QCheckBox(tr("播放时移动"), m_actionConfigPanel);
+    QHBoxLayout *row3Layout = new QHBoxLayout();
+    row3Layout->setSpacing(16);
+
+    m_moveEnabledCheckBox = new QCheckBox(tr("移动播放"), m_actionConfigPanel);
     m_moveEnabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
-    configPanelLayout->addWidget(m_moveEnabledCheckBox);
+    row3Layout->addWidget(m_moveEnabledCheckBox);
 
     m_speedLabel = new QLabel(tr("移动速度"), m_actionConfigPanel);
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
-    configPanelLayout->addWidget(m_speedLabel);
+    row3Layout->addWidget(m_speedLabel);
 
     m_speedComboBox = new QComboBox(m_actionConfigPanel);
     m_speedComboBox->addItem("0.1x", 0.1);
-    m_speedComboBox->addItem("0.2x", 0.2);
     m_speedComboBox->addItem("0.5x", 0.5);
     m_speedComboBox->addItem("0.8x", 0.8);
     m_speedComboBox->addItem("1.0x", 1.0);
-    m_speedComboBox->addItem("1.2x", 1.2);
     m_speedComboBox->addItem("1.5x", 1.5);
     m_speedComboBox->addItem("2.0x", 2.0);
     m_speedComboBox->addItem("2.5x", 2.5);
     m_speedComboBox->addItem("3.0x", 3.0);
-    m_speedComboBox->setCurrentIndex(4);
-    m_speedComboBox->setMinimumWidth(80);
+    m_speedComboBox->addItem("4.0x", 4.0);
+    m_speedComboBox->addItem("5.0x", 5.0);
+    m_speedComboBox->setCurrentIndex(3);
+    m_speedComboBox->setFixedWidth(100);
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
-    configPanelLayout->addWidget(m_speedComboBox);
+    row3Layout->addWidget(m_speedComboBox);
 
-    configPanelLayout->addStretch();
+    row3Layout->addStretch();
+    configPanelOuterLayout->addLayout(row3Layout);
+
     rightLayout->addWidget(m_actionConfigPanel);
 
     splitter->addWidget(rightPanel);
@@ -323,11 +374,22 @@ void ActionSettingsPage::connectSignals()
     connect(m_scheduledActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
     connect(m_emotionActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
 
+    connect(m_dailyActionList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onCategoryListContextMenu);
+    connect(m_randomActionList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onCategoryListContextMenu);
+    connect(m_scheduledActionList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onCategoryListContextMenu);
+    connect(m_emotionActionList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onCategoryListContextMenu);
+
+    connect(m_dailyActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
+    connect(m_randomActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
+    connect(m_scheduledActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
+    connect(m_emotionActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
+
     connect(m_loopCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onLoopChanged);
     connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onRepeatChanged);
+    connect(m_animationSpeedCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onAnimationSpeedCheckChanged);
+    connect(m_animationSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onAnimationSpeedChanged);
     connect(m_moveEnabledCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onMoveEnabledChanged);
     connect(m_speedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onSpeedChanged);
-    connect(m_animationSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onAnimationSpeedChanged);
 }
 
 void ActionSettingsPage::refreshActionLibraryList()
@@ -360,14 +422,18 @@ void ActionSettingsPage::refreshCurrentCategoryList()
 
 void ActionSettingsPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
 {
+    m_updatingCategoryList = true;
     int savedRow = list->currentRow();
     list->clear();
-    for (const PetActionRef &ref : actions) {
-        list->addItem(formatActionDisplay(ref));
+    for (int i = 0; i < actions.size(); ++i) {
+        QListWidgetItem *item = new QListWidgetItem(formatActionDisplay(actions[i]));
+        item->setData(Qt::UserRole, i);
+        list->addItem(item);
     }
     if (savedRow >= 0 && savedRow < list->count()) {
         list->setCurrentRow(savedRow);
     }
+    m_updatingCategoryList = false;
 }
 
 QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
@@ -383,8 +449,14 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
     }
 
     if (tabIndex == 2) {
-        int minutes = ref.intervalSeconds / 60;
-        return QString("%1 (%2) - 每 %3 分钟 / %4").arg(name, ref.actionId).arg(minutes).arg(repeatText);
+        QString intervalText;
+        if (ref.intervalSeconds < 60) {
+            intervalText = tr("每 %1 秒").arg(ref.intervalSeconds);
+        } else {
+            int minutes = ref.intervalSeconds / 60;
+            intervalText = tr("每 %1 分钟").arg(minutes);
+        }
+        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, intervalText, repeatText);
     } else if (tabIndex == 3) {
         return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, ref.emotion, repeatText);
     } else {
@@ -470,18 +542,24 @@ void ActionSettingsPage::updateActionConfigPanel()
 
     QSignalBlocker loopBlocker(m_loopCheckBox);
     QSignalBlocker repeatBlocker(m_repeatSpinBox);
+    QSignalBlocker animSpeedCheckBlocker(m_animationSpeedCheckBox);
+    QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
     QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
     QSignalBlocker speedBlocker(m_speedComboBox);
-    QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
 
     m_loopCheckBox->setChecked(ref.loop);
     m_repeatSpinBox->setValue(ref.repeat);
     m_moveEnabledCheckBox->setChecked(ref.moveEnabled);
+    m_speedComboBox->setEnabled(ref.moveEnabled);
 
     int speedIndex = findSpeedIndex(ref.movementSpeed);
     m_speedComboBox->setCurrentIndex(speedIndex);
 
-    int animSpeedIndex = findSpeedIndex(ref.animationSpeed);
+    bool customAnimSpeed = !qFuzzyCompare(ref.animationSpeed, 1.0);
+    m_animationSpeedCheckBox->setChecked(customAnimSpeed);
+    m_animationSpeedComboBox->setEnabled(customAnimSpeed);
+
+    int animSpeedIndex = findSpeedIndex(customAnimSpeed ? ref.animationSpeed : 1.0);
     m_animationSpeedComboBox->setCurrentIndex(animSpeedIndex);
 }
 
@@ -490,21 +568,27 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
     m_actionConfigPanel->setEnabled(enabled);
     m_loopCheckBox->setEnabled(enabled);
     m_repeatSpinBox->setEnabled(enabled);
+    m_animationSpeedCheckBox->setEnabled(enabled);
     m_moveEnabledCheckBox->setEnabled(enabled);
-    m_speedComboBox->setEnabled(enabled);
-    m_animationSpeedComboBox->setEnabled(enabled);
 
     if (!enabled) {
         QSignalBlocker loopBlocker(m_loopCheckBox);
         QSignalBlocker repeatBlocker(m_repeatSpinBox);
+        QSignalBlocker animSpeedCheckBlocker(m_animationSpeedCheckBox);
+        QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
         QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
         QSignalBlocker speedBlocker(m_speedComboBox);
-        QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
+
         m_loopCheckBox->setChecked(false);
         m_repeatSpinBox->setValue(1);
+
+        m_animationSpeedCheckBox->setChecked(false);
+        m_animationSpeedComboBox->setEnabled(false);
+        m_animationSpeedComboBox->setCurrentIndex(3);
+
         m_moveEnabledCheckBox->setChecked(false);
-        m_speedComboBox->setCurrentIndex(4);
-        m_animationSpeedComboBox->setCurrentIndex(4);
+        m_speedComboBox->setEnabled(false);
+        m_speedComboBox->setCurrentIndex(3);
     }
 }
 
@@ -714,10 +798,10 @@ void ActionSettingsPage::onRepeatChanged(int value)
 
 int ActionSettingsPage::findSpeedIndex(double speed) const
 {
-    QList<double> speeds = {0.1, 0.2, 0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0};
+    QList<double> speeds = {0.1, 0.5, 0.8, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0};
 
-    int closestIndex = 4;
-    double minDiff = qAbs(speeds[4] - speed);
+    int closestIndex = 3;
+    double minDiff = qAbs(speeds[3] - speed);
 
     for (int i = 0; i < speeds.size(); ++i) {
         double diff = qAbs(speeds[i] - speed);
@@ -741,7 +825,9 @@ void ActionSettingsPage::onMoveEnabledChanged(int state)
     PetActionRef ref = currentSelectedRef();
     if (!ref.isValid()) return;
 
-    ref.moveEnabled = (state == Qt::Checked);
+    bool enabled = (state == Qt::Checked);
+    ref.moveEnabled = enabled;
+    m_speedComboBox->setEnabled(enabled);
     updateCurrentSelectedRef(ref);
 }
 
@@ -774,6 +860,32 @@ void ActionSettingsPage::onAnimationSpeedChanged(int index)
 
     double speed = m_animationSpeedComboBox->itemData(index).toDouble();
     ref.animationSpeed = speed;
+    updateCurrentSelectedRef(ref);
+}
+
+void ActionSettingsPage::onAnimationSpeedCheckChanged(int state)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    bool checked = (state == Qt::Checked);
+    m_animationSpeedComboBox->setEnabled(checked);
+
+    if (checked) {
+        double speed = m_animationSpeedComboBox->currentData().toDouble();
+        ref.animationSpeed = speed;
+    } else {
+        ref.animationSpeed = 1.0;
+        QSignalBlocker blocker(m_animationSpeedComboBox);
+        int index = findSpeedIndex(1.0);
+        m_animationSpeedComboBox->setCurrentIndex(index);
+    }
     updateCurrentSelectedRef(ref);
 }
 
@@ -818,6 +930,70 @@ void ActionSettingsPage::onSaveAndApplyConfig()
     }
 }
 
+void ActionSettingsPage::onCategoryListRowsMoved()
+{
+    if (m_updatingCategoryList) return;
+
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    QList<PetActionRef> originalActions = currentCategoryActions();
+    QList<PetActionRef> newOrder;
+
+    for (int i = 0; i < list->count(); ++i) {
+        QListWidgetItem *item = list->item(i);
+        int originalIndex = item->data(Qt::UserRole).toInt();
+        if (originalIndex >= 0 && originalIndex < originalActions.size()) {
+            newOrder.append(originalActions[originalIndex]);
+        }
+    }
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0:
+            m_playlist.setIdleActions(newOrder);
+            break;
+        case 1:
+            m_playlist.setRandomActions(newOrder);
+            break;
+        case 2:
+            m_playlist.setTimedActions(newOrder);
+            break;
+        case 3:
+            m_playlist.setEmotionActions("happy", newOrder);
+            break;
+    }
+
+    refreshCurrentCategoryList();
+}
+
+void ActionSettingsPage::onCategoryListContextMenu(const QPoint &pos)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    QListWidgetItem *item = list->itemAt(pos);
+    if (!item) return;
+
+    list->setCurrentItem(item);
+
+    QMenu contextMenu(tr("操作"), this);
+    QAction *moveUpAction = contextMenu.addAction(tr("上移"));
+    QAction *moveDownAction = contextMenu.addAction(tr("下移"));
+    contextMenu.addSeparator();
+    QAction *removeAction = contextMenu.addAction(tr("移除"));
+
+    QAction *selectedAction = contextMenu.exec(list->mapToGlobal(pos));
+
+    if (selectedAction == moveUpAction) {
+        onMoveUp();
+    } else if (selectedAction == moveDownAction) {
+        onMoveDown();
+    } else if (selectedAction == removeAction) {
+        onRemove();
+    }
+}
+
 void ActionSettingsPage::refreshTheme()
 {
     applyTheme();
@@ -830,7 +1006,12 @@ void ActionSettingsPage::applyTheme()
     m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
     m_contentWidget->setStyleSheet(theme.pageStyleSheet());
 
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(QString(
+        "color: %1;"
+        "background-color: transparent;"
+        "padding: 0;"
+        "margin: 0;"
+    ).arg(theme.textPrimaryColor()));
 
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));
@@ -858,12 +1039,11 @@ void ActionSettingsPage::applyTheme()
     m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                    .arg(theme.textSecondaryColor()));
     m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    m_repeatHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textSecondaryColor()));
     m_moveEnabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    m_animationSpeedCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                              .arg(theme.textSecondaryColor()));
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());

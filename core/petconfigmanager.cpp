@@ -387,16 +387,16 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
     double moveSpeed = obj.value("movementSpeed").toDouble(1.0);
     if (moveSpeed < 0.1) {
         moveSpeed = 0.1;
-    } else if (moveSpeed > 3.0) {
-        moveSpeed = 3.0;
+    } else if (moveSpeed > 5.0) {
+        moveSpeed = 5.0;
     }
     ref.movementSpeed = moveSpeed;
 
     double animSpeed = obj.value("animationSpeed").toDouble(1.0);
     if (animSpeed < 0.1) {
         animSpeed = 0.1;
-    } else if (animSpeed > 3.0) {
-        animSpeed = 3.0;
+    } else if (animSpeed > 5.0) {
+        animSpeed = 5.0;
     }
     ref.animationSpeed = animSpeed;
 

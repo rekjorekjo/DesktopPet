@@ -255,6 +255,26 @@ void PetPlaylist::clearAll()
     m_emotionActions.clear();
 }
 
+void PetPlaylist::setIdleActions(const QList<PetActionRef> &actions)
+{
+    m_idleActions = actions;
+}
+
+void PetPlaylist::setRandomActions(const QList<PetActionRef> &actions)
+{
+    m_randomActions = actions;
+}
+
+void PetPlaylist::setTimedActions(const QList<PetActionRef> &actions)
+{
+    m_timedActions = actions;
+}
+
+void PetPlaylist::setEmotionActions(const QString &emotion, const QList<PetActionRef> &actions)
+{
+    m_emotionActions[emotion] = actions;
+}
+
 QList<PetActionRef> PetPlaylist::idleActions() const
 {
     return m_idleActions;

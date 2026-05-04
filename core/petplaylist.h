@@ -66,6 +66,11 @@ public:
     void clearEmotionActions(const QString &emotion);
     void clearAll();
 
+    void setIdleActions(const QList<PetActionRef> &actions);
+    void setRandomActions(const QList<PetActionRef> &actions);
+    void setTimedActions(const QList<PetActionRef> &actions);
+    void setEmotionActions(const QString &emotion, const QList<PetActionRef> &actions);
+
     QList<PetActionRef> idleActions() const;
     QList<PetActionRef> randomActions() const;
     QList<PetActionRef> timedActions() const;

@@ -63,11 +63,14 @@ private slots:
     void onCategorySelectionChanged();
     void onLoopChanged(int state);
     void onRepeatChanged(int value);
+    void onAnimationSpeedCheckChanged(int state);
+    void onAnimationSpeedChanged(int index);
     void onMoveEnabledChanged(int state);
     void onSpeedChanged(int index);
-    void onAnimationSpeedChanged(int index);
     void onSaveConfig();
     void onSaveAndApplyConfig();
+    void onCategoryListRowsMoved();
+    void onCategoryListContextMenu(const QPoint &pos);
 
 private:
     QScrollArea *m_scrollArea;
@@ -97,16 +100,17 @@ private:
     QCheckBox *m_loopCheckBox;
     QLabel *m_repeatLabel;
     QSpinBox *m_repeatSpinBox;
-    QLabel *m_repeatHintLabel;
+    QCheckBox *m_animationSpeedCheckBox;
+    QLabel *m_animationSpeedLabel;
+    QComboBox *m_animationSpeedComboBox;
     QCheckBox *m_moveEnabledCheckBox;
     QLabel *m_speedLabel;
     QComboBox *m_speedComboBox;
-    QLabel *m_animationSpeedLabel;
-    QComboBox *m_animationSpeedComboBox;
 
     QList<PetAction> m_actionLibrary;
     PetPlaylist m_playlist;
     bool m_loadedSuccessfully;
+    bool m_updatingCategoryList = false;
 };
 
 #endif // ACTIONSETTINGSPAGE_H

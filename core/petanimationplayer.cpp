@@ -124,8 +124,8 @@ void PetAnimationPlayer::setSpeedMultiplier(double multiplier)
 {
     if (multiplier < 0.1) {
         multiplier = 0.1;
-    } else if (multiplier > 3.0) {
-        multiplier = 3.0;
+    } else if (multiplier > 5.0) {
+        multiplier = 5.0;
     }
 
     m_speedMultiplier = multiplier;
