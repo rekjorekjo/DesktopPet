@@ -610,6 +610,40 @@ QString ThemeManager::listWidgetStyleSheet() const
     ).arg(p.inputBackground, p.textPrimary, p.border, p.sidebarSelectedBg, p.sidebarSelectedText, p.pageBackground);
 }
 
+QString ThemeManager::menuStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+
+    return QString(
+        "QMenu {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 6px;"
+        "  padding: 4px;"
+        "}"
+        "QMenu::item {"
+        "  padding: 8px 24px;"
+        "  border-radius: 4px;"
+        "}"
+        "QMenu::item:selected {"
+        "  background-color: %4;"
+        "  color: %5;"
+        "}"
+        "QMenu::separator {"
+        "  height: 1px;"
+        "  background-color: %3;"
+        "  margin: 4px 8px;"
+        "}"
+    ).arg(
+        p.cardBackground,
+        p.textPrimary,
+        p.border,
+        p.sidebarSelectedBg,
+        p.sidebarSelectedText
+    );
+}
+
 QString ThemeManager::splitterStyleSheet() const
 {
     ThemePalette p = currentPalette();

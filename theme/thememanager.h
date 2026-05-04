@@ -90,6 +90,7 @@ public:
     QString spinBoxStyleSheet() const;
     QString sliderStyleSheet() const;
     QString listWidgetStyleSheet() const;
+    QString menuStyleSheet() const;
     QString splitterStyleSheet() const;
     QString tabWidgetStyleSheet() const;
     QString dialogStyleSheet() const;

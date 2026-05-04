@@ -1,4 +1,4 @@
-#include "addactiondialog.h"
+#include "createactiondialog.h"
 
 #include "theme/thememanager.h"
 
@@ -10,7 +10,7 @@
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
-AddActionDialog::AddActionDialog(const QString &petDirPath, QWidget *parent)
+CreateActionDialog::CreateActionDialog(const QString &petDirPath, QWidget *parent)
     : QDialog(parent)
     , m_petDirPath(petDirPath)
     , m_idEdit(nullptr)
@@ -31,22 +31,22 @@ AddActionDialog::AddActionDialog(const QString &petDirPath, QWidget *parent)
     updateExtraConfigVisibility();
 }
 
-QString AddActionDialog::actionId() const
+QString CreateActionDialog::actionId() const
 {
     return m_idEdit->text().trimmed();
 }
 
-QString AddActionDialog::actionFolderPath() const
+QString CreateActionDialog::actionFolderPath() const
 {
     return m_folderEdit->text().trimmed();
 }
 
-int AddActionDialog::fps() const
+int CreateActionDialog::fps() const
 {
     return m_fpsSpinBox->value();
 }
 
-TargetCategory AddActionDialog::targetCategory() const
+TargetCategory CreateActionDialog::targetCategory() const
 {
     int index = m_categoryComboBox->currentIndex();
     switch (index) {
@@ -59,17 +59,17 @@ TargetCategory AddActionDialog::targetCategory() const
     }
 }
 
-int AddActionDialog::timedIntervalSeconds() const
+int CreateActionDialog::timedIntervalSeconds() const
 {
     return m_timedIntervalSpinBox->value();
 }
 
-QString AddActionDialog::emotionName() const
+QString CreateActionDialog::emotionName() const
 {
     return m_emotionComboBox->currentText();
 }
 
-void AddActionDialog::clearForm()
+void CreateActionDialog::clearForm()
 {
     m_idEdit->clear();
     m_folderEdit->clear();
@@ -81,11 +81,11 @@ void AddActionDialog::clearForm()
     updateExtraConfigVisibility();
 }
 
-void AddActionDialog::setupUi()
+void CreateActionDialog::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
 
-    setWindowTitle(tr("添加动作"));
+    setWindowTitle(tr("导入动作"));
     setMinimumWidth(450);
     setStyleSheet(theme.dialogStyleSheet());
 
@@ -208,21 +208,21 @@ void AddActionDialog::setupUi()
     mainLayout->addLayout(buttonLayout);
 }
 
-void AddActionDialog::connectSignals()
+void CreateActionDialog::connectSignals()
 {
-    connect(m_browseButton, &QPushButton::clicked, this, &AddActionDialog::onBrowseFolder);
-    connect(m_confirmButton, &QPushButton::clicked, this, &AddActionDialog::onConfirm);
+    connect(m_browseButton, &QPushButton::clicked, this, &CreateActionDialog::onBrowseFolder);
+    connect(m_confirmButton, &QPushButton::clicked, this, &CreateActionDialog::onConfirm);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AddActionDialog::onCategoryChanged);
+    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CreateActionDialog::onCategoryChanged);
 }
 
-void AddActionDialog::onCategoryChanged(int index)
+void CreateActionDialog::onCategoryChanged(int index)
 {
     Q_UNUSED(index);
     updateExtraConfigVisibility();
 }
 
-void AddActionDialog::updateExtraConfigVisibility()
+void CreateActionDialog::updateExtraConfigVisibility()
 {
     TargetCategory category = targetCategory();
 
@@ -235,7 +235,7 @@ void AddActionDialog::updateExtraConfigVisibility()
     m_emotionComboBox->setVisible(showEmotion);
 }
 
-void AddActionDialog::onBrowseFolder()
+void CreateActionDialog::onBrowseFolder()
 {
     QString actionsDir = m_petDirPath + "/actions";
     QString selectedFolder = QFileDialog::getExistingDirectory(
@@ -285,7 +285,7 @@ void AddActionDialog::onBrowseFolder()
     m_frameCountLabel->setText(QString::number(frameCount));
 }
 
-void AddActionDialog::onConfirm()
+void CreateActionDialog::onConfirm()
 {
     if (!validateInput()) {
         return;
@@ -293,7 +293,7 @@ void AddActionDialog::onConfirm()
     accept();
 }
 
-bool AddActionDialog::validateInput()
+bool CreateActionDialog::validateInput()
 {
     QString id = actionId();
     if (id.isEmpty()) {
@@ -326,13 +326,13 @@ bool AddActionDialog::validateInput()
     return true;
 }
 
-bool AddActionDialog::validateActionId(const QString &id)
+bool CreateActionDialog::validateActionId(const QString &id)
 {
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     return re.match(id).hasMatch();
 }
 
-int AddActionDialog::scanFrameCount(const QString &folderPath)
+int CreateActionDialog::scanFrameCount(const QString &folderPath)
 {
     QDir dir(folderPath);
     if (!dir.exists()) {

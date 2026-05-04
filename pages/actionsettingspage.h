@@ -56,6 +56,7 @@ private:
     bool saveCurrentPlaylist();
 
 private slots:
+    void onActionLibraryContextMenu(const QPoint &pos);
     void onAddToCategory();
     void onMoveUp();
     void onMoveDown();
@@ -72,7 +73,7 @@ private slots:
     void onSaveAndApplyConfig();
     void onCategoryListRowsMoved();
     void onCategoryListContextMenu(const QPoint &pos);
-    void onAddAction();
+    void onImportFolder();
     void onImportGif();
 
 private:
@@ -83,9 +84,8 @@ private:
 
     QLabel *m_libraryTitleLabel;
     QListWidget *m_actionLibraryList;
-    QPushButton *m_addActionButton;
+    QPushButton *m_createActionButton;
     QPushButton *m_importActionButton;
-    QPushButton *m_addToCategoryButton;
 
     QLabel *m_configTitleLabel;
     QTabWidget *m_categoryTabs;

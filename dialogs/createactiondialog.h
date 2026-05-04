@@ -1,5 +1,5 @@
-#ifndef ADDACTIONDIALOG_H
-#define ADDACTIONDIALOG_H
+#ifndef CREATEACTIONDIALOG_H
+#define CREATEACTIONDIALOG_H
 
 #include <QDialog>
 #include <QLineEdit>
@@ -8,16 +8,16 @@
 #include <QLabel>
 #include <QComboBox>
 
-#include "services/actionimportservice.h"
+#include "core/actioncategory.h"
 
 struct PetAction;
 
-class AddActionDialog : public QDialog
+class CreateActionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit AddActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
+    explicit CreateActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
 
     QString actionId() const;
     QString actionFolderPath() const;
@@ -60,4 +60,4 @@ private:
     QPushButton *m_cancelButton;
 };
 
-#endif // ADDACTIONDIALOG_H
+#endif // CREATEACTIONDIALOG_H

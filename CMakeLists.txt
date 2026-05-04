@@ -11,6 +11,7 @@ qt_add_executable(DesktopPet
     main.cpp
     core/appsettings.cpp
     core/appsettings.h
+    core/actioncategory.h
     core/appversion.h
     core/petaction.cpp
     core/petaction.h
@@ -38,8 +39,8 @@ qt_add_executable(DesktopPet
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
     pages/actionsettingspage.h
-    dialogs/addactiondialog.cpp
-    dialogs/addactiondialog.h
+    dialogs/createactiondialog.cpp
+    dialogs/createactiondialog.h
     dialogs/importgifdialog.cpp
     dialogs/importgifdialog.h
     pages/apiconfigpage.cpp

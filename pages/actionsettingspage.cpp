@@ -2,7 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
-#include "dialogs/addactiondialog.h"
+#include "dialogs/createactiondialog.h"
 #include "dialogs/importgifdialog.h"
 #include "services/actionimportservice.h"
 #include "theme/thememanager.h"
@@ -32,9 +32,8 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_titleLabel(nullptr)
     , m_libraryTitleLabel(nullptr)
     , m_actionLibraryList(nullptr)
-    , m_addActionButton(nullptr)
+    , m_createActionButton(nullptr)
     , m_importActionButton(nullptr)
-    , m_addToCategoryButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
     , m_dailyActionList(nullptr)
@@ -145,12 +144,12 @@ void ActionSettingsPage::setupUi()
                                          .arg(theme.textPrimaryColor()));
     libraryTitleLayout->addWidget(m_libraryTitleLabel);
 
-    m_addActionButton = new QPushButton(tr("添加"), leftPanel);
-    m_addActionButton->setMinimumSize(96, 40);
-    m_addActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    libraryTitleLayout->addWidget(m_addActionButton);
+    m_createActionButton = new QPushButton(tr("新建动作"), leftPanel);
+    m_createActionButton->setMinimumSize(96, 40);
+    m_createActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    libraryTitleLayout->addWidget(m_createActionButton);
 
-    m_importActionButton = new QPushButton(tr("导入"), leftPanel);
+    m_importActionButton = new QPushButton(tr("导入动作"), leftPanel);
     m_importActionButton->setMinimumSize(96, 40);
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     libraryTitleLayout->addWidget(m_importActionButton);
@@ -162,12 +161,9 @@ void ActionSettingsPage::setupUi()
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_actionLibraryList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_actionLibraryList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_actionLibraryList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_actionLibraryList->setToolTip(tr("右键动作可添加到当前分类"));
     leftLayout->addWidget(m_actionLibraryList, 1);
-
-    m_addToCategoryButton = new QPushButton(tr("添加到当前分类"), leftPanel);
-    m_addToCategoryButton->setMinimumHeight(32);
-    m_addToCategoryButton->setStyleSheet(theme.primaryButtonStyleSheet());
-    leftLayout->addWidget(m_addToCategoryButton);
 
     splitter->addWidget(leftPanel);
 
@@ -368,8 +364,7 @@ void ActionSettingsPage::initData()
         m_actionLibraryList->addItem(tr("宠物配置加载失败"));
         m_actionLibraryList->setEnabled(false);
 
-        m_addActionButton->setEnabled(false);
-        m_addToCategoryButton->setEnabled(false);
+        m_createActionButton->setEnabled(false);
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
@@ -382,9 +377,9 @@ void ActionSettingsPage::initData()
 
 void ActionSettingsPage::connectSignals()
 {
-    connect(m_addActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
-    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddAction);
-    connect(m_addToCategoryButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddToCategory);
+    connect(m_createActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
+    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportFolder);
+    connect(m_actionLibraryList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onActionLibraryContextMenu);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
     connect(m_removeButton, &QPushButton::clicked, this, &ActionSettingsPage::onRemove);
@@ -623,6 +618,25 @@ void ActionSettingsPage::clearCategorySelection()
     setActionConfigPanelEnabled(false);
 }
 
+void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
+{
+    QListWidgetItem *item = m_actionLibraryList->itemAt(pos);
+    if (!item) {
+        return;
+    }
+
+    m_actionLibraryList->setCurrentItem(item);
+
+    QMenu menu(this);
+    ThemeManager &theme = ThemeManager::instance();
+    menu.setStyleSheet(theme.menuStyleSheet());
+
+    QAction *addAction = menu.addAction(tr("添加到当前分类"));
+    connect(addAction, &QAction::triggered, this, &ActionSettingsPage::onAddToCategory);
+
+    menu.exec(m_actionLibraryList->mapToGlobal(pos));
+}
+
 void ActionSettingsPage::onAddToCategory()
 {
     int row = m_actionLibraryList->currentRow();
@@ -644,7 +658,7 @@ void ActionSettingsPage::onAddToCategory()
             success = m_playlist.addRandomAction(ref);
             break;
         case 2:
-            ref.intervalSeconds = 1800;
+            ref.intervalSeconds = 300;
             success = m_playlist.addTimedAction(ref);
             break;
         case 3:
@@ -1038,7 +1052,6 @@ void ActionSettingsPage::applyTheme()
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_addToCategoryButton->setStyleSheet(theme.primaryButtonStyleSheet());
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textPrimaryColor()));
@@ -1071,10 +1084,10 @@ void ActionSettingsPage::applyTheme()
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
 }
 
-void ActionSettingsPage::onAddAction()
+void ActionSettingsPage::onImportFolder()
 {
     QString petDir = PetPaths::defaultPetDirectory();
-    AddActionDialog dialog(petDir, this);
+    CreateActionDialog dialog(petDir, this);
 
     if (dialog.exec() != QDialog::Accepted) {
         return;
@@ -1158,5 +1171,3 @@ void ActionSettingsPage::onImportGif()
     refreshActionLibraryList();
     refreshCurrentCategoryList();
 }
-
-void ActionSettingsPage::onCategoryTabChanged(int index)

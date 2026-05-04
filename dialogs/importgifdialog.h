@@ -8,7 +8,7 @@
 #include <QLabel>
 #include <QComboBox>
 
-#include "services/actionimportservice.h"
+#include "core/actioncategory.h"
 
 class ImportGifDialog : public QDialog
 {

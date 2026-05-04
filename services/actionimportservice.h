@@ -4,18 +4,11 @@
 #include <QString>
 #include <QList>
 
+#include "core/actioncategory.h"
+
 struct PetAction;
 struct PetBasicInfo;
 class PetPlaylist;
-
-enum class TargetCategory
-{
-    None,
-    Idle,
-    Random,
-    Timed,
-    Emotion
-};
 
 struct ActionImportResult
 {
