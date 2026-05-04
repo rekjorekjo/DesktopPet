@@ -1124,7 +1124,49 @@ void ActionSettingsPage::onAddAction()
         return;
     }
 
+    TargetCategory category = dialog.targetCategory();
+    if (category != TargetCategory::None) {
+        PetActionRef ref(newAction.id);
+        ref.loop = false;
+        ref.repeat = 1;
+        ref.animationSpeed = 1.0;
+        ref.moveEnabled = false;
+        ref.movementSpeed = 1.0;
+
+        if (category == TargetCategory::Timed) {
+            ref.intervalSeconds = dialog.timedIntervalSeconds();
+        } else if (category == TargetCategory::Emotion) {
+            ref.emotion = dialog.emotionName();
+        }
+
+        PetPlaylist updatedPlaylist = m_playlist;
+        switch (category) {
+            case TargetCategory::Idle:
+                updatedPlaylist.addIdleAction(ref);
+                break;
+            case TargetCategory::Random:
+                updatedPlaylist.addRandomAction(ref);
+                break;
+            case TargetCategory::Timed:
+                updatedPlaylist.addTimedAction(ref);
+                break;
+            case TargetCategory::Emotion:
+                updatedPlaylist.addEmotionAction(dialog.emotionName(), ref);
+                break;
+            default:
+                break;
+        }
+
+        QString playlistPath = QDir(petDir).filePath("playlist.json");
+        if (PetConfigManager::savePlaylistToJson(playlistPath, updatedPlaylist)) {
+            m_playlist = updatedPlaylist;
+        } else {
+            QMessageBox::warning(this, tr("提示"), tr("动作已添加，但加入分类失败，请稍后在动作设置中手动添加。"));
+        }
+    }
+
     refreshActionLibraryList();
+    refreshCurrentCategoryList();
 }
 
 void ActionSettingsPage::onImportGif()
@@ -1184,5 +1226,47 @@ void ActionSettingsPage::onImportGif()
         return;
     }
 
+    TargetCategory category = dialog.targetCategory();
+    if (category != TargetCategory::None) {
+        PetActionRef ref(newAction.id);
+        ref.loop = false;
+        ref.repeat = 1;
+        ref.animationSpeed = 1.0;
+        ref.moveEnabled = false;
+        ref.movementSpeed = 1.0;
+
+        if (category == TargetCategory::Timed) {
+            ref.intervalSeconds = dialog.timedIntervalSeconds();
+        } else if (category == TargetCategory::Emotion) {
+            ref.emotion = dialog.emotionName();
+        }
+
+        PetPlaylist updatedPlaylist = m_playlist;
+        switch (category) {
+            case TargetCategory::Idle:
+                updatedPlaylist.addIdleAction(ref);
+                break;
+            case TargetCategory::Random:
+                updatedPlaylist.addRandomAction(ref);
+                break;
+            case TargetCategory::Timed:
+                updatedPlaylist.addTimedAction(ref);
+                break;
+            case TargetCategory::Emotion:
+                updatedPlaylist.addEmotionAction(dialog.emotionName(), ref);
+                break;
+            default:
+                break;
+        }
+
+        QString playlistPath = QDir(petDir).filePath("playlist.json");
+        if (PetConfigManager::savePlaylistToJson(playlistPath, updatedPlaylist)) {
+            m_playlist = updatedPlaylist;
+        } else {
+            QMessageBox::warning(this, tr("提示"), tr("动作已添加，但加入分类失败，请稍后在动作设置中手动添加。"));
+        }
+    }
+
     refreshActionLibraryList();
+    refreshCurrentCategoryList();
 }

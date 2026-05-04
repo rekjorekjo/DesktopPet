@@ -23,6 +23,11 @@ ImportGifDialog::ImportGifDialog(const QString &petDirPath, QWidget *parent)
     , m_nameEdit(nullptr)
     , m_fpsSpinBox(nullptr)
     , m_frameCountLabel(nullptr)
+    , m_categoryComboBox(nullptr)
+    , m_timedIntervalLabel(nullptr)
+    , m_timedIntervalSpinBox(nullptr)
+    , m_emotionLabel(nullptr)
+    , m_emotionComboBox(nullptr)
     , m_confirmButton(nullptr)
     , m_cancelButton(nullptr)
     , m_detectedFrameCount(0)
@@ -30,6 +35,7 @@ ImportGifDialog::ImportGifDialog(const QString &petDirPath, QWidget *parent)
 {
     setupUi();
     connectSignals();
+    updateExtraConfigVisibility();
 }
 
 QString ImportGifDialog::gifPath() const
@@ -52,6 +58,29 @@ int ImportGifDialog::fps() const
     return m_fpsSpinBox->value();
 }
 
+TargetCategory ImportGifDialog::targetCategory() const
+{
+    int index = m_categoryComboBox->currentIndex();
+    switch (index) {
+        case 0: return TargetCategory::None;
+        case 1: return TargetCategory::Idle;
+        case 2: return TargetCategory::Random;
+        case 3: return TargetCategory::Timed;
+        case 4: return TargetCategory::Emotion;
+        default: return TargetCategory::None;
+    }
+}
+
+int ImportGifDialog::timedIntervalSeconds() const
+{
+    return m_timedIntervalSpinBox->value();
+}
+
+QString ImportGifDialog::emotionName() const
+{
+    return m_emotionComboBox->currentText();
+}
+
 void ImportGifDialog::clearForm()
 {
     m_gifPathEdit->clear();
@@ -59,8 +88,12 @@ void ImportGifDialog::clearForm()
     m_nameEdit->clear();
     m_fpsSpinBox->setValue(12);
     m_frameCountLabel->clear();
+    m_categoryComboBox->setCurrentIndex(0);
+    m_timedIntervalSpinBox->setValue(300);
+    m_emotionComboBox->setCurrentIndex(0);
     m_detectedFrameCount = 0;
     m_detectedFps = 12;
+    updateExtraConfigVisibility();
 }
 
 void ImportGifDialog::setupUi()
@@ -136,6 +169,57 @@ void ImportGifDialog::setupUi()
     frameCountLayout->addStretch();
     mainLayout->addLayout(frameCountLayout);
 
+    mainLayout->addSpacing(8);
+
+    QHBoxLayout *categoryLayout = new QHBoxLayout();
+    QLabel *categoryLabel = new QLabel(tr("添加到分类:"), this);
+    categoryLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    categoryLabel->setFixedWidth(80);
+    m_categoryComboBox = new QComboBox(this);
+    m_categoryComboBox->addItem(tr("不添加"));
+    m_categoryComboBox->addItem(tr("日常动作"));
+    m_categoryComboBox->addItem(tr("随机动作"));
+    m_categoryComboBox->addItem(tr("定时动作"));
+    m_categoryComboBox->addItem(tr("情绪动作"));
+    m_categoryComboBox->setFixedWidth(150);
+    m_categoryComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    categoryLayout->addWidget(categoryLabel);
+    categoryLayout->addWidget(m_categoryComboBox);
+    categoryLayout->addStretch();
+    mainLayout->addLayout(categoryLayout);
+
+    QHBoxLayout *timedIntervalLayout = new QHBoxLayout();
+    m_timedIntervalLabel = new QLabel(tr("定时间隔:"), this);
+    m_timedIntervalLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_timedIntervalLabel->setFixedWidth(80);
+    m_timedIntervalSpinBox = new QSpinBox(this);
+    m_timedIntervalSpinBox->setRange(10, 86400);
+    m_timedIntervalSpinBox->setValue(300);
+    m_timedIntervalSpinBox->setSuffix(tr(" 秒"));
+    m_timedIntervalSpinBox->setFixedWidth(120);
+    m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
+    timedIntervalLayout->addWidget(m_timedIntervalLabel);
+    timedIntervalLayout->addWidget(m_timedIntervalSpinBox);
+    timedIntervalLayout->addStretch();
+    mainLayout->addLayout(timedIntervalLayout);
+
+    QHBoxLayout *emotionLayout = new QHBoxLayout();
+    m_emotionLabel = new QLabel(tr("情绪类型:"), this);
+    m_emotionLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_emotionLabel->setFixedWidth(80);
+    m_emotionComboBox = new QComboBox(this);
+    m_emotionComboBox->addItem("happy");
+    m_emotionComboBox->addItem("sad");
+    m_emotionComboBox->addItem("angry");
+    m_emotionComboBox->addItem("confused");
+    m_emotionComboBox->addItem("comfort");
+    m_emotionComboBox->setFixedWidth(150);
+    m_emotionComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    emotionLayout->addWidget(m_emotionLabel);
+    emotionLayout->addWidget(m_emotionComboBox);
+    emotionLayout->addStretch();
+    mainLayout->addLayout(emotionLayout);
+
     mainLayout->addSpacing(16);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
@@ -154,6 +238,26 @@ void ImportGifDialog::connectSignals()
     connect(m_browseButton, &QPushButton::clicked, this, &ImportGifDialog::onBrowseGif);
     connect(m_confirmButton, &QPushButton::clicked, this, &ImportGifDialog::onConfirm);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
+    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ImportGifDialog::onCategoryChanged);
+}
+
+void ImportGifDialog::onCategoryChanged(int index)
+{
+    Q_UNUSED(index);
+    updateExtraConfigVisibility();
+}
+
+void ImportGifDialog::updateExtraConfigVisibility()
+{
+    TargetCategory category = targetCategory();
+
+    bool showTimed = (category == TargetCategory::Timed);
+    m_timedIntervalLabel->setVisible(showTimed);
+    m_timedIntervalSpinBox->setVisible(showTimed);
+
+    bool showEmotion = (category == TargetCategory::Emotion);
+    m_emotionLabel->setVisible(showEmotion);
+    m_emotionComboBox->setVisible(showEmotion);
 }
 
 void ImportGifDialog::onBrowseGif()

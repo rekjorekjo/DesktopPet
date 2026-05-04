@@ -6,6 +6,9 @@
 #include <QSpinBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QComboBox>
+
+#include "pages/addactiondialog.h"
 
 class ImportGifDialog : public QDialog
 {
@@ -19,17 +22,23 @@ public:
     QString actionName() const;
     int fps() const;
 
+    TargetCategory targetCategory() const;
+    int timedIntervalSeconds() const;
+    QString emotionName() const;
+
     void clearForm();
 
 private slots:
     void onBrowseGif();
     void onConfirm();
+    void onCategoryChanged(int index);
 
 private:
     void setupUi();
     void connectSignals();
     bool validateInput();
     void autoFillFromGifFileName(const QString &gifPath);
+    void updateExtraConfigVisibility();
 
     QString m_petDirPath;
 
@@ -39,6 +48,13 @@ private:
     QLineEdit *m_nameEdit;
     QSpinBox *m_fpsSpinBox;
     QLabel *m_frameCountLabel;
+
+    QComboBox *m_categoryComboBox;
+    QLabel *m_timedIntervalLabel;
+    QSpinBox *m_timedIntervalSpinBox;
+    QLabel *m_emotionLabel;
+    QComboBox *m_emotionComboBox;
+
     QPushButton *m_confirmButton;
     QPushButton *m_cancelButton;
 
