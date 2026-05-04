@@ -1,8 +1,10 @@
 #include "actionsettingspage.h"
 
 #include "core/petconfigmanager.h"
+#include "core/gifframeextractor.h"
 #include "core/petpaths.h"
 #include "pages/addactiondialog.h"
+#include "pages/importgifdialog.h"
 #include "theme/thememanager.h"
 
 #include <QAbstractItemView>
@@ -151,8 +153,6 @@ void ActionSettingsPage::setupUi()
     m_importActionButton = new QPushButton(tr("导入"), leftPanel);
     m_importActionButton->setFixedHeight(28);
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_importActionButton->setEnabled(false);
-    m_importActionButton->setToolTip(tr("后续版本支持 GIF 导入"));
     libraryTitleLayout->addWidget(m_importActionButton);
 
     libraryTitleLayout->addStretch();
@@ -383,6 +383,7 @@ void ActionSettingsPage::initData()
 void ActionSettingsPage::connectSignals()
 {
     connect(m_addActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddAction);
+    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
     connect(m_addToCategoryButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddToCategory);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
@@ -1119,6 +1120,66 @@ void ActionSettingsPage::onAddAction()
     m_actionLibrary.clear();
     m_playlist.clearAll();
     if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
+        QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
+        return;
+    }
+
+    refreshActionLibraryList();
+}
+
+void ActionSettingsPage::onImportGif()
+{
+    QString petDir = PetPaths::defaultPetDirectory();
+    ImportGifDialog dialog(petDir, this);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    QString actionId = dialog.actionId();
+    for (const PetAction &existing : m_actionLibrary) {
+        if (existing.id == actionId) {
+            QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在，请使用其他 ID。"));
+            return;
+        }
+    }
+
+    QString actionsDir = petDir + "/actions";
+    QString actionDir = actionsDir + "/" + actionId;
+
+    if (QDir(actionDir).exists()) {
+        QMessageBox::warning(this, tr("提示"), tr("动作目录已存在，请使用其他 ID。"));
+        return;
+    }
+
+    GifExtractResult result = GifFrameExtractor::extractGifToFrames(dialog.gifPath(), actionDir);
+    if (!result.success) {
+        QDir(actionDir).removeRecursively();
+        QMessageBox::warning(this, tr("提示"), result.errorMessage);
+        return;
+    }
+
+    PetAction newAction;
+    newAction.id = actionId;
+    newAction.name = dialog.actionName();
+    newAction.folderPath = "actions/" + actionId;
+    newAction.fps = dialog.fps();
+    newAction.frameCount = result.frameCount;
+
+    QList<PetAction> updatedActions = m_actionLibrary;
+    updatedActions.append(newAction);
+
+    QString petJsonPath = petDir + "/pet.json";
+    if (!PetConfigManager::savePetJson(petJsonPath, m_petInfo, updatedActions)) {
+        QDir(actionDir).removeRecursively();
+        QMessageBox::warning(this, tr("提示"), tr("保存 pet.json 失败。"));
+        return;
+    }
+
+    m_actionLibrary.clear();
+    m_playlist.clearAll();
+    if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
+        QDir(actionDir).removeRecursively();
         QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
         return;
     }

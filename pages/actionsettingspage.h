@@ -73,6 +73,7 @@ private slots:
     void onCategoryListRowsMoved();
     void onCategoryListContextMenu(const QPoint &pos);
     void onAddAction();
+    void onImportGif();
 
 private:
     QScrollArea *m_scrollArea;

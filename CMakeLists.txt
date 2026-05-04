@@ -30,12 +30,16 @@ qt_add_executable(DesktopPet
     core/traymanager.h
     core/updatemanager.cpp
     core/updatemanager.h
+    core/gifframeextractor.cpp
+    core/gifframeextractor.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
     pages/actionsettingspage.h
     pages/addactiondialog.cpp
     pages/addactiondialog.h
+    pages/importgifdialog.cpp
+    pages/importgifdialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/personalizationpage.cpp
