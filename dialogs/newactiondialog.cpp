@@ -1,4 +1,4 @@
-#include "importgifdialog.h"
+#include "newactiondialog.h"
 
 #include "core/gifframeextractor.h"
 #include "theme/thememanager.h"
@@ -13,7 +13,7 @@
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
-ImportGifDialog::ImportGifDialog(const QString &petDirPath, QWidget *parent)
+NewActionDialog::NewActionDialog(const QString &petDirPath, QWidget *parent)
     : QDialog(parent)
     , m_petDirPath(petDirPath)
     , m_gifPathEdit(nullptr)
@@ -36,22 +36,22 @@ ImportGifDialog::ImportGifDialog(const QString &petDirPath, QWidget *parent)
     updateExtraConfigVisibility();
 }
 
-QString ImportGifDialog::gifPath() const
+QString NewActionDialog::gifPath() const
 {
     return m_gifPathEdit->text().trimmed();
 }
 
-QString ImportGifDialog::actionId() const
+QString NewActionDialog::actionId() const
 {
     return m_idEdit->text().trimmed();
 }
 
-int ImportGifDialog::fps() const
+int NewActionDialog::fps() const
 {
     return m_fpsSpinBox->value();
 }
 
-TargetCategory ImportGifDialog::targetCategory() const
+TargetCategory NewActionDialog::targetCategory() const
 {
     int index = m_categoryComboBox->currentIndex();
     switch (index) {
@@ -64,17 +64,17 @@ TargetCategory ImportGifDialog::targetCategory() const
     }
 }
 
-int ImportGifDialog::timedIntervalSeconds() const
+int NewActionDialog::timedIntervalSeconds() const
 {
     return m_timedIntervalSpinBox->value();
 }
 
-QString ImportGifDialog::emotionName() const
+QString NewActionDialog::emotionName() const
 {
     return m_emotionComboBox->currentText();
 }
 
-void ImportGifDialog::clearForm()
+void NewActionDialog::clearForm()
 {
     m_gifPathEdit->clear();
     m_idEdit->clear();
@@ -88,11 +88,11 @@ void ImportGifDialog::clearForm()
     updateExtraConfigVisibility();
 }
 
-void ImportGifDialog::setupUi()
+void NewActionDialog::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
 
-    setWindowTitle(tr("导入 GIF"));
+    setWindowTitle(tr("新建动作"));
     setMinimumWidth(450);
     setStyleSheet(theme.dialogStyleSheet());
 
@@ -178,7 +178,7 @@ void ImportGifDialog::setupUi()
     m_timedIntervalSpinBox->setRange(10, 86400);
     m_timedIntervalSpinBox->setValue(300);
     m_timedIntervalSpinBox->setSuffix(tr(" 秒"));
-    m_timedIntervalSpinBox->setFixedWidth(120);
+    m_timedIntervalSpinBox->setMinimumWidth(160);
     m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     timedIntervalLayout->addWidget(m_timedIntervalLabel);
     timedIntervalLayout->addWidget(m_timedIntervalSpinBox);
@@ -215,21 +215,21 @@ void ImportGifDialog::setupUi()
     mainLayout->addLayout(buttonLayout);
 }
 
-void ImportGifDialog::connectSignals()
+void NewActionDialog::connectSignals()
 {
-    connect(m_browseButton, &QPushButton::clicked, this, &ImportGifDialog::onBrowseGif);
-    connect(m_confirmButton, &QPushButton::clicked, this, &ImportGifDialog::onConfirm);
+    connect(m_browseButton, &QPushButton::clicked, this, &NewActionDialog::onBrowseGif);
+    connect(m_confirmButton, &QPushButton::clicked, this, &NewActionDialog::onConfirm);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ImportGifDialog::onCategoryChanged);
+    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewActionDialog::onCategoryChanged);
 }
 
-void ImportGifDialog::onCategoryChanged(int index)
+void NewActionDialog::onCategoryChanged(int index)
 {
     Q_UNUSED(index);
     updateExtraConfigVisibility();
 }
 
-void ImportGifDialog::updateExtraConfigVisibility()
+void NewActionDialog::updateExtraConfigVisibility()
 {
     TargetCategory category = targetCategory();
 
@@ -242,7 +242,7 @@ void ImportGifDialog::updateExtraConfigVisibility()
     m_emotionComboBox->setVisible(showEmotion);
 }
 
-void ImportGifDialog::onBrowseGif()
+void NewActionDialog::onBrowseGif()
 {
     QString selectedFile = QFileDialog::getOpenFileName(
         this,
@@ -274,7 +274,7 @@ void ImportGifDialog::onBrowseGif()
     autoFillFromGifFileName(selectedFile);
 }
 
-void ImportGifDialog::autoFillFromGifFileName(const QString &gifPath)
+void NewActionDialog::autoFillFromGifFileName(const QString &gifPath)
 {
     QFileInfo fileInfo(gifPath);
     QString baseName = fileInfo.completeBaseName();
@@ -287,7 +287,7 @@ void ImportGifDialog::autoFillFromGifFileName(const QString &gifPath)
     }
 }
 
-void ImportGifDialog::onConfirm()
+void NewActionDialog::onConfirm()
 {
     if (!validateInput()) {
         return;
@@ -295,7 +295,7 @@ void ImportGifDialog::onConfirm()
     accept();
 }
 
-bool ImportGifDialog::validateInput()
+bool NewActionDialog::validateInput()
 {
     QString gif = gifPath();
     if (gif.isEmpty()) {

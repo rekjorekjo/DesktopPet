@@ -2,8 +2,8 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
-#include "dialogs/createactiondialog.h"
-#include "dialogs/importgifdialog.h"
+#include "dialogs/newactiondialog.h"
+#include "dialogs/importactiondialog.h"
 #include "services/actionimportservice.h"
 #include "theme/thememanager.h"
 
@@ -32,7 +32,7 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_titleLabel(nullptr)
     , m_libraryTitleLabel(nullptr)
     , m_actionLibraryList(nullptr)
-    , m_createActionButton(nullptr)
+    , m_newActionButton(nullptr)
     , m_importActionButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
@@ -143,19 +143,25 @@ void ActionSettingsPage::setupUi()
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textPrimaryColor()));
     libraryTitleLayout->addWidget(m_libraryTitleLabel);
-
-    m_createActionButton = new QPushButton(tr("新建动作"), leftPanel);
-    m_createActionButton->setMinimumSize(96, 40);
-    m_createActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    libraryTitleLayout->addWidget(m_createActionButton);
-
-    m_importActionButton = new QPushButton(tr("导入动作"), leftPanel);
-    m_importActionButton->setMinimumSize(96, 40);
-    m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    libraryTitleLayout->addWidget(m_importActionButton);
-
     libraryTitleLayout->addStretch();
     leftLayout->addLayout(libraryTitleLayout);
+
+    QHBoxLayout *libraryButtonLayout = new QHBoxLayout();
+    libraryButtonLayout->setSpacing(8);
+
+    m_newActionButton = new QPushButton(tr("新建动作"), leftPanel);
+    m_newActionButton->setMinimumHeight(40);
+    m_newActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    libraryButtonLayout->addWidget(m_newActionButton);
+
+    m_importActionButton = new QPushButton(tr("导入动作"), leftPanel);
+    m_importActionButton->setMinimumHeight(40);
+    m_importActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    libraryButtonLayout->addWidget(m_importActionButton);
+
+    leftLayout->addLayout(libraryButtonLayout);
 
     m_actionLibraryList = new QListWidget(leftPanel);
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
@@ -364,7 +370,7 @@ void ActionSettingsPage::initData()
         m_actionLibraryList->addItem(tr("宠物配置加载失败"));
         m_actionLibraryList->setEnabled(false);
 
-        m_createActionButton->setEnabled(false);
+        m_newActionButton->setEnabled(false);
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
@@ -377,8 +383,8 @@ void ActionSettingsPage::initData()
 
 void ActionSettingsPage::connectSignals()
 {
-    connect(m_createActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportGif);
-    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportFolder);
+    connect(m_newActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onNewAction);
+    connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportAction);
     connect(m_actionLibraryList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onActionLibraryContextMenu);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
@@ -1084,90 +1090,80 @@ void ActionSettingsPage::applyTheme()
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
 }
 
-void ActionSettingsPage::onImportFolder()
+void ActionSettingsPage::onImportAction()
 {
     QString petDir = PetPaths::defaultPetDirectory();
-    CreateActionDialog dialog(petDir, this);
 
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
+    auto *dialog = new ImportActionDialog(petDir, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowModality(Qt::WindowModal);
 
-    ActionImportResult result = ActionImportService::registerExistingAction(
-        petDir,
-        m_petInfo,
-        m_actionLibrary,
-        m_playlist,
-        dialog.actionId(),
-        dialog.actionFolderPath(),
-        dialog.fps(),
-        dialog.targetCategory(),
-        dialog.timedIntervalSeconds(),
-        dialog.emotionName()
-    );
+    connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
+        ActionImportResult result = ActionImportService::registerExistingAction(
+            petDir,
+            m_petInfo,
+            m_actionLibrary,
+            m_playlist,
+            dialog->actionId(),
+            dialog->actionFolderPath(),
+            dialog->fps(),
+            dialog->targetCategory(),
+            dialog->timedIntervalSeconds(),
+            dialog->emotionName()
+        );
 
-    if (!result.success) {
-        QMessageBox::warning(this, tr("提示"), result.message);
-        return;
-    }
+        if (!result.success) {
+            QMessageBox::warning(this, tr("导入动作失败"), result.message);
+            return;
+        }
 
-    m_actionLibrary.clear();
-    m_playlist.clearAll();
-    if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
-        QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
-        return;
-    }
-
-    if (result.warning) {
-        QMessageBox::warning(this, tr("提示"), result.message);
-    } else if (!result.message.isEmpty()) {
         QMessageBox::information(this, tr("提示"), result.message);
-    }
 
-    refreshActionLibraryList();
-    refreshCurrentCategoryList();
+        initData();
+        if (m_loadedSuccessfully) {
+            refreshActionLibraryList();
+            refreshCurrentCategoryList();
+        }
+    });
+
+    dialog->open();
 }
 
-void ActionSettingsPage::onImportGif()
+void ActionSettingsPage::onNewAction()
 {
     QString petDir = PetPaths::defaultPetDirectory();
-    ImportGifDialog dialog(petDir, this);
 
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
+    auto *dialog = new NewActionDialog(petDir, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowModality(Qt::WindowModal);
 
-    ActionImportResult result = ActionImportService::importGifAction(
-        petDir,
-        m_petInfo,
-        m_actionLibrary,
-        m_playlist,
-        dialog.gifPath(),
-        dialog.actionId(),
-        dialog.fps(),
-        dialog.targetCategory(),
-        dialog.timedIntervalSeconds(),
-        dialog.emotionName()
-    );
+    connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
+        ActionImportResult result = ActionImportService::importGifAction(
+            petDir,
+            m_petInfo,
+            m_actionLibrary,
+            m_playlist,
+            dialog->gifPath(),
+            dialog->actionId(),
+            dialog->fps(),
+            dialog->targetCategory(),
+            dialog->timedIntervalSeconds(),
+            dialog->emotionName()
+        );
 
-    if (!result.success) {
-        QMessageBox::warning(this, tr("提示"), result.message);
-        return;
-    }
+        if (!result.success) {
+            QMessageBox::warning(this, tr("新建动作失败"), result.message);
+            return;
+        }
 
-    m_actionLibrary.clear();
-    m_playlist.clearAll();
-    if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
-        QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
-        return;
-    }
-
-    if (result.warning) {
-        QMessageBox::warning(this, tr("提示"), result.message);
-    } else if (!result.message.isEmpty()) {
         QMessageBox::information(this, tr("提示"), result.message);
-    }
 
-    refreshActionLibraryList();
-    refreshCurrentCategoryList();
+        initData();
+        if (m_loadedSuccessfully) {
+            refreshActionLibraryList();
+            refreshCurrentCategoryList();
+        }
+    });
+
+    dialog->open();
 }

@@ -1,23 +1,23 @@
-#ifndef CREATEACTIONDIALOG_H
-#define CREATEACTIONDIALOG_H
+#ifndef IMPORTACTIONDIALOG_H
+#define IMPORTACTIONDIALOG_H
 
-#include <QDialog>
-#include <QLineEdit>
-#include <QSpinBox>
-#include <QPushButton>
-#include <QLabel>
 #include <QComboBox>
+#include <QDialog>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QSpinBox>
 
 #include "core/actioncategory.h"
 
 struct PetAction;
 
-class CreateActionDialog : public QDialog
+class ImportActionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit CreateActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
+    explicit ImportActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
 
     QString actionId() const;
     QString actionFolderPath() const;
@@ -60,4 +60,4 @@ private:
     QPushButton *m_cancelButton;
 };
 
-#endif // CREATEACTIONDIALOG_H
+#endif // IMPORTACTIONDIALOG_H

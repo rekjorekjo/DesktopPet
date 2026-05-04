@@ -73,8 +73,8 @@ private slots:
     void onSaveAndApplyConfig();
     void onCategoryListRowsMoved();
     void onCategoryListContextMenu(const QPoint &pos);
-    void onImportFolder();
-    void onImportGif();
+    void onImportAction();
+    void onNewAction();
 
 private:
     QScrollArea *m_scrollArea;
@@ -84,7 +84,7 @@ private:
 
     QLabel *m_libraryTitleLabel;
     QListWidget *m_actionLibraryList;
-    QPushButton *m_createActionButton;
+    QPushButton *m_newActionButton;
     QPushButton *m_importActionButton;
 
     QLabel *m_configTitleLabel;

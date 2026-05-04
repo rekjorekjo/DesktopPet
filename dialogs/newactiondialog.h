@@ -1,21 +1,21 @@
-#ifndef IMPORTGIFDIALOG_H
-#define IMPORTGIFDIALOG_H
+#ifndef NEWACTIONDIALOG_H
+#define NEWACTIONDIALOG_H
 
-#include <QDialog>
-#include <QLineEdit>
-#include <QSpinBox>
-#include <QPushButton>
-#include <QLabel>
 #include <QComboBox>
+#include <QDialog>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QSpinBox>
 
 #include "core/actioncategory.h"
 
-class ImportGifDialog : public QDialog
+class NewActionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ImportGifDialog(const QString &petDirPath, QWidget *parent = nullptr);
+    explicit NewActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
 
     QString gifPath() const;
     QString actionId() const;
@@ -60,4 +60,4 @@ private:
     int m_detectedFps;
 };
 
-#endif // IMPORTGIFDIALOG_H
+#endif // NEWACTIONDIALOG_H

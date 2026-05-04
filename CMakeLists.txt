@@ -39,10 +39,10 @@ qt_add_executable(DesktopPet
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
     pages/actionsettingspage.h
-    dialogs/createactiondialog.cpp
-    dialogs/createactiondialog.h
-    dialogs/importgifdialog.cpp
-    dialogs/importgifdialog.h
+    dialogs/newactiondialog.cpp
+    dialogs/newactiondialog.h
+    dialogs/importactiondialog.cpp
+    dialogs/importactiondialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/personalizationpage.cpp

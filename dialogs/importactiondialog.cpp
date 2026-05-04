@@ -1,4 +1,4 @@
-#include "createactiondialog.h"
+#include "importactiondialog.h"
 
 #include "theme/thememanager.h"
 
@@ -10,7 +10,7 @@
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
-CreateActionDialog::CreateActionDialog(const QString &petDirPath, QWidget *parent)
+ImportActionDialog::ImportActionDialog(const QString &petDirPath, QWidget *parent)
     : QDialog(parent)
     , m_petDirPath(petDirPath)
     , m_idEdit(nullptr)
@@ -31,22 +31,22 @@ CreateActionDialog::CreateActionDialog(const QString &petDirPath, QWidget *paren
     updateExtraConfigVisibility();
 }
 
-QString CreateActionDialog::actionId() const
+QString ImportActionDialog::actionId() const
 {
     return m_idEdit->text().trimmed();
 }
 
-QString CreateActionDialog::actionFolderPath() const
+QString ImportActionDialog::actionFolderPath() const
 {
     return m_folderEdit->text().trimmed();
 }
 
-int CreateActionDialog::fps() const
+int ImportActionDialog::fps() const
 {
     return m_fpsSpinBox->value();
 }
 
-TargetCategory CreateActionDialog::targetCategory() const
+TargetCategory ImportActionDialog::targetCategory() const
 {
     int index = m_categoryComboBox->currentIndex();
     switch (index) {
@@ -59,17 +59,17 @@ TargetCategory CreateActionDialog::targetCategory() const
     }
 }
 
-int CreateActionDialog::timedIntervalSeconds() const
+int ImportActionDialog::timedIntervalSeconds() const
 {
     return m_timedIntervalSpinBox->value();
 }
 
-QString CreateActionDialog::emotionName() const
+QString ImportActionDialog::emotionName() const
 {
     return m_emotionComboBox->currentText();
 }
 
-void CreateActionDialog::clearForm()
+void ImportActionDialog::clearForm()
 {
     m_idEdit->clear();
     m_folderEdit->clear();
@@ -81,7 +81,7 @@ void CreateActionDialog::clearForm()
     updateExtraConfigVisibility();
 }
 
-void CreateActionDialog::setupUi()
+void ImportActionDialog::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
 
@@ -171,7 +171,7 @@ void CreateActionDialog::setupUi()
     m_timedIntervalSpinBox->setRange(10, 86400);
     m_timedIntervalSpinBox->setValue(300);
     m_timedIntervalSpinBox->setSuffix(tr(" 秒"));
-    m_timedIntervalSpinBox->setFixedWidth(120);
+    m_timedIntervalSpinBox->setMinimumWidth(160);
     m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     timedIntervalLayout->addWidget(m_timedIntervalLabel);
     timedIntervalLayout->addWidget(m_timedIntervalSpinBox);
@@ -208,21 +208,21 @@ void CreateActionDialog::setupUi()
     mainLayout->addLayout(buttonLayout);
 }
 
-void CreateActionDialog::connectSignals()
+void ImportActionDialog::connectSignals()
 {
-    connect(m_browseButton, &QPushButton::clicked, this, &CreateActionDialog::onBrowseFolder);
-    connect(m_confirmButton, &QPushButton::clicked, this, &CreateActionDialog::onConfirm);
+    connect(m_browseButton, &QPushButton::clicked, this, &ImportActionDialog::onBrowseFolder);
+    connect(m_confirmButton, &QPushButton::clicked, this, &ImportActionDialog::onConfirm);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CreateActionDialog::onCategoryChanged);
+    connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ImportActionDialog::onCategoryChanged);
 }
 
-void CreateActionDialog::onCategoryChanged(int index)
+void ImportActionDialog::onCategoryChanged(int index)
 {
     Q_UNUSED(index);
     updateExtraConfigVisibility();
 }
 
-void CreateActionDialog::updateExtraConfigVisibility()
+void ImportActionDialog::updateExtraConfigVisibility()
 {
     TargetCategory category = targetCategory();
 
@@ -235,7 +235,7 @@ void CreateActionDialog::updateExtraConfigVisibility()
     m_emotionComboBox->setVisible(showEmotion);
 }
 
-void CreateActionDialog::onBrowseFolder()
+void ImportActionDialog::onBrowseFolder()
 {
     QString actionsDir = m_petDirPath + "/actions";
     QString selectedFolder = QFileDialog::getExistingDirectory(
@@ -285,7 +285,7 @@ void CreateActionDialog::onBrowseFolder()
     m_frameCountLabel->setText(QString::number(frameCount));
 }
 
-void CreateActionDialog::onConfirm()
+void ImportActionDialog::onConfirm()
 {
     if (!validateInput()) {
         return;
@@ -293,7 +293,7 @@ void CreateActionDialog::onConfirm()
     accept();
 }
 
-bool CreateActionDialog::validateInput()
+bool ImportActionDialog::validateInput()
 {
     QString id = actionId();
     if (id.isEmpty()) {
@@ -326,13 +326,13 @@ bool CreateActionDialog::validateInput()
     return true;
 }
 
-bool CreateActionDialog::validateActionId(const QString &id)
+bool ImportActionDialog::validateActionId(const QString &id)
 {
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     return re.match(id).hasMatch();
 }
 
-int CreateActionDialog::scanFrameCount(const QString &folderPath)
+int ImportActionDialog::scanFrameCount(const QString &folderPath)
 {
     QDir dir(folderPath);
     if (!dir.exists()) {
