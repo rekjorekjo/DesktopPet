@@ -1,10 +1,10 @@
 #include "actionsettingspage.h"
 
 #include "core/petconfigmanager.h"
-#include "core/gifframeextractor.h"
 #include "core/petpaths.h"
-#include "pages/addactiondialog.h"
-#include "pages/importgifdialog.h"
+#include "dialogs/addactiondialog.h"
+#include "dialogs/importgifdialog.h"
+#include "services/actionimportservice.h"
 #include "theme/thememanager.h"
 
 #include <QAbstractItemView>
@@ -1080,39 +1080,21 @@ void ActionSettingsPage::onAddAction()
         return;
     }
 
-    QString actionId = dialog.actionId();
-    for (const PetAction &existing : m_actionLibrary) {
-        if (existing.id == actionId) {
-            QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在，请使用其他 ID。"));
-            return;
-        }
-    }
+    ActionImportResult result = ActionImportService::registerExistingAction(
+        petDir,
+        m_petInfo,
+        m_actionLibrary,
+        m_playlist,
+        dialog.actionId(),
+        dialog.actionFolderPath(),
+        dialog.fps(),
+        dialog.targetCategory(),
+        dialog.timedIntervalSeconds(),
+        dialog.emotionName()
+    );
 
-    PetAction newAction;
-    newAction.id = actionId;
-    newAction.name = actionId;
-
-    QDir petDirObj(petDir);
-    QString relativePath = petDirObj.relativeFilePath(dialog.actionFolderPath());
-    newAction.folderPath = relativePath;
-
-    newAction.fps = dialog.fps();
-
-    QStringList frameFiles;
-    QDir actionDir(dialog.actionFolderPath());
-    QStringList filters;
-    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-    actionDir.setNameFilters(filters);
-    actionDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    frameFiles = actionDir.entryList();
-    newAction.frameCount = frameFiles.size();
-
-    QList<PetAction> updatedActions = m_actionLibrary;
-    updatedActions.append(newAction);
-
-    QString petJsonPath = petDir + "/pet.json";
-    if (!PetConfigManager::savePetJson(petJsonPath, m_petInfo, updatedActions)) {
-        QMessageBox::warning(this, tr("提示"), tr("保存 pet.json 失败。"));
+    if (!result.success) {
+        QMessageBox::warning(this, tr("提示"), result.message);
         return;
     }
 
@@ -1123,45 +1105,10 @@ void ActionSettingsPage::onAddAction()
         return;
     }
 
-    TargetCategory category = dialog.targetCategory();
-    if (category != TargetCategory::None) {
-        PetActionRef ref(newAction.id);
-        ref.loop = false;
-        ref.repeat = 1;
-        ref.animationSpeed = 1.0;
-        ref.moveEnabled = false;
-        ref.movementSpeed = 1.0;
-
-        if (category == TargetCategory::Timed) {
-            ref.intervalSeconds = dialog.timedIntervalSeconds();
-        } else if (category == TargetCategory::Emotion) {
-            ref.emotion = dialog.emotionName();
-        }
-
-        PetPlaylist updatedPlaylist = m_playlist;
-        switch (category) {
-            case TargetCategory::Idle:
-                updatedPlaylist.addIdleAction(ref);
-                break;
-            case TargetCategory::Random:
-                updatedPlaylist.addRandomAction(ref);
-                break;
-            case TargetCategory::Timed:
-                updatedPlaylist.addTimedAction(ref);
-                break;
-            case TargetCategory::Emotion:
-                updatedPlaylist.addEmotionAction(dialog.emotionName(), ref);
-                break;
-            default:
-                break;
-        }
-
-        QString playlistPath = QDir(petDir).filePath("playlist.json");
-        if (PetConfigManager::savePlaylistToJson(playlistPath, updatedPlaylist)) {
-            m_playlist = updatedPlaylist;
-        } else {
-            QMessageBox::warning(this, tr("提示"), tr("动作已添加，但加入分类失败，请稍后在动作设置中手动添加。"));
-        }
+    if (result.warning) {
+        QMessageBox::warning(this, tr("提示"), result.message);
+    } else if (!result.message.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), result.message);
     }
 
     refreshActionLibraryList();
@@ -1177,95 +1124,39 @@ void ActionSettingsPage::onImportGif()
         return;
     }
 
-    QString actionId = dialog.actionId();
-    for (const PetAction &existing : m_actionLibrary) {
-        if (existing.id == actionId) {
-            QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在，请使用其他 ID。"));
-            return;
-        }
-    }
+    ActionImportResult result = ActionImportService::importGifAction(
+        petDir,
+        m_petInfo,
+        m_actionLibrary,
+        m_playlist,
+        dialog.gifPath(),
+        dialog.actionId(),
+        dialog.fps(),
+        dialog.targetCategory(),
+        dialog.timedIntervalSeconds(),
+        dialog.emotionName()
+    );
 
-    QString actionsDir = petDir + "/actions";
-    QString actionDir = actionsDir + "/" + actionId;
-
-    if (QDir(actionDir).exists()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作目录已存在，请使用其他 ID。"));
-        return;
-    }
-
-    GifExtractResult result = GifFrameExtractor::extractGifToFrames(dialog.gifPath(), actionDir);
     if (!result.success) {
-        QDir(actionDir).removeRecursively();
-        QMessageBox::warning(this, tr("提示"), result.errorMessage);
-        return;
-    }
-
-    PetAction newAction;
-    newAction.id = actionId;
-    newAction.name = actionId;
-    newAction.folderPath = "actions/" + actionId;
-    newAction.fps = dialog.fps();
-    newAction.frameCount = result.frameCount;
-
-    QList<PetAction> updatedActions = m_actionLibrary;
-    updatedActions.append(newAction);
-
-    QString petJsonPath = petDir + "/pet.json";
-    if (!PetConfigManager::savePetJson(petJsonPath, m_petInfo, updatedActions)) {
-        QDir(actionDir).removeRecursively();
-        QMessageBox::warning(this, tr("提示"), tr("保存 pet.json 失败。"));
+        QMessageBox::warning(this, tr("提示"), result.message);
         return;
     }
 
     m_actionLibrary.clear();
     m_playlist.clearAll();
     if (!PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actionLibrary, m_playlist)) {
-        QDir(actionDir).removeRecursively();
         QMessageBox::warning(this, tr("提示"), tr("重新加载宠物配置失败。"));
         return;
     }
 
-    TargetCategory category = dialog.targetCategory();
-    if (category != TargetCategory::None) {
-        PetActionRef ref(newAction.id);
-        ref.loop = false;
-        ref.repeat = 1;
-        ref.animationSpeed = 1.0;
-        ref.moveEnabled = false;
-        ref.movementSpeed = 1.0;
-
-        if (category == TargetCategory::Timed) {
-            ref.intervalSeconds = dialog.timedIntervalSeconds();
-        } else if (category == TargetCategory::Emotion) {
-            ref.emotion = dialog.emotionName();
-        }
-
-        PetPlaylist updatedPlaylist = m_playlist;
-        switch (category) {
-            case TargetCategory::Idle:
-                updatedPlaylist.addIdleAction(ref);
-                break;
-            case TargetCategory::Random:
-                updatedPlaylist.addRandomAction(ref);
-                break;
-            case TargetCategory::Timed:
-                updatedPlaylist.addTimedAction(ref);
-                break;
-            case TargetCategory::Emotion:
-                updatedPlaylist.addEmotionAction(dialog.emotionName(), ref);
-                break;
-            default:
-                break;
-        }
-
-        QString playlistPath = QDir(petDir).filePath("playlist.json");
-        if (PetConfigManager::savePlaylistToJson(playlistPath, updatedPlaylist)) {
-            m_playlist = updatedPlaylist;
-        } else {
-            QMessageBox::warning(this, tr("提示"), tr("动作已添加，但加入分类失败，请稍后在动作设置中手动添加。"));
-        }
+    if (result.warning) {
+        QMessageBox::warning(this, tr("提示"), result.message);
+    } else if (!result.message.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), result.message);
     }
 
     refreshActionLibraryList();
     refreshCurrentCategoryList();
 }
+
+void ActionSettingsPage::onCategoryTabChanged(int index)

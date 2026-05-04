@@ -1,5 +1,5 @@
-#ifndef IMPORTGIFDIALOG_H
-#define IMPORTGIFDIALOG_H
+#ifndef ADDACTIONDIALOG_H
+#define ADDACTIONDIALOG_H
 
 #include <QDialog>
 #include <QLineEdit>
@@ -8,17 +8,19 @@
 #include <QLabel>
 #include <QComboBox>
 
-#include "pages/addactiondialog.h"
+#include "services/actionimportservice.h"
 
-class ImportGifDialog : public QDialog
+struct PetAction;
+
+class AddActionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ImportGifDialog(const QString &petDirPath, QWidget *parent = nullptr);
+    explicit AddActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
 
-    QString gifPath() const;
     QString actionId() const;
+    QString actionFolderPath() const;
     int fps() const;
 
     TargetCategory targetCategory() const;
@@ -28,7 +30,7 @@ public:
     void clearForm();
 
 private slots:
-    void onBrowseGif();
+    void onBrowseFolder();
     void onConfirm();
     void onCategoryChanged(int index);
 
@@ -36,14 +38,15 @@ private:
     void setupUi();
     void connectSignals();
     bool validateInput();
-    void autoFillFromGifFileName(const QString &gifPath);
+    bool validateActionId(const QString &id);
+    int scanFrameCount(const QString &folderPath);
     void updateExtraConfigVisibility();
 
     QString m_petDirPath;
 
-    QLineEdit *m_gifPathEdit;
-    QPushButton *m_browseButton;
     QLineEdit *m_idEdit;
+    QLineEdit *m_folderEdit;
+    QPushButton *m_browseButton;
     QSpinBox *m_fpsSpinBox;
     QLabel *m_frameCountLabel;
 
@@ -55,9 +58,6 @@ private:
 
     QPushButton *m_confirmButton;
     QPushButton *m_cancelButton;
-
-    int m_detectedFrameCount;
-    int m_detectedFps;
 };
 
-#endif // IMPORTGIFDIALOG_H
+#endif // ADDACTIONDIALOG_H
