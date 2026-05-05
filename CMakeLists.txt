@@ -56,8 +56,6 @@ qt_add_executable(DesktopPet
     dialogs/importactiondialog.h
     dialogs/newpetdialog.cpp
     dialogs/newpetdialog.h
-    dialogs/addexistingactiondialog.cpp
-    dialogs/addexistingactiondialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/personalizationpage.cpp
@@ -68,6 +66,8 @@ qt_add_executable(DesktopPet
     theme/thememanager.h
     widgets/actioncategorylistwidget.cpp
     widgets/actioncategorylistwidget.h
+    widgets/actioncategorytabwidget.cpp
+    widgets/actioncategorytabwidget.h
     widgets/actionlibrarylistwidget.cpp
     widgets/actionlibrarylistwidget.h
 )

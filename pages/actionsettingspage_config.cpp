@@ -1,4 +1,5 @@
 #include "actionsettingspage.h"
+#include "widgets/actioncategorytabwidget.h"
 
 #include <QCheckBox>
 #include <QComboBox>

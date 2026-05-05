@@ -1,8 +1,11 @@
 #include "actionsettingspage.h"
 
+#include "core/petpaths.h"
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actionlibrarylistwidget.h"
+#include "widgets/actioncategorytabwidget.h"
 
+#include <QDir>
 #include <QListWidgetItem>
 
 void ActionSettingsPage::refreshActionLibraryList()
@@ -10,12 +13,54 @@ void ActionSettingsPage::refreshActionLibraryList()
     m_actionLibraryList->clear();
 
     for (const PetAction &action : m_actionLibrary) {
-        if (!action.enabled) {
-            continue;
-        }
         QString displayText = QString("%1 (%2)").arg(action.name, action.id);
         QListWidgetItem *item = new QListWidgetItem(displayText, m_actionLibraryList);
         item->setData(Qt::UserRole, action.id);
+    }
+}
+
+void ActionSettingsPage::loadGlobalActionLibrary()
+{
+    m_actionLibrary.clear();
+
+    QString actionsDir = PetPaths::actionsDirectory();
+    QDir dir(actionsDir);
+    if (!dir.exists()) {
+        return;
+    }
+
+    QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    for (const QString &actionId : actionFolders) {
+        QString actionDir = actionsDir + "/" + actionId;
+
+        QStringList filters;
+        filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
+
+        QDir frameDir(actionDir);
+        frameDir.setNameFilters(filters);
+        frameDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+
+        QStringList frameNames = frameDir.entryList(QDir::Files, QDir::Name);
+        QStringList frameFiles;
+        for (const QString &frameName : frameNames) {
+            frameFiles.append(frameDir.filePath(frameName));
+        }
+
+        if (frameFiles.isEmpty()) {
+            continue;
+        }
+
+        PetAction action;
+        action.id = actionId;
+        action.name = actionId;
+        action.folderPath = actionId;
+        action.fps = 12;
+        action.frameCount = frameFiles.size();
+        action.frameFiles = frameFiles;
+        action.enabled = true;
+
+        m_actionLibrary.append(action);
     }
 }
 

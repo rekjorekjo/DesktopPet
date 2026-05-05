@@ -4,6 +4,7 @@
 #include "core/petpaths.h"
 #include "theme/thememanager.h"
 #include "widgets/actioncategorylistwidget.h"
+#include "widgets/actioncategorytabwidget.h"
 #include "widgets/actionlibrarylistwidget.h"
 
 #include <QAbstractItemView>
@@ -32,7 +33,6 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_actionLibraryList(nullptr)
     , m_newActionButton(nullptr)
     , m_importActionButton(nullptr)
-    , m_addExistingActionButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
     , m_dailyActionList(nullptr)
@@ -166,12 +166,6 @@ void ActionSettingsPage::setupUi()
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     libraryButtonLayout->addWidget(m_importActionButton);
 
-    m_addExistingActionButton = new QPushButton(tr("添加已有动作"), leftPanel);
-    m_addExistingActionButton->setMinimumHeight(40);
-    m_addExistingActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_addExistingActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    libraryButtonLayout->addWidget(m_addExistingActionButton);
-
     leftLayout->addLayout(libraryButtonLayout);
 
     m_actionLibraryList = new ActionLibraryListWidget(leftPanel);
@@ -200,7 +194,7 @@ void ActionSettingsPage::setupUi()
                                         .arg(theme.textPrimaryColor()));
     rightLayout->addWidget(m_configTitleLabel);
 
-    m_categoryTabs = new QTabWidget(rightPanel);
+    m_categoryTabs = new ActionCategoryTabWidget(rightPanel);
     m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
 
     m_dailyActionList = new ActionCategoryListWidget(m_categoryTabs);
@@ -440,7 +434,17 @@ void ActionSettingsPage::setupUi()
 
 void ActionSettingsPage::initData()
 {
-    if (PetConfigManager::loadPetFromDirectory(PetPaths::currentPetDirectory(), m_petInfo, m_actionLibrary, m_playlist)) {
+    loadGlobalActionLibrary();
+
+    QString petDir = PetPaths::currentPetDirectory();
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
+
+    QList<PetAction> ignoredPetActions;
+    bool petLoaded = PetConfigManager::loadPetJson(petJsonPath, m_petInfo, ignoredPetActions);
+    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
+
+    if (petLoaded && playlistLoaded) {
         m_loadedSuccessfully = true;
     } else {
         m_loadedSuccessfully = false;
@@ -450,7 +454,6 @@ void ActionSettingsPage::initData()
 
         m_newActionButton->setEnabled(false);
         m_importActionButton->setEnabled(false);
-        m_addExistingActionButton->setEnabled(false);
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
@@ -465,14 +468,13 @@ void ActionSettingsPage::connectSignals()
 {
     connect(m_newActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onNewAction);
     connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportAction);
-    connect(m_addExistingActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddExistingAction);
     connect(m_actionLibraryList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onActionLibraryContextMenu);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
     connect(m_removeButton, &QPushButton::clicked, this, &ActionSettingsPage::onRemove);
     connect(m_saveConfigButton, &QPushButton::clicked, this, &ActionSettingsPage::onSaveConfig);
     connect(m_saveAndApplyButton, &QPushButton::clicked, this, &ActionSettingsPage::onSaveAndApplyConfig);
-    connect(m_categoryTabs, &QTabWidget::currentChanged, this, &ActionSettingsPage::onTabChanged);
+    connect(m_categoryTabs, &ActionCategoryTabWidget::currentChanged, this, &ActionSettingsPage::onTabChanged);
 
     connect(m_dailyActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
     connect(m_randomActionList, &QListWidget::itemSelectionChanged, this, &ActionSettingsPage::onCategorySelectionChanged);
@@ -538,7 +540,6 @@ void ActionSettingsPage::reloadData()
         m_actionLibraryList->setEnabled(true);
         m_newActionButton->setEnabled(true);
         m_importActionButton->setEnabled(true);
-        m_addExistingActionButton->setEnabled(true);
         m_categoryTabs->setEnabled(true);
         m_saveConfigButton->setEnabled(true);
         m_saveAndApplyButton->setEnabled(true);
@@ -568,7 +569,6 @@ void ActionSettingsPage::applyTheme()
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_addExistingActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textPrimaryColor()));

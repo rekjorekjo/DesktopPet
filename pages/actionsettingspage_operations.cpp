@@ -1,12 +1,14 @@
 #include "actionsettingspage.h"
 
+#include "core/petconfigmanager.h"
 #include "core/petpaths.h"
-#include "services/actionlibraryservice.h"
 #include "theme/thememanager.h"
 #include "widgets/actionlibrarylistwidget.h"
 #include "widgets/actioncategorylistwidget.h"
+#include "widgets/actioncategorytabwidget.h"
 
 #include <QAction>
+#include <QDir>
 #include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMenu>
@@ -29,9 +31,6 @@ void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
     connect(addAction, &QAction::triggered, this, &ActionSettingsPage::onAddToCategory);
 
     menu.addSeparator();
-
-    QAction *disableAction = menu.addAction(tr("移除动作"));
-    connect(disableAction, &QAction::triggered, this, &ActionSettingsPage::onDisableLibraryAction);
 
     QAction *deleteAction = menu.addAction(tr("删除动作"));
     connect(deleteAction, &QAction::triggered, this, &ActionSettingsPage::onDeleteLibraryAction);
@@ -58,7 +57,7 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
     }
 
     PetAction action = findLibraryActionById(actionId);
-    if (!action.isValid() || !action.enabled) {
+    if (!action.isValid()) {
         return false;
     }
 
@@ -94,50 +93,6 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
     return success;
 }
 
-void ActionSettingsPage::onDisableLibraryAction()
-{
-    QString actionId = currentLibraryActionId();
-    if (actionId.isEmpty()) {
-        return;
-    }
-
-    PetAction action = findLibraryActionById(actionId);
-    if (!action.isValid() || !action.enabled) {
-        return;
-    }
-
-    QMessageBox::StandardButton reply = QMessageBox::question(
-        this,
-        tr("移除动作"),
-        tr("确定要移除动作 %1 吗？\n\n动作不会被删除，仅在动作库中隐藏，并从所有分类中移除。").arg(actionId),
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No
-    );
-
-    if (reply != QMessageBox::Yes) {
-        return;
-    }
-
-    ActionLibraryOperationResult result = ActionLibraryService::disableAction(
-        PetPaths::currentPetDirectory(),
-        m_actionLibrary,
-        m_playlist,
-        actionId
-    );
-
-    if (result.success) {
-        initData();
-        refreshActionLibraryList();
-        refreshCurrentCategoryList();
-    }
-
-    if (result.warning) {
-        QMessageBox::warning(this, tr("移除动作"), result.message);
-    } else {
-        QMessageBox::information(this, result.success ? tr("成功") : tr("失败"), result.message);
-    }
-}
-
 void ActionSettingsPage::onDeleteLibraryAction()
 {
     QString actionId = currentLibraryActionId();
@@ -145,15 +100,10 @@ void ActionSettingsPage::onDeleteLibraryAction()
         return;
     }
 
-    PetAction action = findLibraryActionById(actionId);
-    if (!action.isValid() || !action.enabled) {
-        return;
-    }
-
     QMessageBox::StandardButton reply = QMessageBox::question(
         this,
         tr("删除动作"),
-        tr("确定要删除动作 %1 吗？\n\n动作将被删除！并从动作库和所有分类中移除！此操作不可撤销！").arg(actionId),
+        tr("确定要删除动作 %1 吗？\n\n动作将从全局动作库中删除，并从当前宠物的所有分类中移除！此操作不可撤销！").arg(actionId),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No
     );
@@ -162,23 +112,29 @@ void ActionSettingsPage::onDeleteLibraryAction()
         return;
     }
 
-    ActionLibraryOperationResult result = ActionLibraryService::deleteAction(
-        PetPaths::currentPetDirectory(),
-        m_actionLibrary,
-        m_playlist,
-        actionId
-    );
+    QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
+    QDir dir(actionDir);
 
-    if (result.success) {
-        initData();
-        refreshActionLibraryList();
-        refreshCurrentCategoryList();
+    int removedCount = m_playlist.removeActionReferences(actionId);
+
+    QString playlistPath = PetPaths::currentPetDirectory() + "/playlist.json";
+    PetConfigManager::savePlaylistToJson(playlistPath, m_playlist);
+
+    bool deleteSuccess = true;
+    if (dir.exists()) {
+        deleteSuccess = dir.removeRecursively();
     }
 
-    if (result.warning) {
-        QMessageBox::warning(this, tr("删除动作"), result.message);
+    initData();
+    refreshActionLibraryList();
+    refreshCurrentCategoryList();
+
+    if (deleteSuccess) {
+        QMessageBox::information(this, tr("成功"),
+            tr("已删除动作 %1，清理了 %2 个分类引用。").arg(actionId).arg(removedCount));
     } else {
-        QMessageBox::information(this, result.success ? tr("成功") : tr("失败"), result.message);
+        QMessageBox::warning(this, tr("部分成功"),
+            tr("已清理 %1 个分类引用，但删除动作目录失败。").arg(removedCount));
     }
 }
 

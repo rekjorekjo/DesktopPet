@@ -104,7 +104,16 @@ void PetWidget::showPetStatusMessage(const QString &text, const QString &color)
 
 bool PetWidget::loadPet(const QString &petDirPath)
 {
-    if (!PetConfigManager::loadPetFromDirectory(petDirPath, m_petInfo, m_actions, m_playlist)) {
+    loadGlobalActionLibrary();
+
+    QString petJsonPath = petDirPath + "/pet.json";
+    QString playlistPath = petDirPath + "/playlist.json";
+
+    QList<PetAction> petActions;
+    bool petLoaded = PetConfigManager::loadPetJson(petJsonPath, m_petInfo, petActions);
+    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
+
+    if (!petLoaded || !playlistLoaded) {
         m_petRunning = false;
         showPetStatusMessage(tr("宠物资源加载失败"), "red");
         return false;
@@ -135,6 +144,51 @@ bool PetWidget::loadPet(const QString &petDirPath)
     }
 
     return true;
+}
+
+void PetWidget::loadGlobalActionLibrary()
+{
+    m_actions.clear();
+
+    QString actionsDir = PetPaths::actionsDirectory();
+    QDir dir(actionsDir);
+    if (!dir.exists()) {
+        return;
+    }
+
+    QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    for (const QString &actionId : actionFolders) {
+        QString actionDir = actionsDir + "/" + actionId;
+
+        QStringList filters;
+        filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
+
+        QDir frameDir(actionDir);
+        frameDir.setNameFilters(filters);
+        frameDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+
+        QStringList frameNames = frameDir.entryList(QDir::Files, QDir::Name);
+        QStringList frameFiles;
+        for (const QString &frameName : frameNames) {
+            frameFiles.append(frameDir.filePath(frameName));
+        }
+
+        if (frameFiles.isEmpty()) {
+            continue;
+        }
+
+        PetAction action;
+        action.id = actionId;
+        action.name = actionId;
+        action.folderPath = actionId;
+        action.fps = 12;
+        action.frameCount = frameFiles.size();
+        action.frameFiles = frameFiles;
+        action.enabled = true;
+
+        m_actions.append(action);
+    }
 }
 
 bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
@@ -256,41 +310,10 @@ void PetWidget::reloadPet()
     m_currentActionId.clear();
     m_currentMode = PetPlayMode::Idle;
     m_lastTimedTriggerTimes.clear();
+    m_clockTimedLastTriggeredDate.clear();
     m_idleActionIndex = 0;
 
-    bool wasRunning = m_petRunning;
-
-    if (!PetConfigManager::loadPetFromDirectory(PetPaths::currentPetDirectory(), m_petInfo, m_actions, m_playlist)) {
-        m_petRunning = false;
-        showPetStatusMessage(tr("宠物资源加载失败"), "red");
-        return;
-    }
-
-    if (!hasAnyActionResources()) {
-        m_petRunning = false;
-        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
-        return;
-    }
-
-    if (!hasAnyUsableEnabledAction()) {
-        m_petRunning = false;
-        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
-        return;
-    }
-
-    QSize displaySize = currentDisplaySize();
-    setFixedSize(displaySize);
-    m_displayLabel->setFixedSize(displaySize);
-
-    if (wasRunning) {
-        m_petRunning = true;
-        playIdleAction();
-        m_randomTimer->start(30000);
-        m_timedCheckTimer->start(1000);
-    } else {
-        m_petRunning = false;
-        showPetStatusMessage(tr("已暂停"), "gray");
-    }
+    loadPet(PetPaths::currentPetDirectory());
 }
 
 void PetWidget::setPetScaleFactor(double scale)

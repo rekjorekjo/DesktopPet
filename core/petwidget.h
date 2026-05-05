@@ -64,6 +64,7 @@ private:
     void setupUi();
     QSize currentDisplaySize() const;
     PetAction findActionById(const QString &actionId) const;
+    void loadGlobalActionLibrary();
     bool playAction(const PetAction &action, const PetActionRef &ref);
     bool playActionByRef(const PetActionRef &ref);
     bool hasAnyActionResources() const;

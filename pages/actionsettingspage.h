@@ -4,7 +4,6 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QScrollArea>
-#include <QTabWidget>
 #include <QTime>
 #include <QWidget>
 
@@ -19,6 +18,7 @@ class QPushButton;
 class QSpinBox;
 class QTimeEdit;
 class ActionCategoryListWidget;
+class ActionCategoryTabWidget;
 class ActionLibraryListWidget;
 
 class ActionSettingsPage : public QWidget
@@ -45,6 +45,7 @@ private:
     void refreshActionLibraryList();
     void refreshCurrentCategoryList();
     void refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions);
+    void loadGlobalActionLibrary();
 
     QString formatActionDisplay(const PetActionRef &ref) const;
     QString getActionName(const QString &actionId) const;
@@ -67,7 +68,6 @@ private:
 private slots:
     void onActionLibraryContextMenu(const QPoint &pos);
     void onAddToCategory();
-    void onDisableLibraryAction();
     void onDeleteLibraryAction();
     void onMoveUp();
     void onMoveDown();
@@ -90,7 +90,6 @@ private slots:
     void onCategoryListContextMenu(const QPoint &pos);
     void onImportAction();
     void onNewAction();
-    void onAddExistingAction();
 
 private:
     QScrollArea *m_scrollArea;
@@ -102,10 +101,9 @@ private:
     ActionLibraryListWidget *m_actionLibraryList;
     QPushButton *m_newActionButton;
     QPushButton *m_importActionButton;
-    QPushButton *m_addExistingActionButton;
 
     QLabel *m_configTitleLabel;
-    QTabWidget *m_categoryTabs;
+    ActionCategoryTabWidget *m_categoryTabs;
     ActionCategoryListWidget *m_dailyActionList;
     ActionCategoryListWidget *m_randomActionList;
     ActionCategoryListWidget *m_scheduledActionList;
