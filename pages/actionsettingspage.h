@@ -18,6 +18,8 @@ class QFrame;
 class QPushButton;
 class QSpinBox;
 class QTimeEdit;
+class ActionCategoryListWidget;
+class ActionLibraryListWidget;
 
 class ActionSettingsPage : public QWidget
 {
@@ -49,6 +51,7 @@ private:
     QString displayNameForRef(const PetActionRef &ref) const;
     QString currentLibraryActionId() const;
     PetAction findLibraryActionById(const QString &actionId) const;
+    bool addActionIdToCurrentCategory(const QString &actionId);
 
     QListWidget* currentCategoryList() const;
     QList<PetActionRef> currentCategoryActions() const;
@@ -87,6 +90,7 @@ private slots:
     void onCategoryListContextMenu(const QPoint &pos);
     void onImportAction();
     void onNewAction();
+    void onAddExistingAction();
 
 private:
     QScrollArea *m_scrollArea;
@@ -95,16 +99,17 @@ private:
     QLabel *m_titleLabel;
 
     QLabel *m_libraryTitleLabel;
-    QListWidget *m_actionLibraryList;
+    ActionLibraryListWidget *m_actionLibraryList;
     QPushButton *m_newActionButton;
     QPushButton *m_importActionButton;
+    QPushButton *m_addExistingActionButton;
 
     QLabel *m_configTitleLabel;
     QTabWidget *m_categoryTabs;
-    QListWidget *m_dailyActionList;
-    QListWidget *m_randomActionList;
-    QListWidget *m_scheduledActionList;
-    QListWidget *m_emotionActionList;
+    ActionCategoryListWidget *m_dailyActionList;
+    ActionCategoryListWidget *m_randomActionList;
+    ActionCategoryListWidget *m_scheduledActionList;
+    ActionCategoryListWidget *m_emotionActionList;
 
     QPushButton *m_moveUpButton;
     QPushButton *m_moveDownButton;

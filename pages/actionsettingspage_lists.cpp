@@ -1,5 +1,10 @@
 #include "actionsettingspage.h"
 
+#include "widgets/actioncategorylistwidget.h"
+#include "widgets/actionlibrarylistwidget.h"
+
+#include <QListWidgetItem>
+
 void ActionSettingsPage::refreshActionLibraryList()
 {
     m_actionLibraryList->clear();

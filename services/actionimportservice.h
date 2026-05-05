@@ -21,6 +21,20 @@ struct ActionImportResult
 class ActionImportService
 {
 public:
+    static ActionImportResult registerGlobalActionToPet(
+        const QString &petDir,
+        const PetBasicInfo &petInfo,
+        QList<PetAction> currentActions,
+        PetPlaylist currentPlaylist,
+        const QString &actionId,
+        int fps,
+        TargetCategory targetCategory,
+        int timedIntervalSeconds,
+        const QString &emotionName,
+        TimedTriggerMode timedTriggerMode = TimedTriggerMode::Interval,
+        const QString &triggerTime = "00:00"
+    );
+
     static ActionImportResult registerExistingAction(
         const QString &petDir,
         const PetBasicInfo &petInfo,

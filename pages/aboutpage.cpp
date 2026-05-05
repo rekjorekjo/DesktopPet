@@ -164,6 +164,7 @@ void AboutPage::setupUi()
     m_updateStatusLabel = new QLabel(m_updateCard);
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textSecondaryColor()));
+    m_updateStatusLabel->setVisible(false);
     updateLayout->addWidget(m_updateStatusLabel);
 
     m_checkUpdateButton = new QPushButton(tr("检查更新"), m_updateCard);
@@ -217,6 +218,7 @@ void AboutPage::applyTheme()
 void AboutPage::onCheckUpdateClicked()
 {
     m_checkUpdateButton->setEnabled(false);
+    m_updateStatusLabel->setVisible(true);
     m_updateStatusLabel->setText(tr("正在检查更新..."));
     m_updateManager->checkForUpdates();
 }

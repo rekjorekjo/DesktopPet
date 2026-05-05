@@ -9,6 +9,101 @@
 #include <QDir>
 #include <QFile>
 
+ActionImportResult ActionImportService::registerGlobalActionToPet(
+    const QString &petDir,
+    const PetBasicInfo &petInfo,
+    QList<PetAction> currentActions,
+    PetPlaylist currentPlaylist,
+    const QString &actionId,
+    int fps,
+    TargetCategory targetCategory,
+    int timedIntervalSeconds,
+    const QString &emotionName,
+    TimedTriggerMode timedTriggerMode,
+    const QString &triggerTime)
+{
+    ActionImportResult result;
+    result.success = false;
+    result.message = QString();
+
+    if (actionId.isEmpty()) {
+        result.message = QObject::tr("动作 ID 不能为空。");
+        return result;
+    }
+
+    for (const PetAction &existing : currentActions) {
+        if (existing.id == actionId) {
+            if (existing.enabled) {
+                result.message = QObject::tr("该动作已添加到当前宠物。");
+                return result;
+            }
+        }
+    }
+
+    QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
+    if (!QDir(actionDir).exists()) {
+        result.message = QObject::tr("动作资源目录不存在。");
+        return result;
+    }
+
+    QDir dir(actionDir);
+    QStringList filters;
+    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
+    dir.setNameFilters(filters);
+    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+    QStringList frameFiles = dir.entryList();
+
+    if (frameFiles.isEmpty()) {
+        result.message = QObject::tr("动作目录中没有图片帧。");
+        return result;
+    }
+
+    bool foundExisting = false;
+    for (PetAction &action : currentActions) {
+        if (action.id == actionId) {
+            action.enabled = true;
+            action.fps = fps;
+            action.frameCount = frameFiles.size();
+            action.frameFiles = frameFiles;
+            foundExisting = true;
+            break;
+        }
+    }
+
+    if (!foundExisting) {
+        PetAction newAction;
+        newAction.id = actionId;
+        newAction.name = actionId;
+        newAction.folderPath = actionId;
+        newAction.fps = fps;
+        newAction.frameCount = frameFiles.size();
+        newAction.frameFiles = frameFiles;
+        newAction.enabled = true;
+        currentActions.append(newAction);
+    }
+
+    QString petJsonPath = QDir(petDir).filePath("pet.json");
+    if (!PetConfigManager::savePetJson(petJsonPath, petInfo, currentActions)) {
+        result.message = QObject::tr("保存 pet.json 失败。");
+        return result;
+    }
+
+    if (targetCategory != TargetCategory::None) {
+        ActionImportResult categoryResult = addToCategory(
+            petDir, currentPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
+        if (!categoryResult.success) {
+            result.success = true;
+            result.warning = true;
+            result.message = QObject::tr("动作已添加，但加入分类失败，请稍后在动作设置中手动添加。");
+            return result;
+        }
+    }
+
+    result.success = true;
+    result.message = QObject::tr("动作添加成功。");
+    return result;
+}
+
 ActionImportResult ActionImportService::registerExistingAction(
     const QString &petDir,
     const PetBasicInfo &petInfo,

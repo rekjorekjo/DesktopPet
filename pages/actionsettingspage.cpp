@@ -3,6 +3,8 @@
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "theme/thememanager.h"
+#include "widgets/actioncategorylistwidget.h"
+#include "widgets/actionlibrarylistwidget.h"
 
 #include <QAbstractItemView>
 #include <QCheckBox>
@@ -12,6 +14,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QListWidgetItem>
+#include <QMimeData>
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QSpinBox>
@@ -29,6 +32,7 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_actionLibraryList(nullptr)
     , m_newActionButton(nullptr)
     , m_importActionButton(nullptr)
+    , m_addExistingActionButton(nullptr)
     , m_configTitleLabel(nullptr)
     , m_categoryTabs(nullptr)
     , m_dailyActionList(nullptr)
@@ -162,14 +166,22 @@ void ActionSettingsPage::setupUi()
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     libraryButtonLayout->addWidget(m_importActionButton);
 
+    m_addExistingActionButton = new QPushButton(tr("添加已有动作"), leftPanel);
+    m_addExistingActionButton->setMinimumHeight(40);
+    m_addExistingActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_addExistingActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    libraryButtonLayout->addWidget(m_addExistingActionButton);
+
     leftLayout->addLayout(libraryButtonLayout);
 
-    m_actionLibraryList = new QListWidget(leftPanel);
+    m_actionLibraryList = new ActionLibraryListWidget(leftPanel);
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_actionLibraryList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_actionLibraryList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_actionLibraryList->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_actionLibraryList->setToolTip(tr("右键动作可添加到当前分类"));
+    m_actionLibraryList->setDragEnabled(true);
+    m_actionLibraryList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_actionLibraryList->setToolTip(tr("右键动作可添加到当前分类，或拖拽到右侧分类"));
     leftLayout->addWidget(m_actionLibraryList, 1);
 
     splitter->addWidget(leftPanel);
@@ -191,7 +203,7 @@ void ActionSettingsPage::setupUi()
     m_categoryTabs = new QTabWidget(rightPanel);
     m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
 
-    m_dailyActionList = new QListWidget(m_categoryTabs);
+    m_dailyActionList = new ActionCategoryListWidget(m_categoryTabs);
     m_dailyActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_dailyActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_dailyActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -201,7 +213,7 @@ void ActionSettingsPage::setupUi()
     m_dailyActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_dailyActionList, tr("日常动作"));
 
-    m_randomActionList = new QListWidget(m_categoryTabs);
+    m_randomActionList = new ActionCategoryListWidget(m_categoryTabs);
     m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_randomActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_randomActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -211,7 +223,7 @@ void ActionSettingsPage::setupUi()
     m_randomActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_randomActionList, tr("随机动作"));
 
-    m_scheduledActionList = new QListWidget(m_categoryTabs);
+    m_scheduledActionList = new ActionCategoryListWidget(m_categoryTabs);
     m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_scheduledActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scheduledActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -221,7 +233,7 @@ void ActionSettingsPage::setupUi()
     m_scheduledActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_categoryTabs->addTab(m_scheduledActionList, tr("定时动作"));
 
-    m_emotionActionList = new QListWidget(m_categoryTabs);
+    m_emotionActionList = new ActionCategoryListWidget(m_categoryTabs);
     m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_emotionActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_emotionActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -438,6 +450,7 @@ void ActionSettingsPage::initData()
 
         m_newActionButton->setEnabled(false);
         m_importActionButton->setEnabled(false);
+        m_addExistingActionButton->setEnabled(false);
         m_moveUpButton->setEnabled(false);
         m_moveDownButton->setEnabled(false);
         m_removeButton->setEnabled(false);
@@ -452,6 +465,7 @@ void ActionSettingsPage::connectSignals()
 {
     connect(m_newActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onNewAction);
     connect(m_importActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onImportAction);
+    connect(m_addExistingActionButton, &QPushButton::clicked, this, &ActionSettingsPage::onAddExistingAction);
     connect(m_actionLibraryList, &QListWidget::customContextMenuRequested, this, &ActionSettingsPage::onActionLibraryContextMenu);
     connect(m_moveUpButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveUp);
     connect(m_moveDownButton, &QPushButton::clicked, this, &ActionSettingsPage::onMoveDown);
@@ -474,6 +488,31 @@ void ActionSettingsPage::connectSignals()
     connect(m_randomActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
     connect(m_scheduledActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
     connect(m_emotionActionList->model(), &QAbstractItemModel::rowsMoved, this, &ActionSettingsPage::onCategoryListRowsMoved);
+
+    connect(m_dailyActionList, &ActionCategoryListWidget::actionDropped, this, [this](const QString &actionId) {
+        m_categoryTabs->setCurrentIndex(0);
+        if (addActionIdToCurrentCategory(actionId)) {
+            refreshCurrentCategoryList();
+        }
+    });
+    connect(m_randomActionList, &ActionCategoryListWidget::actionDropped, this, [this](const QString &actionId) {
+        m_categoryTabs->setCurrentIndex(1);
+        if (addActionIdToCurrentCategory(actionId)) {
+            refreshCurrentCategoryList();
+        }
+    });
+    connect(m_scheduledActionList, &ActionCategoryListWidget::actionDropped, this, [this](const QString &actionId) {
+        m_categoryTabs->setCurrentIndex(2);
+        if (addActionIdToCurrentCategory(actionId)) {
+            refreshCurrentCategoryList();
+        }
+    });
+    connect(m_emotionActionList, &ActionCategoryListWidget::actionDropped, this, [this](const QString &actionId) {
+        m_categoryTabs->setCurrentIndex(3);
+        if (addActionIdToCurrentCategory(actionId)) {
+            refreshCurrentCategoryList();
+        }
+    });
 
     connect(m_loopCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onLoopChanged);
     connect(m_repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onRepeatChanged);
@@ -499,6 +538,7 @@ void ActionSettingsPage::reloadData()
         m_actionLibraryList->setEnabled(true);
         m_newActionButton->setEnabled(true);
         m_importActionButton->setEnabled(true);
+        m_addExistingActionButton->setEnabled(true);
         m_categoryTabs->setEnabled(true);
         m_saveConfigButton->setEnabled(true);
         m_saveAndApplyButton->setEnabled(true);
@@ -528,6 +568,7 @@ void ActionSettingsPage::applyTheme()
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_addExistingActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textPrimaryColor()));

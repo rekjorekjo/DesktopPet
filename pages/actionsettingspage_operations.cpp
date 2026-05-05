@@ -3,8 +3,12 @@
 #include "core/petpaths.h"
 #include "services/actionlibraryservice.h"
 #include "theme/thememanager.h"
+#include "widgets/actionlibrarylistwidget.h"
+#include "widgets/actioncategorylistwidget.h"
 
+#include <QAction>
 #include <QInputDialog>
+#include <QListWidgetItem>
 #include <QMenu>
 #include <QMessageBox>
 
@@ -42,12 +46,28 @@ void ActionSettingsPage::onAddToCategory()
         return;
     }
 
+    if (addActionIdToCurrentCategory(actionId)) {
+        refreshCurrentCategoryList();
+    }
+}
+
+bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
+{
+    if (actionId.isEmpty()) {
+        return false;
+    }
+
     PetAction action = findLibraryActionById(actionId);
     if (!action.isValid() || !action.enabled) {
-        return;
+        return false;
     }
 
     PetActionRef ref(action.id);
+    ref.loop = false;
+    ref.repeat = 1;
+    ref.animationSpeed = 1.0;
+    ref.moveEnabled = false;
+    ref.movementSpeed = 1.0;
 
     int tabIndex = m_categoryTabs->currentIndex();
     bool success = false;
@@ -71,9 +91,7 @@ void ActionSettingsPage::onAddToCategory()
             break;
     }
 
-    if (success) {
-        refreshCurrentCategoryList();
-    }
+    return success;
 }
 
 void ActionSettingsPage::onDisableLibraryAction()
