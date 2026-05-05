@@ -695,3 +695,29 @@ QString ThemeManager::dialogStyleSheet() const
         "}"
     ).arg(p.pageBackground);
 }
+
+QString ThemeManager::timeEditStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QTimeEdit {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 4px;"
+        "  padding: 4px 8px;"
+        "}"
+        "QTimeEdit:focus {"
+        "  border-color: %4;"
+        "}"
+        "QTimeEdit::up-button, QTimeEdit::down-button {"
+        "  background-color: %5;"
+        "  border: none;"
+        "  width: 16px;"
+        "}"
+        "QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {"
+        "  background-color: %6;"
+        "}"
+    )
+    .arg(p.inputBackground, p.textPrimary, p.border, p.buttonPrimary, p.cardBackground, p.secondaryHover);
+}

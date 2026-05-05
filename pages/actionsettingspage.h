@@ -5,6 +5,7 @@
 #include <QListWidget>
 #include <QScrollArea>
 #include <QTabWidget>
+#include <QTime>
 #include <QWidget>
 
 #include "core/petaction.h"
@@ -16,6 +17,7 @@ class QComboBox;
 class QFrame;
 class QPushButton;
 class QSpinBox;
+class QTimeEdit;
 
 class ActionSettingsPage : public QWidget
 {
@@ -69,6 +71,9 @@ private slots:
     void onAnimationSpeedChanged(int index);
     void onMoveEnabledChanged(int state);
     void onSpeedChanged(int index);
+    void onTimedTriggerModeChanged(int index);
+    void onTimedIntervalChanged(int value);
+    void onTriggerTimeChanged(const QTime &time);
     void onSaveConfig();
     void onSaveAndApplyConfig();
     void onCategoryListRowsMoved();
@@ -111,6 +116,13 @@ private:
     QCheckBox *m_moveEnabledCheckBox;
     QLabel *m_speedLabel;
     QComboBox *m_speedComboBox;
+
+    QLabel *m_timedTriggerModeLabel;
+    QComboBox *m_timedTriggerModeComboBox;
+    QLabel *m_timedIntervalLabel;
+    QSpinBox *m_timedIntervalSpinBox;
+    QLabel *m_triggerTimeLabel;
+    QTimeEdit *m_triggerTimeEdit;
 
     QList<PetAction> m_actionLibrary;
     PetBasicInfo m_petInfo;

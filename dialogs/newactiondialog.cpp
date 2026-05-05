@@ -22,8 +22,12 @@ NewActionDialog::NewActionDialog(const QString &petDirPath, QWidget *parent)
     , m_fpsSpinBox(nullptr)
     , m_frameCountLabel(nullptr)
     , m_categoryComboBox(nullptr)
+    , m_timedTriggerModeLabel(nullptr)
+    , m_timedTriggerModeComboBox(nullptr)
     , m_timedIntervalLabel(nullptr)
     , m_timedIntervalSpinBox(nullptr)
+    , m_triggerTimeLabel(nullptr)
+    , m_triggerTimeEdit(nullptr)
     , m_emotionLabel(nullptr)
     , m_emotionComboBox(nullptr)
     , m_confirmButton(nullptr)
@@ -74,6 +78,17 @@ QString NewActionDialog::emotionName() const
     return m_emotionComboBox->currentText();
 }
 
+TimedTriggerMode NewActionDialog::timedTriggerMode() const
+{
+    int index = m_timedTriggerModeComboBox->currentIndex();
+    return (index == 1) ? TimedTriggerMode::ClockTime : TimedTriggerMode::Interval;
+}
+
+QString NewActionDialog::triggerTime() const
+{
+    return m_triggerTimeEdit->time().toString("HH:mm");
+}
+
 void NewActionDialog::clearForm()
 {
     m_gifPathEdit->clear();
@@ -81,7 +96,9 @@ void NewActionDialog::clearForm()
     m_fpsSpinBox->setValue(12);
     m_frameCountLabel->clear();
     m_categoryComboBox->setCurrentIndex(0);
+    m_timedTriggerModeComboBox->setCurrentIndex(0);
     m_timedIntervalSpinBox->setValue(300);
+    m_triggerTimeEdit->setTime(QTime(0, 0));
     m_emotionComboBox->setCurrentIndex(0);
     m_detectedFrameCount = 0;
     m_detectedFps = 12;
@@ -170,6 +187,20 @@ void NewActionDialog::setupUi()
     categoryLayout->addStretch();
     mainLayout->addLayout(categoryLayout);
 
+    QHBoxLayout *timedTriggerModeLayout = new QHBoxLayout();
+    m_timedTriggerModeLabel = new QLabel(tr("触发方式:"), this);
+    m_timedTriggerModeLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_timedTriggerModeLabel->setFixedWidth(80);
+    m_timedTriggerModeComboBox = new QComboBox(this);
+    m_timedTriggerModeComboBox->addItem(tr("每隔一段时间"), static_cast<int>(TimedTriggerMode::Interval));
+    m_timedTriggerModeComboBox->addItem(tr("指定时间"), static_cast<int>(TimedTriggerMode::ClockTime));
+    m_timedTriggerModeComboBox->setFixedWidth(150);
+    m_timedTriggerModeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    timedTriggerModeLayout->addWidget(m_timedTriggerModeLabel);
+    timedTriggerModeLayout->addWidget(m_timedTriggerModeComboBox);
+    timedTriggerModeLayout->addStretch();
+    mainLayout->addLayout(timedTriggerModeLayout);
+
     QHBoxLayout *timedIntervalLayout = new QHBoxLayout();
     m_timedIntervalLabel = new QLabel(tr("定时间隔:"), this);
     m_timedIntervalLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
@@ -184,6 +215,20 @@ void NewActionDialog::setupUi()
     timedIntervalLayout->addWidget(m_timedIntervalSpinBox);
     timedIntervalLayout->addStretch();
     mainLayout->addLayout(timedIntervalLayout);
+
+    QHBoxLayout *triggerTimeLayout = new QHBoxLayout();
+    m_triggerTimeLabel = new QLabel(tr("播放时间:"), this);
+    m_triggerTimeLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_triggerTimeLabel->setFixedWidth(80);
+    m_triggerTimeEdit = new QTimeEdit(this);
+    m_triggerTimeEdit->setDisplayFormat("HH:mm");
+    m_triggerTimeEdit->setTime(QTime(0, 0));
+    m_triggerTimeEdit->setFixedWidth(100);
+    m_triggerTimeEdit->setStyleSheet(theme.timeEditStyleSheet());
+    triggerTimeLayout->addWidget(m_triggerTimeLabel);
+    triggerTimeLayout->addWidget(m_triggerTimeEdit);
+    triggerTimeLayout->addStretch();
+    mainLayout->addLayout(triggerTimeLayout);
 
     QHBoxLayout *emotionLayout = new QHBoxLayout();
     m_emotionLabel = new QLabel(tr("情绪类型:"), this);
@@ -221,9 +266,16 @@ void NewActionDialog::connectSignals()
     connect(m_confirmButton, &QPushButton::clicked, this, &NewActionDialog::onConfirm);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     connect(m_categoryComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewActionDialog::onCategoryChanged);
+    connect(m_timedTriggerModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewActionDialog::onTimedTriggerModeChanged);
 }
 
 void NewActionDialog::onCategoryChanged(int index)
+{
+    Q_UNUSED(index);
+    updateExtraConfigVisibility();
+}
+
+void NewActionDialog::onTimedTriggerModeChanged(int index)
 {
     Q_UNUSED(index);
     updateExtraConfigVisibility();
@@ -234,8 +286,20 @@ void NewActionDialog::updateExtraConfigVisibility()
     TargetCategory category = targetCategory();
 
     bool showTimed = (category == TargetCategory::Timed);
+    m_timedTriggerModeLabel->setVisible(showTimed);
+    m_timedTriggerModeComboBox->setVisible(showTimed);
     m_timedIntervalLabel->setVisible(showTimed);
     m_timedIntervalSpinBox->setVisible(showTimed);
+    m_triggerTimeLabel->setVisible(showTimed);
+    m_triggerTimeEdit->setVisible(showTimed);
+
+    if (showTimed) {
+        bool isIntervalMode = (timedTriggerMode() == TimedTriggerMode::Interval);
+        m_timedIntervalLabel->setVisible(isIntervalMode);
+        m_timedIntervalSpinBox->setVisible(isIntervalMode);
+        m_triggerTimeLabel->setVisible(!isIntervalMode);
+        m_triggerTimeEdit->setVisible(!isIntervalMode);
+    }
 
     bool showEmotion = (category == TargetCategory::Emotion);
     m_emotionLabel->setVisible(showEmotion);

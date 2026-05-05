@@ -22,6 +22,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QTimeEdit>
 #include <QtGlobal>
 #include <QVBoxLayout>
 
@@ -56,6 +57,12 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_moveEnabledCheckBox(nullptr)
     , m_speedLabel(nullptr)
     , m_speedComboBox(nullptr)
+    , m_timedTriggerModeLabel(nullptr)
+    , m_timedTriggerModeComboBox(nullptr)
+    , m_timedIntervalLabel(nullptr)
+    , m_timedIntervalSpinBox(nullptr)
+    , m_triggerTimeLabel(nullptr)
+    , m_triggerTimeEdit(nullptr)
     , m_loadedSuccessfully(false)
 {
     setupUi();
@@ -349,6 +356,71 @@ void ActionSettingsPage::setupUi()
     row3Layout->addStretch();
     configPanelOuterLayout->addLayout(row3Layout);
 
+    QHBoxLayout *row4Layout = new QHBoxLayout();
+    row4Layout->setSpacing(16);
+
+    m_timedTriggerModeLabel = new QLabel(tr("触发方式:"), m_actionConfigPanel);
+    m_timedTriggerModeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                               .arg(theme.textPrimaryColor()));
+    m_timedTriggerModeLabel->setFixedWidth(80);
+    row4Layout->addWidget(m_timedTriggerModeLabel);
+
+    m_timedTriggerModeComboBox = new QComboBox(m_actionConfigPanel);
+    m_timedTriggerModeComboBox->addItem(tr("每隔一段时间"), static_cast<int>(TimedTriggerMode::Interval));
+    m_timedTriggerModeComboBox->addItem(tr("指定时间"), static_cast<int>(TimedTriggerMode::ClockTime));
+    m_timedTriggerModeComboBox->setFixedWidth(150);
+    m_timedTriggerModeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    row4Layout->addWidget(m_timedTriggerModeComboBox);
+
+    row4Layout->addStretch();
+    configPanelOuterLayout->addLayout(row4Layout);
+
+    QHBoxLayout *row5Layout = new QHBoxLayout();
+    row5Layout->setSpacing(16);
+
+    m_timedIntervalLabel = new QLabel(tr("定时间隔:"), m_actionConfigPanel);
+    m_timedIntervalLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                            .arg(theme.textPrimaryColor()));
+    m_timedIntervalLabel->setFixedWidth(80);
+    row5Layout->addWidget(m_timedIntervalLabel);
+
+    m_timedIntervalSpinBox = new QSpinBox(m_actionConfigPanel);
+    m_timedIntervalSpinBox->setRange(1, 86400);
+    m_timedIntervalSpinBox->setValue(300);
+    m_timedIntervalSpinBox->setSuffix(tr(" 秒"));
+    m_timedIntervalSpinBox->setMinimumWidth(160);
+    m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
+    row5Layout->addWidget(m_timedIntervalSpinBox);
+
+    row5Layout->addStretch();
+    configPanelOuterLayout->addLayout(row5Layout);
+
+    QHBoxLayout *row6Layout = new QHBoxLayout();
+    row6Layout->setSpacing(16);
+
+    m_triggerTimeLabel = new QLabel(tr("播放时间:"), m_actionConfigPanel);
+    m_triggerTimeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                          .arg(theme.textPrimaryColor()));
+    m_triggerTimeLabel->setFixedWidth(80);
+    row6Layout->addWidget(m_triggerTimeLabel);
+
+    m_triggerTimeEdit = new QTimeEdit(m_actionConfigPanel);
+    m_triggerTimeEdit->setDisplayFormat("HH:mm");
+    m_triggerTimeEdit->setTime(QTime(0, 0));
+    m_triggerTimeEdit->setFixedWidth(100);
+    m_triggerTimeEdit->setStyleSheet(theme.timeEditStyleSheet());
+    row6Layout->addWidget(m_triggerTimeEdit);
+
+    row6Layout->addStretch();
+    configPanelOuterLayout->addLayout(row6Layout);
+
+    m_timedTriggerModeLabel->hide();
+    m_timedTriggerModeComboBox->hide();
+    m_timedIntervalLabel->hide();
+    m_timedIntervalSpinBox->hide();
+    m_triggerTimeLabel->hide();
+    m_triggerTimeEdit->hide();
+
     rightLayout->addWidget(m_actionConfigPanel);
 
     splitter->addWidget(rightPanel);
@@ -414,6 +486,9 @@ void ActionSettingsPage::connectSignals()
     connect(m_animationSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onAnimationSpeedChanged);
     connect(m_moveEnabledCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onMoveEnabledChanged);
     connect(m_speedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onSpeedChanged);
+    connect(m_timedTriggerModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onTimedTriggerModeChanged);
+    connect(m_timedIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onTimedIntervalChanged);
+    connect(m_triggerTimeEdit, &QTimeEdit::timeChanged, this, &ActionSettingsPage::onTriggerTimeChanged);
 }
 
 void ActionSettingsPage::refreshActionLibraryList()
@@ -472,14 +547,13 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
     }
 
     if (tabIndex == 2) {
-        QString intervalText;
-        if (ref.intervalSeconds < 60) {
-            intervalText = tr("每 %1 秒").arg(ref.intervalSeconds);
+        QString triggerText;
+        if (ref.timedTriggerMode == TimedTriggerMode::ClockTime) {
+            triggerText = tr("每天 %1").arg(ref.triggerTime);
         } else {
-            int minutes = ref.intervalSeconds / 60;
-            intervalText = tr("每 %1 分钟").arg(minutes);
+            triggerText = tr("每 %1 秒").arg(ref.intervalSeconds);
         }
-        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, intervalText, repeatText);
+        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, triggerText, repeatText);
     } else if (tabIndex == 3) {
         return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, ref.emotion, repeatText);
     } else {
@@ -569,6 +643,9 @@ void ActionSettingsPage::updateActionConfigPanel()
     QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
     QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
     QSignalBlocker speedBlocker(m_speedComboBox);
+    QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
+    QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
+    QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
 
     m_loopCheckBox->setChecked(ref.loop);
     m_repeatSpinBox->setValue(ref.repeat);
@@ -584,6 +661,38 @@ void ActionSettingsPage::updateActionConfigPanel()
 
     int animSpeedIndex = findSpeedIndex(customAnimSpeed ? ref.animationSpeed : 1.0);
     m_animationSpeedComboBox->setCurrentIndex(animSpeedIndex);
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    bool isTimedTab = (tabIndex == 2);
+
+    m_timedTriggerModeLabel->setVisible(isTimedTab);
+    m_timedTriggerModeComboBox->setVisible(isTimedTab);
+
+    if (isTimedTab) {
+        int modeIndex = (ref.timedTriggerMode == TimedTriggerMode::ClockTime) ? 1 : 0;
+        m_timedTriggerModeComboBox->setCurrentIndex(modeIndex);
+
+        bool isIntervalMode = (ref.timedTriggerMode == TimedTriggerMode::Interval);
+        m_timedIntervalLabel->setVisible(isIntervalMode);
+        m_timedIntervalSpinBox->setVisible(isIntervalMode);
+        m_triggerTimeLabel->setVisible(!isIntervalMode);
+        m_triggerTimeEdit->setVisible(!isIntervalMode);
+
+        if (isIntervalMode) {
+            m_timedIntervalSpinBox->setValue(ref.intervalSeconds > 0 ? ref.intervalSeconds : 300);
+        } else {
+            QTime time = QTime::fromString(ref.triggerTime, "HH:mm");
+            if (!time.isValid()) {
+                time = QTime(0, 0);
+            }
+            m_triggerTimeEdit->setTime(time);
+        }
+    } else {
+        m_timedIntervalLabel->hide();
+        m_timedIntervalSpinBox->hide();
+        m_triggerTimeLabel->hide();
+        m_triggerTimeEdit->hide();
+    }
 }
 
 void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
@@ -601,6 +710,9 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
         QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
         QSignalBlocker speedBlocker(m_speedComboBox);
+        QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
+        QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
+        QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
 
         m_loopCheckBox->setChecked(false);
         m_repeatSpinBox->setValue(1);
@@ -612,6 +724,17 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         m_moveEnabledCheckBox->setChecked(false);
         m_speedComboBox->setEnabled(false);
         m_speedComboBox->setCurrentIndex(3);
+
+        m_timedTriggerModeComboBox->setCurrentIndex(0);
+        m_timedIntervalSpinBox->setValue(300);
+        m_triggerTimeEdit->setTime(QTime(0, 0));
+
+        m_timedTriggerModeLabel->hide();
+        m_timedTriggerModeComboBox->hide();
+        m_timedIntervalLabel->hide();
+        m_timedIntervalSpinBox->hide();
+        m_triggerTimeLabel->hide();
+        m_triggerTimeEdit->hide();
     }
 }
 
@@ -665,6 +788,8 @@ void ActionSettingsPage::onAddToCategory()
             break;
         case 2:
             ref.intervalSeconds = 300;
+            ref.timedTriggerMode = TimedTriggerMode::Interval;
+            ref.triggerTime = "00:00";
             success = m_playlist.addTimedAction(ref);
             break;
         case 3:
@@ -931,6 +1056,67 @@ void ActionSettingsPage::onAnimationSpeedCheckChanged(int state)
     updateCurrentSelectedRef(ref);
 }
 
+void ActionSettingsPage::onTimedTriggerModeChanged(int index)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    TimedTriggerMode mode = static_cast<TimedTriggerMode>(m_timedTriggerModeComboBox->itemData(index).toInt());
+    ref.timedTriggerMode = mode;
+
+    bool isIntervalMode = (mode == TimedTriggerMode::Interval);
+    m_timedIntervalLabel->setVisible(isIntervalMode);
+    m_timedIntervalSpinBox->setVisible(isIntervalMode);
+    m_triggerTimeLabel->setVisible(!isIntervalMode);
+    m_triggerTimeEdit->setVisible(!isIntervalMode);
+
+    updateCurrentSelectedRef(ref);
+    refreshCurrentCategoryList();
+    list->setCurrentRow(row);
+}
+
+void ActionSettingsPage::onTimedIntervalChanged(int value)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    ref.intervalSeconds = value;
+    updateCurrentSelectedRef(ref);
+
+    refreshCurrentCategoryList();
+    list->setCurrentRow(row);
+}
+
+void ActionSettingsPage::onTriggerTimeChanged(const QTime &time)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    ref.triggerTime = time.toString("HH:mm");
+    updateCurrentSelectedRef(ref);
+
+    refreshCurrentCategoryList();
+    list->setCurrentRow(row);
+}
+
 bool ActionSettingsPage::saveCurrentPlaylist()
 {
     if (!m_loadedSuccessfully) {
@@ -1109,7 +1295,9 @@ void ActionSettingsPage::onImportAction()
             dialog->fps(),
             dialog->targetCategory(),
             dialog->timedIntervalSeconds(),
-            dialog->emotionName()
+            dialog->emotionName(),
+            dialog->timedTriggerMode(),
+            dialog->triggerTime()
         );
 
         if (!result.success) {
@@ -1148,7 +1336,9 @@ void ActionSettingsPage::onNewAction()
             dialog->fps(),
             dialog->targetCategory(),
             dialog->timedIntervalSeconds(),
-            dialog->emotionName()
+            dialog->emotionName(),
+            dialog->timedTriggerMode(),
+            dialog->triggerTime()
         );
 
         if (!result.success) {

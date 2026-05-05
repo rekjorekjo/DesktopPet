@@ -427,29 +427,50 @@ void PetWidget::checkTimedActions()
     }
 
     QDateTime now = QDateTime::currentDateTime();
+    QTime currentTime = now.time();
+    QDate today = now.date();
 
     for (int i = 0; i < timedRefs.size(); ++i) {
         const PetActionRef &ref = timedRefs.at(i);
 
-        if (ref.intervalSeconds <= 0) {
-            continue;
-        }
+        if (ref.timedTriggerMode == TimedTriggerMode::ClockTime) {
+            QTime targetTime = QTime::fromString(ref.triggerTime, "HH:mm");
+            if (!targetTime.isValid()) {
+                targetTime = QTime(0, 0);
+            }
 
-        if (!m_lastTimedTriggerTimes.contains(i)) {
-            m_lastTimedTriggerTimes[i] = now;
-            continue;
-        }
+            if (currentTime.hour() == targetTime.hour() && currentTime.minute() == targetTime.minute()) {
+                QString key = QString("%1|%2").arg(ref.actionId, ref.triggerTime);
 
-        QDateTime lastTrigger = m_lastTimedTriggerTimes[i];
-        qint64 elapsedSeconds = lastTrigger.secsTo(now);
+                if (!m_clockTimedLastTriggeredDate.contains(key) || m_clockTimedLastTriggeredDate[key] != today) {
+                    if (playActionByRef(ref)) {
+                        m_currentMode = PetPlayMode::Timed;
+                        m_clockTimedLastTriggeredDate[key] = today;
+                        return;
+                    }
+                }
+            }
+        } else {
+            if (ref.intervalSeconds <= 0) {
+                continue;
+            }
 
-        if (elapsedSeconds >= ref.intervalSeconds) {
-            if (playActionByRef(ref)) {
-                m_currentMode = PetPlayMode::Timed;
+            if (!m_lastTimedTriggerTimes.contains(i)) {
                 m_lastTimedTriggerTimes[i] = now;
-                return;
-            } else {
-                m_lastTimedTriggerTimes[i] = now;
+                continue;
+            }
+
+            QDateTime lastTrigger = m_lastTimedTriggerTimes[i];
+            qint64 elapsedSeconds = lastTrigger.secsTo(now);
+
+            if (elapsedSeconds >= ref.intervalSeconds) {
+                if (playActionByRef(ref)) {
+                    m_currentMode = PetPlayMode::Timed;
+                    m_lastTimedTriggerTimes[i] = now;
+                    return;
+                } else {
+                    m_lastTimedTriggerTimes[i] = now;
+                }
             }
         }
     }

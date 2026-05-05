@@ -1,5 +1,24 @@
 #include "petplaylist.h"
 
+QString timedTriggerModeToString(TimedTriggerMode mode)
+{
+    switch (mode) {
+        case TimedTriggerMode::ClockTime:
+            return "clockTime";
+        case TimedTriggerMode::Interval:
+        default:
+            return "interval";
+    }
+}
+
+TimedTriggerMode timedTriggerModeFromString(const QString &value)
+{
+    if (value == "clockTime") {
+        return TimedTriggerMode::ClockTime;
+    }
+    return TimedTriggerMode::Interval;
+}
+
 PetActionRef::PetActionRef()
     : loop(false)
     , repeat(1)
@@ -7,6 +26,8 @@ PetActionRef::PetActionRef()
     , moveEnabled(false)
     , movementSpeed(1.0)
     , animationSpeed(1.0)
+    , timedTriggerMode(TimedTriggerMode::Interval)
+    , triggerTime("00:00")
 {
 }
 
@@ -18,6 +39,8 @@ PetActionRef::PetActionRef(const QString &id)
     , moveEnabled(false)
     , movementSpeed(1.0)
     , animationSpeed(1.0)
+    , timedTriggerMode(TimedTriggerMode::Interval)
+    , triggerTime("00:00")
 {
 }
 

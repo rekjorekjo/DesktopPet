@@ -18,7 +18,9 @@ ActionImportResult ActionImportService::registerExistingAction(
     int fps,
     TargetCategory targetCategory,
     int timedIntervalSeconds,
-    const QString &emotionName)
+    const QString &emotionName,
+    TimedTriggerMode timedTriggerMode,
+    const QString &triggerTime)
 {
     ActionImportResult result;
     result.success = false;
@@ -62,7 +64,7 @@ ActionImportResult ActionImportService::registerExistingAction(
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
         ActionImportResult categoryResult = addToCategory(
-            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName);
+            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
         if (!categoryResult.success) {
             result.success = true;
             result.warning = true;
@@ -86,7 +88,9 @@ ActionImportResult ActionImportService::importGifAction(
     int fps,
     TargetCategory targetCategory,
     int timedIntervalSeconds,
-    const QString &emotionName)
+    const QString &emotionName,
+    TimedTriggerMode timedTriggerMode,
+    const QString &triggerTime)
 {
     ActionImportResult result;
     result.success = false;
@@ -134,7 +138,7 @@ ActionImportResult ActionImportService::importGifAction(
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
         ActionImportResult categoryResult = addToCategory(
-            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName);
+            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
         if (!categoryResult.success) {
             result.success = true;
             result.warning = true;
@@ -154,7 +158,9 @@ ActionImportResult ActionImportService::addToCategory(
     const QString &actionId,
     TargetCategory targetCategory,
     int timedIntervalSeconds,
-    const QString &emotionName)
+    const QString &emotionName,
+    TimedTriggerMode timedTriggerMode,
+    const QString &triggerTime)
 {
     ActionImportResult result;
     result.success = false;
@@ -169,6 +175,8 @@ ActionImportResult ActionImportService::addToCategory(
 
     if (targetCategory == TargetCategory::Timed) {
         ref.intervalSeconds = timedIntervalSeconds;
+        ref.timedTriggerMode = timedTriggerMode;
+        ref.triggerTime = triggerTime;
     } else if (targetCategory == TargetCategory::Emotion) {
         ref.emotion = emotionName;
     }

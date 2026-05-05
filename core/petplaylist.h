@@ -5,6 +5,15 @@
 #include <QMap>
 #include <QString>
 
+enum class TimedTriggerMode
+{
+    Interval,
+    ClockTime
+};
+
+QString timedTriggerModeToString(TimedTriggerMode mode);
+TimedTriggerMode timedTriggerModeFromString(const QString &value);
+
 struct PetActionRef
 {
     QString actionId;
@@ -22,6 +31,8 @@ struct PetActionRef
     double movementSpeed;
     // 动画播放速度
     double animationSpeed;
+    TimedTriggerMode timedTriggerMode;
+    QString triggerTime;
 
     PetActionRef();
     explicit PetActionRef(const QString &id);

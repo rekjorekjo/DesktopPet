@@ -5,6 +5,7 @@
 #include <QList>
 
 #include "core/actioncategory.h"
+#include "core/petplaylist.h"
 
 struct PetAction;
 struct PetBasicInfo;
@@ -30,7 +31,9 @@ public:
         int fps,
         TargetCategory targetCategory,
         int timedIntervalSeconds,
-        const QString &emotionName
+        const QString &emotionName,
+        TimedTriggerMode timedTriggerMode = TimedTriggerMode::Interval,
+        const QString &triggerTime = "00:00"
     );
 
     static ActionImportResult importGifAction(
@@ -43,7 +46,9 @@ public:
         int fps,
         TargetCategory targetCategory,
         int timedIntervalSeconds,
-        const QString &emotionName
+        const QString &emotionName,
+        TimedTriggerMode timedTriggerMode = TimedTriggerMode::Interval,
+        const QString &triggerTime = "00:00"
     );
 
 private:
@@ -53,7 +58,9 @@ private:
         const QString &actionId,
         TargetCategory targetCategory,
         int timedIntervalSeconds,
-        const QString &emotionName
+        const QString &emotionName,
+        TimedTriggerMode timedTriggerMode = TimedTriggerMode::Interval,
+        const QString &triggerTime = "00:00"
     );
 };
 

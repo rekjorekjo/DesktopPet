@@ -7,8 +7,10 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QTimeEdit>
 
 #include "core/actioncategory.h"
+#include "core/petplaylist.h"
 
 struct PetAction;
 
@@ -26,6 +28,8 @@ public:
     TargetCategory targetCategory() const;
     int timedIntervalSeconds() const;
     QString emotionName() const;
+    TimedTriggerMode timedTriggerMode() const;
+    QString triggerTime() const;
 
     void clearForm();
 
@@ -33,6 +37,7 @@ private slots:
     void onBrowseFolder();
     void onConfirm();
     void onCategoryChanged(int index);
+    void onTimedTriggerModeChanged(int index);
 
 private:
     void setupUi();
@@ -51,8 +56,12 @@ private:
     QLabel *m_frameCountLabel;
 
     QComboBox *m_categoryComboBox;
+    QLabel *m_timedTriggerModeLabel;
+    QComboBox *m_timedTriggerModeComboBox;
     QLabel *m_timedIntervalLabel;
     QSpinBox *m_timedIntervalSpinBox;
+    QLabel *m_triggerTimeLabel;
+    QTimeEdit *m_triggerTimeEdit;
     QLabel *m_emotionLabel;
     QComboBox *m_emotionComboBox;
 

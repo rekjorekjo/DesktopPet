@@ -2,6 +2,7 @@
 #define PETWIDGET_H
 
 #include <QDateTime>
+#include <QHash>
 #include <QLabel>
 #include <QMap>
 #include <QPoint>
@@ -71,6 +72,7 @@ private:
     QTimer *m_randomTimer;
     QTimer *m_timedCheckTimer;
     QMap<int, QDateTime> m_lastTimedTriggerTimes;
+    QHash<QString, QDate> m_clockTimedLastTriggeredDate;
 
     PetBasicInfo m_petInfo;
     QList<PetAction> m_actions;

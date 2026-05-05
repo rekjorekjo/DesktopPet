@@ -8,6 +8,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTime>
+
 
 PetBasicInfo::PetBasicInfo()
     : canvasSize(400, 400)
@@ -371,6 +373,8 @@ QJsonObject PetConfigManager::actionRefToJson(const PetActionRef &ref)
     obj["moveEnabled"] = ref.moveEnabled;
     obj["movementSpeed"] = ref.movementSpeed;
     obj["animationSpeed"] = ref.animationSpeed;
+    obj["timedTriggerMode"] = timedTriggerModeToString(ref.timedTriggerMode);
+    obj["triggerTime"] = ref.triggerTime;
     return obj;
 }
 
@@ -399,6 +403,21 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
         animSpeed = 5.0;
     }
     ref.animationSpeed = animSpeed;
+
+    QString triggerModeStr = obj.value("timedTriggerMode").toString("interval");
+    ref.timedTriggerMode = timedTriggerModeFromString(triggerModeStr);
+
+    QString triggerTimeStr = obj.value("triggerTime").toString("00:00");
+    QTime triggerTime = QTime::fromString(triggerTimeStr, "HH:mm");
+    if (!triggerTime.isValid()) {
+        triggerTime = QTime::fromString(triggerTimeStr, "H:mm");
+    }
+
+    if (triggerTime.isValid()) {
+        ref.triggerTime = triggerTime.toString("HH:mm");
+    } else {
+        ref.triggerTime = "00:00";
+    }
 
     return ref;
 }

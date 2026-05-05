@@ -94,6 +94,7 @@ public:
     QString splitterStyleSheet() const;
     QString tabWidgetStyleSheet() const;
     QString dialogStyleSheet() const;
+    QString timeEditStyleSheet() const;
 
 signals:
     void themeChanged();
