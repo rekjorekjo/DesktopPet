@@ -1,6 +1,7 @@
 #ifndef PETCREATIONSERVICE_H
 #define PETCREATIONSERVICE_H
 
+#include <QSize>
 #include <QString>
 
 struct PetCreationResult
@@ -14,7 +15,12 @@ struct PetCreationResult
 class PetCreationService
 {
 public:
-    static PetCreationResult createPet(const QString &petId, const QString &petName);
+    static PetCreationResult createPet(
+        const QString &petId,
+        const QString &petName,
+        const QSize &canvasSize = QSize(400, 400),
+        const QSize &displaySize = QSize(200, 200)
+    );
 };
 
 #endif // PETCREATIONSERVICE_H

@@ -54,6 +54,8 @@ qt_add_executable(DesktopPet
     dialogs/newactiondialog.h
     dialogs/importactiondialog.cpp
     dialogs/importactiondialog.h
+    dialogs/newpetdialog.cpp
+    dialogs/newpetdialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/personalizationpage.cpp

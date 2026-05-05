@@ -7,7 +7,11 @@
 #include <QObject>
 #include <QRegularExpression>
 
-PetCreationResult PetCreationService::createPet(const QString &petId, const QString &petName)
+PetCreationResult PetCreationService::createPet(
+    const QString &petId,
+    const QString &petName,
+    const QSize &canvasSize,
+    const QSize &displaySize)
 {
     PetCreationResult result;
     result.success = false;
@@ -39,8 +43,8 @@ PetCreationResult PetCreationService::createPet(const QString &petId, const QStr
     PetBasicInfo info;
     info.id = trimmedId;
     info.name = petName.trimmed().isEmpty() ? trimmedId : petName.trimmed();
-    info.canvasSize = QSize(400, 400);
-    info.displaySize = QSize(200, 200);
+    info.canvasSize = canvasSize.isValid() ? canvasSize : QSize(400, 400);
+    info.displaySize = displaySize.isValid() ? displaySize : QSize(200, 200);
 
     QList<PetAction> actions;
     PetPlaylist playlist;
