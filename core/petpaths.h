@@ -11,8 +11,12 @@ public:
     static QString rootDirectory();
     static QString actionsDirectory();
     static QString petsDirectory();
+    static QString petDirectory(const QString &petId);
+    static QString currentPetDirectory();
     static QString defaultPetDirectory();
     static QString legacyDefaultPetDirectory();
+    static QString currentPetJsonPath();
+    static QString currentPlaylistPath();
     static QString defaultPetJsonPath();
     static QString defaultPlaylistPath();
 
@@ -23,6 +27,7 @@ public:
 private:
     static bool migrateFromLegacyStructure();
     static bool copyDirectory(const QString &source, const QString &destination);
+    static bool ensureDefaultPetConfig();
 };
 
 #endif // PETPATHS_H

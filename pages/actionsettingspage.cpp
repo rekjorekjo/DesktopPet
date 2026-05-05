@@ -428,7 +428,7 @@ void ActionSettingsPage::setupUi()
 
 void ActionSettingsPage::initData()
 {
-    if (PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), m_petInfo, m_actionLibrary, m_playlist)) {
+    if (PetConfigManager::loadPetFromDirectory(PetPaths::currentPetDirectory(), m_petInfo, m_actionLibrary, m_playlist)) {
         m_loadedSuccessfully = true;
     } else {
         m_loadedSuccessfully = false;
@@ -489,6 +489,24 @@ void ActionSettingsPage::connectSignals()
 void ActionSettingsPage::refreshTheme()
 {
     applyTheme();
+}
+
+void ActionSettingsPage::reloadData()
+{
+    initData();
+
+    if (m_loadedSuccessfully) {
+        m_actionLibraryList->setEnabled(true);
+        m_newActionButton->setEnabled(true);
+        m_importActionButton->setEnabled(true);
+        m_categoryTabs->setEnabled(true);
+        m_saveConfigButton->setEnabled(true);
+        m_saveAndApplyButton->setEnabled(true);
+
+        refreshActionLibraryList();
+        refreshCurrentCategoryList();
+        updateActionConfigPanel();
+    }
 }
 
 void ActionSettingsPage::applyTheme()

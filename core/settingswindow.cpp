@@ -99,6 +99,13 @@ void SettingsWindow::connectSignals()
     connect(m_actionSettingsPage, &ActionSettingsPage::applyConfigRequested,
             this, &SettingsWindow::applyPetConfigRequested);
 
+    connect(m_petManagePage, &PetManagePage::applyConfigRequested, this, [this]() {
+        if (m_actionSettingsPage) {
+            m_actionSettingsPage->reloadData();
+        }
+        emit applyPetConfigRequested();
+    });
+
     connect(m_personalizationPage, &PersonalizationPage::petOpacityChanged,
             this, &SettingsWindow::petOpacityChanged);
 }

@@ -66,6 +66,9 @@ private:
     PetAction findActionById(const QString &actionId) const;
     bool playAction(const PetAction &action, const PetActionRef &ref);
     bool playActionByRef(const PetActionRef &ref);
+    bool hasAnyActionResources() const;
+    bool hasAnyUsableEnabledAction() const;
+    void showPetStatusMessage(const QString &text, const QString &color);
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;

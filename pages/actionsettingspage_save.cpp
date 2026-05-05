@@ -12,7 +12,7 @@ bool ActionSettingsPage::saveCurrentPlaylist()
         return false;
     }
 
-    QString petDir = PetPaths::defaultPetDirectory();
+    QString petDir = PetPaths::currentPetDirectory();
     QString playlistPath = QDir(petDir).filePath("playlist.json");
 
     return PetConfigManager::savePlaylistToJson(playlistPath, m_playlist);

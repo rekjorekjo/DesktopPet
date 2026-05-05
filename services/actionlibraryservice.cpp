@@ -12,8 +12,6 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
     PetPlaylist playlist,
     const QString &actionId)
 {
-    Q_UNUSED(petDir);
-
     ActionLibraryOperationResult result;
     result.success = false;
     result.warning = false;
@@ -34,7 +32,7 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
 
     int removedCount = playlist.removeActionReferences(actionId);
 
-    QString petJsonPath = PetPaths::defaultPetJsonPath();
+    QString petJsonPath = QDir(petDir).filePath("pet.json");
     PetBasicInfo info;
     QList<PetAction> existingActions;
     PetConfigManager::loadPetJson(petJsonPath, info, existingActions);
@@ -44,7 +42,7 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
         return result;
     }
 
-    QString playlistPath = PetPaths::defaultPlaylistPath();
+    QString playlistPath = QDir(petDir).filePath("playlist.json");
     if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
         result.message = QObject::tr("保存 playlist.json 失败。");
         return result;
@@ -61,8 +59,6 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
     PetPlaylist playlist,
     const QString &actionId)
 {
-    Q_UNUSED(petDir);
-
     ActionLibraryOperationResult result;
     result.success = false;
     result.warning = false;
@@ -93,7 +89,7 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
 
     int removedCount = playlist.removeActionReferences(actionId);
 
-    QString petJsonPath = PetPaths::defaultPetJsonPath();
+    QString petJsonPath = QDir(petDir).filePath("pet.json");
     PetBasicInfo info;
     QList<PetAction> existingActions;
     PetConfigManager::loadPetJson(petJsonPath, info, existingActions);
@@ -103,7 +99,7 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
         return result;
     }
 
-    QString playlistPath = PetPaths::defaultPlaylistPath();
+    QString playlistPath = QDir(petDir).filePath("playlist.json");
     if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
         result.message = QObject::tr("保存 playlist.json 失败。");
         return result;

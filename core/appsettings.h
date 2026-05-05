@@ -1,9 +1,14 @@
 #ifndef APPSETTINGS_H
 #define APPSETTINGS_H
 
+#include <QString>
+
 class AppSettings
 {
 public:
+    static QString currentPetId();
+    static void setCurrentPetId(const QString &petId);
+
     static double petScaleFactor();
     static void setPetScaleFactor(double scale);
 

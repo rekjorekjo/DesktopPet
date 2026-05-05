@@ -9,7 +9,7 @@
 
 void ActionSettingsPage::onNewAction()
 {
-    QString petDir = PetPaths::defaultPetDirectory();
+    QString petDir = PetPaths::currentPetDirectory();
 
     auto *dialog = new NewActionDialog(petDir, this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -50,7 +50,7 @@ void ActionSettingsPage::onNewAction()
 
 void ActionSettingsPage::onImportAction()
 {
-    QString petDir = PetPaths::defaultPetDirectory();
+    QString petDir = PetPaths::currentPetDirectory();
 
     auto *dialog = new ImportActionDialog(petDir, this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);

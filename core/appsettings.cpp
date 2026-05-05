@@ -8,6 +8,18 @@
 #include <QSettings>
 #endif
 
+QString AppSettings::currentPetId()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    return settings.value("pet/currentPetId", "default_pet").toString();
+}
+
+void AppSettings::setCurrentPetId(const QString &petId)
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("pet/currentPetId", petId);
+}
+
 double AppSettings::petScaleFactor()
 {
     QSettings settings("DesktopPet", "DesktopPet");

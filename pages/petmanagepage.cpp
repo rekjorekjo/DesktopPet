@@ -1,13 +1,17 @@
 #include "petmanagepage.h"
 
+#include "core/appsettings.h"
+#include "core/petpaths.h"
+#include "services/petcreationservice.h"
+#include "theme/thememanager.h"
+
 #include <QDir>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
-
-#include "core/petpaths.h"
-#include "theme/thememanager.h"
 
 PetManagePage::PetManagePage(QWidget *parent)
     : QWidget(parent)
@@ -24,6 +28,8 @@ PetManagePage::~PetManagePage()
 
 void PetManagePage::connectSignals()
 {
+    connect(m_createPetButton, &QPushButton::clicked, this, &PetManagePage::onCreatePet);
+
     connect(m_startButton, &QPushButton::clicked, this, [this]() {
         setRunningStatus(true);
         emit startPetRequested();
@@ -33,6 +39,11 @@ void PetManagePage::connectSignals()
         setRunningStatus(false);
         emit pausePetRequested();
     });
+
+    connect(m_reloadButton, &QPushButton::clicked, this, [this]() {
+        loadPetInfo();
+        emit applyConfigRequested();
+    });
 }
 
 void PetManagePage::setupUi()
@@ -41,7 +52,7 @@ void PetManagePage::setupUi()
     mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->setSpacing(16);
 
-    m_titleLabel = new QLabel("宠物管理", this);
+    m_titleLabel = new QLabel(tr("宠物管理"), this);
     m_titleLabel->setObjectName("pageTitleLabel");
     mainLayout->addWidget(m_titleLabel);
 
@@ -54,6 +65,10 @@ void PetManagePage::setupUi()
     m_petNameLabel = new QLabel(this);
     m_petNameLabel->setObjectName("infoLabel");
     cardLayout->addWidget(m_petNameLabel);
+
+    m_petIdLabel = new QLabel(this);
+    m_petIdLabel->setObjectName("infoLabel");
+    cardLayout->addWidget(m_petIdLabel);
 
     m_petDirLabel = new QLabel(this);
     m_petDirLabel->setObjectName("infoLabel");
@@ -81,22 +96,26 @@ void PetManagePage::setupUi()
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(12);
 
-    m_startButton = new QPushButton("开始", this);
+    m_createPetButton = new QPushButton(tr("新建宠物"), this);
+    m_createPetButton->setObjectName("secondaryButton");
+    buttonLayout->addWidget(m_createPetButton);
+
+    buttonLayout->addStretch();
+
+    m_startButton = new QPushButton(tr("开始"), this);
     m_startButton->setObjectName("primaryButton");
     m_startButton->setEnabled(false);
     buttonLayout->addWidget(m_startButton);
 
-    m_pauseButton = new QPushButton("暂停", this);
+    m_pauseButton = new QPushButton(tr("暂停"), this);
     m_pauseButton->setObjectName("secondaryButton");
     m_pauseButton->setEnabled(false);
     buttonLayout->addWidget(m_pauseButton);
 
-    m_reloadButton = new QPushButton("重新加载", this);
+    m_reloadButton = new QPushButton(tr("重新加载"), this);
     m_reloadButton->setObjectName("secondaryButton");
     m_reloadButton->setEnabled(false);
     buttonLayout->addWidget(m_reloadButton);
-
-    buttonLayout->addStretch();
 
     mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch();
@@ -117,12 +136,14 @@ void PetManagePage::applyTheme()
                                 .arg(theme.textSecondaryColor());
 
     m_petNameLabel->setStyleSheet(infoStyle);
+    m_petIdLabel->setStyleSheet(infoStyle);
     m_petDirLabel->setStyleSheet(infoStyle);
     m_canvasSizeLabel->setStyleSheet(infoStyle);
     m_displaySizeLabel->setStyleSheet(infoStyle);
     m_actionCountLabel->setStyleSheet(infoStyle);
     m_statusLabel->setStyleSheet(infoStyle);
 
+    m_createPetButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_startButton->setStyleSheet(theme.primaryButtonStyleSheet());
     m_pauseButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_reloadButton->setStyleSheet(theme.secondaryButtonStyleSheet());
@@ -130,34 +151,53 @@ void PetManagePage::applyTheme()
 
 void PetManagePage::loadPetInfo()
 {
-    QString petDir = PetPaths::defaultPetDirectory();
+    QString petDir = PetPaths::currentPetDirectory();
 
     if (PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actions, m_playlist)) {
         updateInfoDisplay();
         m_startButton->setEnabled(true);
         m_pauseButton->setEnabled(true);
+        m_reloadButton->setEnabled(true);
     } else {
-        m_petNameLabel->setText("宠物名称: 加载失败");
-        m_petDirLabel->setText("宠物目录: " + petDir);
-        m_canvasSizeLabel->setText("画布尺寸: -");
-        m_displaySizeLabel->setText("显示尺寸: -");
-        m_actionCountLabel->setText("动作数量: 0");
-        m_statusLabel->setText("运行状态: 未加载");
+        m_petNameLabel->setText(tr("宠物名称: 加载失败"));
+        m_petIdLabel->setText(tr("宠物 ID: -"));
+        m_petDirLabel->setText(tr("宠物目录: ") + petDir);
+        m_canvasSizeLabel->setText(tr("画布尺寸: -"));
+        m_displaySizeLabel->setText(tr("显示尺寸: -"));
+        m_actionCountLabel->setText(tr("动作数量: 0"));
+        m_statusLabel->setText(tr("运行状态: 未加载"));
+        m_startButton->setEnabled(false);
+        m_pauseButton->setEnabled(false);
+        m_reloadButton->setEnabled(false);
     }
 }
 
 void PetManagePage::updateInfoDisplay()
 {
-    m_petNameLabel->setText("宠物名称: " + m_petInfo.name);
-    m_petDirLabel->setText("宠物目录: " + PetPaths::defaultPetDirectory());
-    m_canvasSizeLabel->setText(QString("画布尺寸: %1 x %2")
+    m_petNameLabel->setText(tr("宠物名称: ") + m_petInfo.name);
+    m_petIdLabel->setText(tr("宠物 ID: ") + m_petInfo.id);
+    m_petDirLabel->setText(tr("宠物目录: ") + PetPaths::currentPetDirectory());
+    m_canvasSizeLabel->setText(tr("画布尺寸: %1 x %2")
                                    .arg(m_petInfo.canvasSize.width())
                                    .arg(m_petInfo.canvasSize.height()));
-    m_displaySizeLabel->setText(QString("显示尺寸: %1 x %2")
+    m_displaySizeLabel->setText(tr("显示尺寸: %1 x %2")
                                     .arg(m_petInfo.displaySize.width())
                                     .arg(m_petInfo.displaySize.height()));
-    m_actionCountLabel->setText(QString("动作数量: %1").arg(m_actions.size()));
-    m_statusLabel->setText("运行状态: 已加载");
+
+    int usableCount = 0;
+    for (const PetAction &action : m_actions) {
+        if (action.enabled && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
+            ++usableCount;
+        }
+    }
+
+    m_actionCountLabel->setText(tr("动作数量: %1").arg(usableCount));
+
+    if (usableCount == 0) {
+        m_statusLabel->setText(tr("运行状态: 无可用动作，请前往设置新增动作"));
+    } else {
+        m_statusLabel->setText(tr("运行状态: 已加载"));
+    }
 }
 
 void PetManagePage::refreshTheme()
@@ -165,11 +205,60 @@ void PetManagePage::refreshTheme()
     applyTheme();
 }
 
+void PetManagePage::reloadPetInfo()
+{
+    loadPetInfo();
+}
+
 void PetManagePage::setRunningStatus(bool running)
 {
     if (running) {
-        m_statusLabel->setText("运行状态: 运行中");
+        m_statusLabel->setText(tr("运行状态: 运行中"));
     } else {
-        m_statusLabel->setText("运行状态: 已暂停");
+        m_statusLabel->setText(tr("运行状态: 已暂停"));
+    }
+}
+
+void PetManagePage::onCreatePet()
+{
+    bool ok = false;
+    QString petId = QInputDialog::getText(
+        this,
+        tr("新建宠物"),
+        tr("请输入宠物 ID（只能包含字母、数字、下划线和短横线）："),
+        QLineEdit::Normal,
+        QString(),
+        &ok
+    );
+
+    if (!ok || petId.trimmed().isEmpty()) {
+        return;
+    }
+
+    QString petName = QInputDialog::getText(
+        this,
+        tr("新建宠物"),
+        tr("请输入宠物名称："),
+        QLineEdit::Normal,
+        petId.trimmed(),
+        &ok
+    );
+
+    if (!ok) {
+        return;
+    }
+
+    PetCreationResult result = PetCreationService::createPet(petId, petName);
+
+    if (result.success) {
+        AppSettings::setCurrentPetId(result.petId);
+        loadPetInfo();
+        emit applyConfigRequested();
+    }
+
+    if (result.warning) {
+        QMessageBox::warning(this, tr("新建宠物"), result.message);
+    } else {
+        QMessageBox::information(this, result.success ? tr("成功") : tr("失败"), result.message);
     }
 }

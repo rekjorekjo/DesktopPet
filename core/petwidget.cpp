@@ -38,7 +38,7 @@ PetWidget::PetWidget(QWidget *parent)
 
     setWindowOpacity(AppSettings::petOpacity());
 
-    loadPet(PetPaths::defaultPetDirectory());
+    loadPet(PetPaths::currentPetDirectory());
 }
 
 PetWidget::~PetWidget()
@@ -79,19 +79,46 @@ QSize PetWidget::currentDisplaySize() const
     );
 }
 
+bool PetWidget::hasAnyActionResources() const
+{
+    QDir actionsDir(PetPaths::actionsDirectory());
+    QStringList actionDirs = actionsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    return !actionDirs.isEmpty();
+}
+
+bool PetWidget::hasAnyUsableEnabledAction() const
+{
+    for (const PetAction &action : m_actions) {
+        if (action.enabled && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PetWidget::showPetStatusMessage(const QString &text, const QString &color)
+{
+    m_displayLabel->setText(text);
+    m_displayLabel->setStyleSheet(QString("color: %1; background-color: rgba(0, 0, 0, 180); border-radius: 10px;").arg(color));
+}
+
 bool PetWidget::loadPet(const QString &petDirPath)
 {
     if (!PetConfigManager::loadPetFromDirectory(petDirPath, m_petInfo, m_actions, m_playlist)) {
         m_petRunning = false;
-        m_displayLabel->setText("宠物资源加载失败");
-        m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("宠物资源加载失败"), "red");
         return false;
     }
 
-    if (m_actions.isEmpty()) {
+    if (!hasAnyActionResources()) {
         m_petRunning = false;
-        m_displayLabel->setText("没有可用动作");
-        m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
+        return false;
+    }
+
+    if (!hasAnyUsableEnabledAction()) {
+        m_petRunning = false;
+        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
         return false;
     }
 
@@ -104,8 +131,7 @@ bool PetWidget::loadPet(const QString &petDirPath)
         m_randomTimer->start(30000);
         m_timedCheckTimer->start(1000);
     } else {
-        m_displayLabel->setText("已暂停");
-        m_displayLabel->setStyleSheet("color: gray; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("已暂停"), "gray");
     }
 
     return true;
@@ -174,16 +200,19 @@ void PetWidget::playIdleAction()
     }
 
     if (!m_actions.isEmpty()) {
-        PetActionRef defaultRef(m_actions.first().id);
-        defaultRef.loop = true;
-        defaultRef.repeat = 0;
-        if (playAction(m_actions.first(), defaultRef)) {
-            return;
+        for (const PetAction &action : m_actions) {
+            if (action.enabled && action.isValid() && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
+                PetActionRef defaultRef(action.id);
+                defaultRef.loop = true;
+                defaultRef.repeat = 0;
+                if (playAction(action, defaultRef)) {
+                    return;
+                }
+            }
         }
     }
 
-    m_displayLabel->setText("没有可用动作");
-    m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+    showPetStatusMessage(tr("请前往设置新增动作"), "orange");
 }
 
 void PetWidget::startPet()
@@ -231,17 +260,21 @@ void PetWidget::reloadPet()
 
     bool wasRunning = m_petRunning;
 
-    if (!PetConfigManager::loadPetFromDirectory(PetPaths::defaultPetDirectory(), m_petInfo, m_actions, m_playlist)) {
+    if (!PetConfigManager::loadPetFromDirectory(PetPaths::currentPetDirectory(), m_petInfo, m_actions, m_playlist)) {
         m_petRunning = false;
-        m_displayLabel->setText("宠物资源加载失败");
-        m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("宠物资源加载失败"), "red");
         return;
     }
 
-    if (m_actions.isEmpty()) {
+    if (!hasAnyActionResources()) {
         m_petRunning = false;
-        m_displayLabel->setText("没有可用动作");
-        m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
+        return;
+    }
+
+    if (!hasAnyUsableEnabledAction()) {
+        m_petRunning = false;
+        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
         return;
     }
 
@@ -256,8 +289,7 @@ void PetWidget::reloadPet()
         m_timedCheckTimer->start(1000);
     } else {
         m_petRunning = false;
-        m_displayLabel->setText("已暂停");
-        m_displayLabel->setStyleSheet("color: gray; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showPetStatusMessage(tr("已暂停"), "gray");
     }
 }
 

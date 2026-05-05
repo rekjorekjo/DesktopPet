@@ -1,6 +1,9 @@
 #include "petpaths.h"
 
+#include "core/appsettings.h"
 #include "core/petaction.h"
+#include "core/petconfigmanager.h"
+#include "core/petplaylist.h"
 
 #include <QDebug>
 #include <QDir>
@@ -21,6 +24,16 @@ QString PetPaths::petsDirectory()
     return rootDirectory() + "/pets";
 }
 
+QString PetPaths::petDirectory(const QString &petId)
+{
+    return petsDirectory() + "/" + petId;
+}
+
+QString PetPaths::currentPetDirectory()
+{
+    return petDirectory(AppSettings::currentPetId());
+}
+
 QString PetPaths::defaultPetDirectory()
 {
     return petsDirectory() + "/default_pet";
@@ -29,6 +42,16 @@ QString PetPaths::defaultPetDirectory()
 QString PetPaths::legacyDefaultPetDirectory()
 {
     return rootDirectory() + "/default_pet";
+}
+
+QString PetPaths::currentPetJsonPath()
+{
+    return currentPetDirectory() + "/pet.json";
+}
+
+QString PetPaths::currentPlaylistPath()
+{
+    return currentPetDirectory() + "/playlist.json";
 }
 
 QString PetPaths::defaultPetJsonPath()
@@ -91,6 +114,44 @@ bool PetPaths::ensureDefaultStructure()
 
     if (!migrateFromLegacyStructure()) {
         qWarning() << "Migration from legacy structure encountered issues, but continuing...";
+    }
+
+    if (!ensureDefaultPetConfig()) {
+        qWarning() << "Failed to ensure default pet config, but continuing...";
+    }
+
+    return true;
+}
+
+bool PetPaths::ensureDefaultPetConfig()
+{
+    QString petJsonPath = defaultPetJsonPath();
+    QString playlistPath = defaultPlaylistPath();
+
+    if (!QFile::exists(petJsonPath)) {
+        PetBasicInfo info;
+        info.id = "default_pet";
+        info.name = "Default Pet";
+        info.canvasSize = QSize(400, 400);
+        info.displaySize = QSize(200, 200);
+
+        QList<PetAction> actions;
+
+        if (!PetConfigManager::savePetJson(petJsonPath, info, actions)) {
+            qWarning() << "Failed to create default pet.json";
+            return false;
+        }
+        qDebug() << "Created default pet.json";
+    }
+
+    if (!QFile::exists(playlistPath)) {
+        PetPlaylist playlist;
+
+        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+            qWarning() << "Failed to create default playlist.json";
+            return false;
+        }
+        qDebug() << "Created default playlist.json";
     }
 
     return true;

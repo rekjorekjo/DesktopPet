@@ -101,7 +101,7 @@ void ActionSettingsPage::onDisableLibraryAction()
     }
 
     ActionLibraryOperationResult result = ActionLibraryService::disableAction(
-        PetPaths::defaultPetDirectory(),
+        PetPaths::currentPetDirectory(),
         m_actionLibrary,
         m_playlist,
         actionId
@@ -145,7 +145,7 @@ void ActionSettingsPage::onDeleteLibraryAction()
     }
 
     ActionLibraryOperationResult result = ActionLibraryService::deleteAction(
-        PetPaths::defaultPetDirectory(),
+        PetPaths::currentPetDirectory(),
         m_actionLibrary,
         m_playlist,
         actionId

@@ -29,6 +29,7 @@ public:
 
 public slots:
     void refreshTheme();
+    void reloadData();
 
 signals:
     void applyConfigRequested();

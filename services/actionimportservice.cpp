@@ -23,8 +23,6 @@ ActionImportResult ActionImportService::registerExistingAction(
     TimedTriggerMode timedTriggerMode,
     const QString &triggerTime)
 {
-    Q_UNUSED(petDir);
-
     ActionImportResult result;
     result.success = false;
     result.message = QString();
@@ -87,7 +85,7 @@ ActionImportResult ActionImportService::registerExistingAction(
     QList<PetAction> updatedActions = currentActions;
     updatedActions.append(newAction);
 
-    QString petJsonPath = PetPaths::defaultPetJsonPath();
+    QString petJsonPath = QDir(petDir).filePath("pet.json");
     if (!PetConfigManager::savePetJson(petJsonPath, petInfo, updatedActions)) {
         targetDir.removeRecursively();
         result.message = QObject::tr("保存 pet.json 失败。");
@@ -97,7 +95,7 @@ ActionImportResult ActionImportService::registerExistingAction(
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
         ActionImportResult categoryResult = addToCategory(
-            PetPaths::defaultPetDirectory(), updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
+            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
         if (!categoryResult.success) {
             result.success = true;
             result.warning = true;
@@ -125,8 +123,6 @@ ActionImportResult ActionImportService::importGifAction(
     TimedTriggerMode timedTriggerMode,
     const QString &triggerTime)
 {
-    Q_UNUSED(petDir);
-
     ActionImportResult result;
     result.success = false;
     result.message = QString();
@@ -164,7 +160,7 @@ ActionImportResult ActionImportService::importGifAction(
     QList<PetAction> updatedActions = currentActions;
     updatedActions.append(newAction);
 
-    QString petJsonPath = PetPaths::defaultPetJsonPath();
+    QString petJsonPath = QDir(petDir).filePath("pet.json");
     if (!PetConfigManager::savePetJson(petJsonPath, petInfo, updatedActions)) {
         QDir(actionDir).removeRecursively();
         result.message = QObject::tr("保存 pet.json 失败。");
@@ -174,7 +170,7 @@ ActionImportResult ActionImportService::importGifAction(
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
         ActionImportResult categoryResult = addToCategory(
-            PetPaths::defaultPetDirectory(), updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
+            petDir, updatedPlaylist, actionId, targetCategory, timedIntervalSeconds, emotionName, timedTriggerMode, triggerTime);
         if (!categoryResult.success) {
             result.success = true;
             result.warning = true;

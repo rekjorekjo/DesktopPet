@@ -21,10 +21,12 @@ public:
 
 public slots:
     void refreshTheme();
+    void reloadPetInfo();
 
 signals:
     void startPetRequested();
     void pausePetRequested();
+    void applyConfigRequested();
 
 private:
     void setupUi();
@@ -34,17 +36,22 @@ private:
     void setRunningStatus(bool running);
     void connectSignals();
 
+private slots:
+    void onCreatePet();
+
 private:
     QLabel *m_titleLabel;
 
     QFrame *m_infoCard;
     QLabel *m_petNameLabel;
+    QLabel *m_petIdLabel;
     QLabel *m_petDirLabel;
     QLabel *m_canvasSizeLabel;
     QLabel *m_displaySizeLabel;
     QLabel *m_actionCountLabel;
     QLabel *m_statusLabel;
 
+    QPushButton *m_createPetButton;
     QPushButton *m_startButton;
     QPushButton *m_pauseButton;
     QPushButton *m_reloadButton;
