@@ -10,6 +10,8 @@
 class QLabel;
 class QPushButton;
 class QFrame;
+class QListWidget;
+class QListWidgetItem;
 
 class PetManagePage : public QWidget
 {
@@ -36,16 +38,23 @@ private:
     void setRunningStatus(bool running);
     void connectSignals();
     void updateButtonStates();
+    void refreshPetList();
+    QString petDisplayName(const QString &petId) const;
 
     int usablePetActionCount() const;
     int globalActionResourceCount() const;
 
 private slots:
     void onCreatePet();
+    void onPetListItemClicked(QListWidgetItem *item);
+    void onPetListContextMenu(const QPoint &pos);
+    void onEditPet();
 
 private:
     QLabel *m_titleLabel;
     QLabel *m_currentPetLabel;
+
+    QListWidget *m_petListWidget;
 
     QFrame *m_infoCard;
     QLabel *m_petNameLabel;

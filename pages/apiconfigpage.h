@@ -51,7 +51,6 @@ private:
     QFrame *m_statusCard;
     QFrame *m_editorCard;
     QFrame *m_profilesCard;
-    QLabel *m_statusCardTitle;
     QLabel *m_editorCardTitle;
     QLabel *m_profilesCardTitle;
     QLabel *m_apiKeyLabel;

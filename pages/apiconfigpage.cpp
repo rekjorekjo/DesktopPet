@@ -17,7 +17,6 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_statusCard(nullptr)
     , m_editorCard(nullptr)
     , m_profilesCard(nullptr)
-    , m_statusCardTitle(nullptr)
     , m_editorCardTitle(nullptr)
     , m_profilesCardTitle(nullptr)
     , m_apiKeyLabel(nullptr)
@@ -74,19 +73,14 @@ void ApiConfigPage::setupUi()
     statusLayout->setContentsMargins(24, 20, 24, 20);
     statusLayout->setSpacing(10);
 
-    m_statusCardTitle = new QLabel(tr("当前状态"), m_statusCard);
-    QFont statusTitleFont = m_statusCardTitle->font();
+    m_currentApiProfileLabel = new QLabel(tr("当前配置：未选择"), m_statusCard);
+    QFont statusTitleFont = m_currentApiProfileLabel->font();
     statusTitleFont.setPointSize(12);
     statusTitleFont.setBold(true);
-    m_statusCardTitle->setFont(statusTitleFont);
-    m_statusCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textPrimaryColor()));
-    statusLayout->addWidget(m_statusCardTitle);
-
-    m_currentApiProfileLabel = new QLabel(tr("当前配置：未选择"), m_statusCard);
+    m_currentApiProfileLabel->setFont(statusTitleFont);
     m_currentApiProfileLabel->setStyleSheet(
-        QString("color: %1; font-size: 14px; font-weight: bold; border: none; background: transparent;")
-            .arg(theme.buttonPrimaryColor()));
+        QString("color: %1; border: none; background: transparent;")
+            .arg(theme.textPrimaryColor()));
     statusLayout->addWidget(m_currentApiProfileLabel);
 
     contentLayout->addWidget(m_statusCard);
@@ -98,7 +92,7 @@ void ApiConfigPage::setupUi()
     editorLayout->setContentsMargins(24, 24, 24, 24);
     editorLayout->setSpacing(16);
 
-    m_editorCardTitle = new QLabel(tr("配置编辑"), m_editorCard);
+    m_editorCardTitle = new QLabel(tr("编辑配置"), m_editorCard);
     QFont editorTitleFont = m_editorCardTitle->font();
     editorTitleFont.setPointSize(12);
     editorTitleFont.setBold(true);
@@ -155,7 +149,7 @@ void ApiConfigPage::setupUi()
     profilesLayout->setContentsMargins(24, 24, 24, 24);
     profilesLayout->setSpacing(16);
 
-    m_profilesCardTitle = new QLabel(tr("已有配置"), m_profilesCard);
+    m_profilesCardTitle = new QLabel(tr("配置库"), m_profilesCard);
     QFont profilesTitleFont = m_profilesCardTitle->font();
     profilesTitleFont.setPointSize(12);
     profilesTitleFont.setBold(true);
@@ -216,8 +210,8 @@ void ApiConfigPage::applyTheme()
     m_editorCard->setStyleSheet(theme.cardStyleSheet("editorCard"));
     m_profilesCard->setStyleSheet(theme.cardStyleSheet("profilesCard"));
 
-    m_statusCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textPrimaryColor()));
+    m_currentApiProfileLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                                .arg(theme.textPrimaryColor()));
     m_editorCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                        .arg(theme.textPrimaryColor()));
     m_profilesCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
@@ -229,10 +223,6 @@ void ApiConfigPage::applyTheme()
                                     .arg(theme.textSecondaryColor()));
     m_modelLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                   .arg(theme.textSecondaryColor()));
-
-    m_currentApiProfileLabel->setStyleSheet(
-        QString("color: %1; font-size: 14px; font-weight: bold; border: none; background: transparent;")
-            .arg(theme.buttonPrimaryColor()));
 
     m_apiKeyEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_baseUrlEdit->setStyleSheet(theme.lineEditStyleSheet());

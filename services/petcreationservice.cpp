@@ -108,7 +108,7 @@ PetCreationResult PetCreationService::createPet(
 
     if (!hasAction) {
         result.warning = true;
-        result.message = QObject::tr("宠物已创建，请前往新建第一个动作。");
+        result.message = QObject::tr("宠物已创建，但动作库为空，请前往设置新增动作。");
     } else {
         result.message = QObject::tr("宠物 %1 创建成功。").arg(info.name);
     }

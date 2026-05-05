@@ -19,6 +19,13 @@ public:
     QSize canvasSize() const;
     QSize displaySize() const;
 
+    void setPetId(const QString &petId);
+    void setPetName(const QString &petName);
+    void setCanvasSize(const QSize &size);
+    void setDisplaySize(const QSize &size);
+    void setPetIdReadOnly(bool readOnly);
+    void setConfirmButtonText(const QString &text);
+
 private slots:
     void accept() override;
 
@@ -32,6 +39,7 @@ private:
     QSpinBox *m_canvasHeightSpinBox;
     QSpinBox *m_displayWidthSpinBox;
     QSpinBox *m_displayHeightSpinBox;
+    QPushButton *m_confirmButton;
 };
 
 #endif // NEWPETDIALOG_H
