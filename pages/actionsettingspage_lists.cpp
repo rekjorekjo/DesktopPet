@@ -1,0 +1,140 @@
+#include "actionsettingspage.h"
+
+void ActionSettingsPage::refreshActionLibraryList()
+{
+    m_actionLibraryList->clear();
+
+    for (const PetAction &action : m_actionLibrary) {
+        QString displayText = QString("%1 (%2)").arg(action.name, action.id);
+        QListWidgetItem *item = new QListWidgetItem(displayText, m_actionLibraryList);
+        item->setData(Qt::UserRole, action.id);
+    }
+}
+
+void ActionSettingsPage::refreshCurrentCategoryList()
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0:
+            refreshCategoryList(m_dailyActionList, m_playlist.idleActions());
+            break;
+        case 1:
+            refreshCategoryList(m_randomActionList, m_playlist.randomActions());
+            break;
+        case 2:
+            refreshCategoryList(m_scheduledActionList, m_playlist.timedActions());
+            break;
+        case 3:
+            refreshCategoryList(m_emotionActionList, m_playlist.emotionActions("happy"));
+            break;
+    }
+}
+
+void ActionSettingsPage::refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions)
+{
+    m_updatingCategoryList = true;
+    int savedRow = list->currentRow();
+    list->clear();
+    for (int i = 0; i < actions.size(); ++i) {
+        QListWidgetItem *item = new QListWidgetItem(formatActionDisplay(actions[i]));
+        item->setData(Qt::UserRole, i);
+        list->addItem(item);
+    }
+    if (savedRow >= 0 && savedRow < list->count()) {
+        list->setCurrentRow(savedRow);
+    }
+    m_updatingCategoryList = false;
+}
+
+QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
+{
+    QString name = getActionName(ref.actionId);
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    QString repeatText;
+    if (ref.repeat == 0 || ref.repeat > 10) {
+        repeatText = tr("无限循环");
+    } else {
+        repeatText = tr("播放 %1 次").arg(ref.repeat);
+    }
+
+    if (tabIndex == 2) {
+        QString triggerText;
+        if (ref.timedTriggerMode == TimedTriggerMode::ClockTime) {
+            triggerText = tr("每天 %1").arg(ref.triggerTime);
+        } else {
+            triggerText = tr("每 %1 秒").arg(ref.intervalSeconds);
+        }
+        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, triggerText, repeatText);
+    } else if (tabIndex == 3) {
+        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, ref.emotion, repeatText);
+    } else {
+        return QString("%1 (%2) - %3").arg(name, ref.actionId, repeatText);
+    }
+}
+
+QString ActionSettingsPage::getActionName(const QString &actionId) const
+{
+    for (const PetAction &action : m_actionLibrary) {
+        if (action.id == actionId) {
+            return action.name;
+        }
+    }
+    return actionId;
+}
+
+QListWidget* ActionSettingsPage::currentCategoryList() const
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_dailyActionList;
+        case 1: return m_randomActionList;
+        case 2: return m_scheduledActionList;
+        case 3: return m_emotionActionList;
+        default: return nullptr;
+    }
+}
+
+QList<PetActionRef> ActionSettingsPage::currentCategoryActions() const
+{
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_playlist.idleActions();
+        case 1: return m_playlist.randomActions();
+        case 2: return m_playlist.timedActions();
+        case 3: return m_playlist.emotionActions("happy");
+        default: return QList<PetActionRef>();
+    }
+}
+
+PetActionRef ActionSettingsPage::currentSelectedRef() const
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return PetActionRef();
+
+    int row = list->currentRow();
+    if (row < 0) return PetActionRef();
+
+    QList<PetActionRef> actions = currentCategoryActions();
+    if (row >= actions.size()) return PetActionRef();
+
+    return actions[row];
+}
+
+bool ActionSettingsPage::updateCurrentSelectedRef(const PetActionRef &ref)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return false;
+
+    int row = list->currentRow();
+    if (row < 0) return false;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    switch (tabIndex) {
+        case 0: return m_playlist.updateIdleActionAt(row, ref);
+        case 1: return m_playlist.updateRandomActionAt(row, ref);
+        case 2: return m_playlist.updateTimedActionAt(row, ref);
+        case 3: return m_playlist.updateEmotionActionAt("happy", row, ref);
+        default: return false;
+    }
+}

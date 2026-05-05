@@ -10,7 +10,7 @@
 #include <QTimeEdit>
 
 #include "core/actioncategory.h"
-#include "core/petplaylist.h"
+#include "core/timedtrigger.h"
 
 class NewActionDialog : public QDialog
 {

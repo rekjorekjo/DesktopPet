@@ -33,12 +33,19 @@ qt_add_executable(DesktopPet
     core/updatemanager.h
     core/gifframeextractor.cpp
     core/gifframeextractor.h
+    core/timedtrigger.cpp
+    core/timedtrigger.h
     services/actionimportservice.cpp
     services/actionimportservice.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
     pages/actionsettingspage.h
+    pages/actionsettingspage_config.cpp
+    pages/actionsettingspage_import.cpp
+    pages/actionsettingspage_lists.cpp
+    pages/actionsettingspage_operations.cpp
+    pages/actionsettingspage_save.cpp
     dialogs/newactiondialog.cpp
     dialogs/newactiondialog.h
     dialogs/importactiondialog.cpp

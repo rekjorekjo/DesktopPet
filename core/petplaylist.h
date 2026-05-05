@@ -5,14 +5,7 @@
 #include <QMap>
 #include <QString>
 
-enum class TimedTriggerMode
-{
-    Interval,
-    ClockTime
-};
-
-QString timedTriggerModeToString(TimedTriggerMode mode);
-TimedTriggerMode timedTriggerModeFromString(const QString &value);
+#include "core/timedtrigger.h"
 
 struct PetActionRef
 {

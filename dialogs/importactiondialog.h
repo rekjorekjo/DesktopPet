@@ -10,7 +10,7 @@
 #include <QTimeEdit>
 
 #include "core/actioncategory.h"
-#include "core/petplaylist.h"
+#include "core/timedtrigger.h"
 
 struct PetAction;
 
