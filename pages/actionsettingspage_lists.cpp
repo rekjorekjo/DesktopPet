@@ -49,9 +49,17 @@ void ActionSettingsPage::refreshCategoryList(QListWidget *list, const QList<PetA
     m_updatingCategoryList = false;
 }
 
+QString ActionSettingsPage::displayNameForRef(const PetActionRef &ref) const
+{
+    if (!ref.displayName.trimmed().isEmpty()) {
+        return ref.displayName.trimmed();
+    }
+    return getActionName(ref.actionId);
+}
+
 QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
 {
-    QString name = getActionName(ref.actionId);
+    QString name = displayNameForRef(ref);
     int tabIndex = m_categoryTabs->currentIndex();
 
     QString repeatText;
@@ -84,6 +92,25 @@ QString ActionSettingsPage::getActionName(const QString &actionId) const
         }
     }
     return actionId;
+}
+
+QString ActionSettingsPage::currentLibraryActionId() const
+{
+    QListWidgetItem *item = m_actionLibraryList->currentItem();
+    if (!item) {
+        return QString();
+    }
+    return item->data(Qt::UserRole).toString();
+}
+
+PetAction ActionSettingsPage::findLibraryActionById(const QString &actionId) const
+{
+    for (const PetAction &action : m_actionLibrary) {
+        if (action.id == actionId) {
+            return action;
+        }
+    }
+    return PetAction();
 }
 
 QListWidget* ActionSettingsPage::currentCategoryList() const

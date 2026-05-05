@@ -365,6 +365,9 @@ QJsonObject PetConfigManager::actionRefToJson(const PetActionRef &ref)
 {
     QJsonObject obj;
     obj["actionId"] = ref.actionId;
+    if (!ref.displayName.trimmed().isEmpty()) {
+        obj["displayName"] = ref.displayName.trimmed();
+    }
     obj["loop"] = ref.loop;
     obj["repeat"] = ref.repeat;
     obj["intervalSeconds"] = ref.intervalSeconds;
@@ -381,6 +384,7 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
 {
     PetActionRef ref;
     ref.actionId = obj.value("actionId").toString();
+    ref.displayName = obj.value("displayName").toString().trimmed();
     ref.loop = obj.value("loop").toBool(false);
     ref.repeat = obj.value("repeat").toInt(1);
     ref.intervalSeconds = obj.value("intervalSeconds").toInt(0);

@@ -10,6 +10,7 @@
 struct PetActionRef
 {
     QString actionId;
+    QString displayName;
     bool loop;
     // repeat 规则：
     // - repeat = 0 表示无限循环
@@ -80,6 +81,8 @@ public:
     QList<PetActionRef> timedActions() const;
     QList<PetActionRef> emotionActions(const QString &emotion) const;
     QMap<QString, QList<PetActionRef>> allEmotionActions() const;
+
+    int removeActionReferences(const QString &actionId);
 
 private:
     bool moveActionUp(QList<PetActionRef> &list, int index);

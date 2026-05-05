@@ -45,6 +45,9 @@ private:
 
     QString formatActionDisplay(const PetActionRef &ref) const;
     QString getActionName(const QString &actionId) const;
+    QString displayNameForRef(const PetActionRef &ref) const;
+    QString currentLibraryActionId() const;
+    PetAction findLibraryActionById(const QString &actionId) const;
 
     QListWidget* currentCategoryList() const;
     QList<PetActionRef> currentCategoryActions() const;
@@ -60,9 +63,12 @@ private:
 private slots:
     void onActionLibraryContextMenu(const QPoint &pos);
     void onAddToCategory();
+    void onDisableLibraryAction();
+    void onDeleteLibraryAction();
     void onMoveUp();
     void onMoveDown();
     void onRemove();
+    void onRenameCategoryAction();
     void onTabChanged(int index);
     void onCategorySelectionChanged();
     void onLoopChanged(int state);

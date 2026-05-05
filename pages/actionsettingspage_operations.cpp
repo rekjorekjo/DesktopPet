@@ -1,8 +1,12 @@
 #include "actionsettingspage.h"
 
+#include "core/petpaths.h"
+#include "services/actionlibraryservice.h"
 #include "theme/thememanager.h"
 
+#include <QInputDialog>
 #include <QMenu>
+#include <QMessageBox>
 
 void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
 {
@@ -20,17 +24,29 @@ void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
     QAction *addAction = menu.addAction(tr("添加到当前分类"));
     connect(addAction, &QAction::triggered, this, &ActionSettingsPage::onAddToCategory);
 
+    menu.addSeparator();
+
+    QAction *disableAction = menu.addAction(tr("移除动作"));
+    connect(disableAction, &QAction::triggered, this, &ActionSettingsPage::onDisableLibraryAction);
+
+    QAction *deleteAction = menu.addAction(tr("删除动作"));
+    connect(deleteAction, &QAction::triggered, this, &ActionSettingsPage::onDeleteLibraryAction);
+
     menu.exec(m_actionLibraryList->mapToGlobal(pos));
 }
 
 void ActionSettingsPage::onAddToCategory()
 {
-    int row = m_actionLibraryList->currentRow();
-    if (row < 0 || row >= m_actionLibrary.size()) {
+    QString actionId = currentLibraryActionId();
+    if (actionId.isEmpty()) {
         return;
     }
 
-    const PetAction &action = m_actionLibrary[row];
+    PetAction action = findLibraryActionById(actionId);
+    if (!action.isValid() || !action.enabled) {
+        return;
+    }
+
     PetActionRef ref(action.id);
 
     int tabIndex = m_categoryTabs->currentIndex();
@@ -57,6 +73,94 @@ void ActionSettingsPage::onAddToCategory()
 
     if (success) {
         refreshCurrentCategoryList();
+    }
+}
+
+void ActionSettingsPage::onDisableLibraryAction()
+{
+    QString actionId = currentLibraryActionId();
+    if (actionId.isEmpty()) {
+        return;
+    }
+
+    PetAction action = findLibraryActionById(actionId);
+    if (!action.isValid() || !action.enabled) {
+        return;
+    }
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("移除动作"),
+        tr("确定要移除动作 %1 吗？\n\n动作不会被删除，仅在动作库中隐藏，并从所有分类中移除。").arg(actionId),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No
+    );
+
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+
+    ActionLibraryOperationResult result = ActionLibraryService::disableAction(
+        PetPaths::defaultPetDirectory(),
+        m_actionLibrary,
+        m_playlist,
+        actionId
+    );
+
+    if (result.success) {
+        initData();
+        refreshActionLibraryList();
+        refreshCurrentCategoryList();
+    }
+
+    if (result.warning) {
+        QMessageBox::warning(this, tr("移除动作"), result.message);
+    } else {
+        QMessageBox::information(this, result.success ? tr("成功") : tr("失败"), result.message);
+    }
+}
+
+void ActionSettingsPage::onDeleteLibraryAction()
+{
+    QString actionId = currentLibraryActionId();
+    if (actionId.isEmpty()) {
+        return;
+    }
+
+    PetAction action = findLibraryActionById(actionId);
+    if (!action.isValid() || !action.enabled) {
+        return;
+    }
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("删除动作"),
+        tr("确定要删除动作 %1 吗？\n\n动作将被删除！并从动作库和所有分类中移除！此操作不可撤销！").arg(actionId),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No
+    );
+
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+
+    ActionLibraryOperationResult result = ActionLibraryService::deleteAction(
+        PetPaths::defaultPetDirectory(),
+        m_actionLibrary,
+        m_playlist,
+        actionId
+    );
+
+    if (result.success) {
+        initData();
+        refreshActionLibraryList();
+        refreshCurrentCategoryList();
+    }
+
+    if (result.warning) {
+        QMessageBox::warning(this, tr("删除动作"), result.message);
+    } else {
+        QMessageBox::information(this, result.success ? tr("成功") : tr("失败"), result.message);
     }
 }
 
@@ -156,6 +260,41 @@ void ActionSettingsPage::onRemove()
     }
 }
 
+void ActionSettingsPage::onRenameCategoryAction()
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    QString defaultName = displayNameForRef(ref);
+
+    bool ok = false;
+    QString newName = QInputDialog::getText(
+        this,
+        tr("重命名"),
+        tr("请输入新的显示名称（留空则使用动作名称）："),
+        QLineEdit::Normal,
+        defaultName,
+        &ok
+    );
+
+    if (!ok) {
+        return;
+    }
+
+    ref.displayName = newName.trimmed();
+
+    if (updateCurrentSelectedRef(ref)) {
+        refreshCurrentCategoryList();
+        list->setCurrentRow(row);
+    }
+}
+
 void ActionSettingsPage::onTabChanged(int)
 {
     refreshCurrentCategoryList();
@@ -215,6 +354,7 @@ void ActionSettingsPage::onCategoryListContextMenu(const QPoint &pos)
     list->setCurrentItem(item);
 
     QMenu contextMenu(tr("操作"), this);
+    QAction *renameAction = contextMenu.addAction(tr("重命名"));
     QAction *moveUpAction = contextMenu.addAction(tr("上移"));
     QAction *moveDownAction = contextMenu.addAction(tr("下移"));
     contextMenu.addSeparator();
@@ -222,7 +362,9 @@ void ActionSettingsPage::onCategoryListContextMenu(const QPoint &pos)
 
     QAction *selectedAction = contextMenu.exec(list->mapToGlobal(pos));
 
-    if (selectedAction == moveUpAction) {
+    if (selectedAction == renameAction) {
+        onRenameCategoryAction();
+    } else if (selectedAction == moveUpAction) {
         onMoveUp();
     } else if (selectedAction == moveDownAction) {
         onMoveDown();

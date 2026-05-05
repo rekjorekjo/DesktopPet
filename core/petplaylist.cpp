@@ -303,3 +303,41 @@ QMap<QString, QList<PetActionRef>> PetPlaylist::allEmotionActions() const
 {
     return m_emotionActions;
 }
+
+int PetPlaylist::removeActionReferences(const QString &actionId)
+{
+    int count = 0;
+
+    for (int i = m_idleActions.size() - 1; i >= 0; --i) {
+        if (m_idleActions[i].actionId == actionId) {
+            m_idleActions.removeAt(i);
+            ++count;
+        }
+    }
+
+    for (int i = m_randomActions.size() - 1; i >= 0; --i) {
+        if (m_randomActions[i].actionId == actionId) {
+            m_randomActions.removeAt(i);
+            ++count;
+        }
+    }
+
+    for (int i = m_timedActions.size() - 1; i >= 0; --i) {
+        if (m_timedActions[i].actionId == actionId) {
+            m_timedActions.removeAt(i);
+            ++count;
+        }
+    }
+
+    for (const QString &emotion : m_emotionActions.keys()) {
+        QList<PetActionRef> &list = m_emotionActions[emotion];
+        for (int i = list.size() - 1; i >= 0; --i) {
+            if (list[i].actionId == actionId) {
+                list.removeAt(i);
+                ++count;
+            }
+        }
+    }
+
+    return count;
+}
