@@ -12,6 +12,7 @@ struct PetAction
     int fps;
     int frameCount;
     QStringList frameFiles;
+    bool enabled;
 
     PetAction();
     PetAction(const QString &actionId, const QString &actionName, const QString &path, int actionFps = 15, int frames = 0);

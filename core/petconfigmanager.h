@@ -37,7 +37,7 @@ private:
     static QJsonObject actionRefToJson(const PetActionRef &ref);
     static PetActionRef jsonToActionRef(const QJsonObject &obj);
 
-    static void scanActionFrames(PetAction &action, const QString &petDirPath);
+    static void scanActionFrames(PetAction &action);
     static QStringList scanFrameFiles(const QString &folderPath);
     static bool naturalSortLessThan(const QString &a, const QString &b);
 };

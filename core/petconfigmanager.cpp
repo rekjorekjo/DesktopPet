@@ -1,5 +1,7 @@
 #include "petconfigmanager.h"
 
+#include "core/petpaths.h"
+
 #include <algorithm>
 
 #include <QDir>
@@ -268,20 +270,15 @@ bool PetConfigManager::loadPetFromDirectory(const QString &petDirPath, PetBasicI
     }
 
     for (PetAction &action : actions) {
-        scanActionFrames(action, petDirPath);
+        scanActionFrames(action);
     }
 
     return true;
 }
 
-void PetConfigManager::scanActionFrames(PetAction &action, const QString &petDirPath)
+void PetConfigManager::scanActionFrames(PetAction &action)
 {
-    QString absoluteFolderPath;
-    if (QDir::isAbsolutePath(action.folderPath)) {
-        absoluteFolderPath = QDir::cleanPath(action.folderPath);
-    } else {
-        absoluteFolderPath = QDir::cleanPath(QDir(petDirPath).filePath(action.folderPath));
-    }
+    QString absoluteFolderPath = PetPaths::resolveActionDirectory(action);
 
     QDir actionDir(absoluteFolderPath);
     if (!actionDir.exists()) {
@@ -348,6 +345,7 @@ QJsonObject PetConfigManager::actionToJson(const PetAction &action)
     obj["folderPath"] = action.folderPath;
     obj["fps"] = action.fps;
     obj["frameCount"] = action.frameCount;
+    obj["enabled"] = action.enabled;
     return obj;
 }
 
@@ -359,6 +357,7 @@ PetAction PetConfigManager::jsonToAction(const QJsonObject &obj)
     action.folderPath = obj.value("folderPath").toString();
     action.fps = obj.value("fps").toInt(24);
     action.frameCount = obj.value("frameCount").toInt(1);
+    action.enabled = obj.value("enabled").toBool(true);
     return action;
 }
 

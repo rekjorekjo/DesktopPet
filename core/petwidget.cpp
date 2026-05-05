@@ -329,7 +329,7 @@ void PetWidget::playEmotion(const QString &emotion)
 PetAction PetWidget::findActionById(const QString &actionId) const
 {
     for (const PetAction &action : m_actions) {
-        if (action.id == actionId) {
+        if (action.id == actionId && action.enabled) {
             return action;
         }
     }

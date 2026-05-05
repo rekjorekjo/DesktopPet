@@ -1,4 +1,5 @@
 #include "core/appsettings.h"
+#include "core/petpaths.h"
 #include "core/petwidget.h"
 #include "core/settingswindow.h"
 #include "core/traymanager.h"
@@ -13,6 +14,8 @@ int main(int argc, char *argv[])
 
     QIcon appIcon(":/icons/app_icon.ico");
     QApplication::setWindowIcon(appIcon);
+
+    PetPaths::ensureDefaultStructure();
 
     PetWidget pet;
     SettingsWindow settings;

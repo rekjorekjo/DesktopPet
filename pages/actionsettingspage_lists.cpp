@@ -5,6 +5,9 @@ void ActionSettingsPage::refreshActionLibraryList()
     m_actionLibraryList->clear();
 
     for (const PetAction &action : m_actionLibrary) {
+        if (!action.enabled) {
+            continue;
+        }
         QString displayText = QString("%1 (%2)").arg(action.name, action.id);
         QListWidgetItem *item = new QListWidgetItem(displayText, m_actionLibraryList);
         item->setData(Qt::UserRole, action.id);
