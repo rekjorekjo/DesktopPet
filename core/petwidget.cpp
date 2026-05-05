@@ -1,6 +1,7 @@
 #include "petwidget.h"
 
 #include "core/appsettings.h"
+#include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 
 #include <QContextMenuEvent>
@@ -109,8 +110,7 @@ bool PetWidget::loadPet(const QString &petDirPath)
     QString petJsonPath = petDirPath + "/pet.json";
     QString playlistPath = petDirPath + "/playlist.json";
 
-    QList<PetAction> petActions;
-    bool petLoaded = PetConfigManager::loadPetJson(petJsonPath, m_petInfo, petActions);
+    bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
     if (!petLoaded || !playlistLoaded) {
@@ -161,18 +161,7 @@ void PetWidget::loadGlobalActionLibrary()
     for (const QString &actionId : actionFolders) {
         QString actionDir = actionsDir + "/" + actionId;
 
-        QStringList filters;
-        filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-
-        QDir frameDir(actionDir);
-        frameDir.setNameFilters(filters);
-        frameDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-
-        QStringList frameNames = frameDir.entryList(QDir::Files, QDir::Name);
-        QStringList frameFiles;
-        for (const QString &frameName : frameNames) {
-            frameFiles.append(frameDir.filePath(frameName));
-        }
+        QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
 
         if (frameFiles.isEmpty()) {
             continue;

@@ -20,6 +20,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QThread>
 #include <QTimeEdit>
 #include <QtGlobal>
 #include <QVBoxLayout>
@@ -74,7 +75,13 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     setActionConfigPanelEnabled(false);
 }
 
-ActionSettingsPage::~ActionSettingsPage() {}
+ActionSettingsPage::~ActionSettingsPage()
+{
+    if (m_importThread && m_importThread->isRunning()) {
+        m_importThread->quit();
+        m_importThread->wait();
+    }
+}
 
 void ActionSettingsPage::setupUi()
 {
@@ -440,8 +447,7 @@ void ActionSettingsPage::initData()
     QString petJsonPath = petDir + "/pet.json";
     QString playlistPath = petDir + "/playlist.json";
 
-    QList<PetAction> ignoredPetActions;
-    bool petLoaded = PetConfigManager::loadPetJson(petJsonPath, m_petInfo, ignoredPetActions);
+    bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
     if (petLoaded && playlistLoaded) {

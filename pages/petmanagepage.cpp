@@ -1,6 +1,7 @@
 #include "petmanagepage.h"
 
 #include "core/appsettings.h"
+#include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "dialogs/newpetdialog.h"
 #include "services/petcreationservice.h"
@@ -13,6 +14,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSet>
 #include <QVBoxLayout>
 
 PetManagePage::PetManagePage(QWidget *parent)
@@ -189,17 +191,68 @@ void PetManagePage::applyTheme()
 void PetManagePage::loadPetInfo()
 {
     QString petDir = PetPaths::currentPetDirectory();
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
 
-    m_loadSuccess = PetConfigManager::loadPetFromDirectory(petDir, m_petInfo, m_actions, m_playlist);
+    m_actions.clear();
+
+    QString actionsDir = PetPaths::actionsDirectory();
+    QDir dir(actionsDir);
+    if (dir.exists()) {
+        QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+        for (const QString &actionId : actionFolders) {
+            QString actionDir = actionsDir + "/" + actionId;
+
+            QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
+
+            if (frameFiles.isEmpty()) {
+                continue;
+            }
+
+            PetAction action;
+            action.id = actionId;
+            action.name = actionId;
+            action.folderPath = actionId;
+            action.fps = 12;
+            action.frameCount = frameFiles.size();
+            action.frameFiles = frameFiles;
+            action.enabled = true;
+
+            m_actions.append(action);
+        }
+    }
+
+    bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
+    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
+
+    m_loadSuccess = petLoaded && playlistLoaded;
     updateInfoDisplay();
     updateButtonStates();
 }
 
 int PetManagePage::usablePetActionCount() const
 {
+    QSet<QString> actionIds;
+
+    for (const PetActionRef &ref : m_playlist.idleActions()) {
+        actionIds.insert(ref.actionId);
+    }
+    for (const PetActionRef &ref : m_playlist.randomActions()) {
+        actionIds.insert(ref.actionId);
+    }
+    for (const PetActionRef &ref : m_playlist.timedActions()) {
+        actionIds.insert(ref.actionId);
+    }
+    for (const QString &emotion : m_playlist.allEmotionActions().keys()) {
+        for (const PetActionRef &ref : m_playlist.emotionActions(emotion)) {
+            actionIds.insert(ref.actionId);
+        }
+    }
+
     int count = 0;
     for (const PetAction &action : m_actions) {
-        if (action.enabled && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
+        if (actionIds.contains(action.id) && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
             ++count;
         }
     }
@@ -218,12 +271,8 @@ int PetManagePage::globalActionResourceCount() const
 
     for (const QString &folder : actionFolders) {
         QString folderPath = actionsDir.filePath(folder);
-        QDir dir(folderPath);
 
-        QStringList frameFiles = dir.entryList(
-            QStringList() << "*.png" << "*.jpg" << "*.jpeg" << "*.webp",
-            QDir::Files
-        );
+        QStringList frameFiles = PetConfigManager::scanFrameFiles(folderPath);
 
         if (!frameFiles.isEmpty()) {
             ++count;
@@ -239,8 +288,7 @@ QString PetManagePage::petDisplayName(const QString &petId) const
     QString petJsonPath = petDir + "/pet.json";
 
     PetBasicInfo info;
-    QList<PetAction> actions;
-    if (PetConfigManager::loadPetJson(petJsonPath, info, actions)) {
+    if (PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
         return QString("%1 (%2)").arg(info.name).arg(info.id);
     }
 
@@ -267,6 +315,9 @@ void PetManagePage::refreshPetList()
         }
 
         QString displayName = petDisplayName(petId);
+        if (petId == currentPetId) {
+            displayName = tr("当前：") + displayName;
+        }
 
         QListWidgetItem *item = new QListWidgetItem(displayName, m_petListWidget);
         item->setData(Qt::UserRole, petId);
@@ -305,6 +356,93 @@ void PetManagePage::updateInfoDisplay()
 
     int petActionCount = usablePetActionCount();
     int globalCount = globalActionResourceCount();
+
+    m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
+    m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalCount));
+
+    if (globalCount == 0) {
+        m_statusLabel->setText(tr("运行状态: 动作库为空，请前往动作设置新增动作"));
+    } else if (petActionCount == 0) {
+        m_statusLabel->setText(tr("运行状态: 当前宠物无可用动作，请前往动作设置添加动作"));
+    } else {
+        m_statusLabel->setText(tr("运行状态: 已加载"));
+    }
+}
+
+void PetManagePage::updatePreviewForPet(const QString &petId)
+{
+    QString petDir = PetPaths::petDirectory(petId);
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
+
+    PetBasicInfo info;
+    bool infoLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, info);
+
+    PetPlaylist playlist;
+    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, playlist);
+
+    if (!infoLoaded) {
+        m_petNameLabel->setText(tr("宠物名称: 加载失败"));
+        m_petIdLabel->setText(tr("宠物 ID: ") + petId);
+        m_petDirLabel->setText(tr("宠物目录: ") + petDir);
+        m_canvasSizeLabel->setText(tr("画布尺寸: -"));
+        m_displaySizeLabel->setText(tr("显示尺寸: -"));
+        m_petActionCountLabel->setText(tr("当前宠物动作数: -"));
+        m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalActionResourceCount()));
+        m_statusLabel->setText(tr("运行状态: 加载失败"));
+        return;
+    }
+
+    m_petNameLabel->setText(tr("宠物名称: ") + info.name);
+    m_petIdLabel->setText(tr("宠物 ID: ") + info.id);
+    m_petDirLabel->setText(tr("宠物目录: ") + petDir);
+    m_canvasSizeLabel->setText(tr("画布尺寸: %1 x %2")
+                                   .arg(info.canvasSize.width())
+                                   .arg(info.canvasSize.height()));
+    m_displaySizeLabel->setText(tr("显示尺寸: %1 x %2")
+                                    .arg(info.displaySize.width())
+                                    .arg(info.displaySize.height()));
+
+    int petActionCount = 0;
+    int globalCount = globalActionResourceCount();
+
+    if (playlistLoaded) {
+        QSet<QString> actionIds;
+
+        for (const PetActionRef &ref : playlist.idleActions()) {
+            actionIds.insert(ref.actionId);
+        }
+        for (const PetActionRef &ref : playlist.randomActions()) {
+            actionIds.insert(ref.actionId);
+        }
+        for (const PetActionRef &ref : playlist.timedActions()) {
+            actionIds.insert(ref.actionId);
+        }
+        for (const QString &emotion : playlist.allEmotionActions().keys()) {
+            for (const PetActionRef &ref : playlist.emotionActions(emotion)) {
+                actionIds.insert(ref.actionId);
+            }
+        }
+
+        QString actionsDir = PetPaths::actionsDirectory();
+        QDir dir(actionsDir);
+        if (dir.exists()) {
+            QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString &actionId : actionFolders) {
+                if (!actionIds.contains(actionId)) {
+                    continue;
+                }
+
+                QString actionDir = actionsDir + "/" + actionId;
+                QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
+
+                if (!frameFiles.isEmpty()) {
+                    ++petActionCount;
+                }
+            }
+        }
+    }
 
     m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
     m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalCount));
@@ -384,14 +522,11 @@ void PetManagePage::onPetListItemClicked(QListWidgetItem *item)
     }
 
     QString petId = item->data(Qt::UserRole).toString();
-    if (petId.isEmpty() || petId == AppSettings::currentPetId()) {
+    if (petId.isEmpty()) {
         return;
     }
 
-    AppSettings::setCurrentPetId(petId);
-    refreshPetList();
-    loadPetInfo();
-    emit applyConfigRequested();
+    updatePreviewForPet(petId);
 }
 
 void PetManagePage::onPetListContextMenu(const QPoint &pos)
@@ -403,13 +538,46 @@ void PetManagePage::onPetListContextMenu(const QPoint &pos)
 
     m_petListWidget->setCurrentItem(item);
 
+    QString petId = item->data(Qt::UserRole).toString();
+    QString currentPetId = AppSettings::currentPetId();
+
     QMenu menu(this);
+    QAction *switchAction = menu.addAction(tr("切换到当前宠物"));
+    if (petId == currentPetId) {
+        switchAction->setEnabled(false);
+    }
+    menu.addSeparator();
     QAction *editAction = menu.addAction(tr("编辑宠物"));
 
     QAction *selectedAction = menu.exec(m_petListWidget->mapToGlobal(pos));
-    if (selectedAction == editAction) {
+    if (selectedAction == switchAction) {
+        onSwitchToPet();
+    } else if (selectedAction == editAction) {
         onEditPet();
     }
+}
+
+void PetManagePage::onSwitchToPet()
+{
+    QListWidgetItem *item = m_petListWidget->currentItem();
+    if (!item) {
+        return;
+    }
+
+    QString petId = item->data(Qt::UserRole).toString();
+    if (petId.isEmpty()) {
+        return;
+    }
+
+    if (petId == AppSettings::currentPetId()) {
+        QMessageBox::information(this, tr("切换宠物"), tr("已经是当前宠物。"));
+        return;
+    }
+
+    AppSettings::setCurrentPetId(petId);
+    refreshPetList();
+    loadPetInfo();
+    emit applyConfigRequested();
 }
 
 void PetManagePage::onEditPet()
@@ -428,8 +596,7 @@ void PetManagePage::onEditPet()
     QString petJsonPath = oldPetDir + "/pet.json";
 
     PetBasicInfo info;
-    QList<PetAction> actions;
-    if (!PetConfigManager::loadPetJson(petJsonPath, info, actions)) {
+    if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
         QMessageBox::warning(this, tr("编辑宠物"), tr("无法加载宠物配置。"));
         return;
     }
@@ -467,7 +634,7 @@ void PetManagePage::onEditPet()
     info.displaySize = dialog.displaySize();
 
     QString targetPetJsonPath = newPetDir + "/pet.json";
-    if (!PetConfigManager::savePetJson(targetPetJsonPath, info, actions)) {
+    if (!PetConfigManager::savePetInfoJson(targetPetJsonPath, info)) {
         QMessageBox::warning(this, tr("编辑宠物"), tr("保存宠物配置失败。"));
         return;
     }

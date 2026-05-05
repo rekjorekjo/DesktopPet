@@ -1,6 +1,7 @@
 #include "newactiondialog.h"
 
 #include "core/gifframeextractor.h"
+#include "core/petpaths.h"
 #include "theme/thememanager.h"
 
 #include <QDir>
@@ -384,8 +385,7 @@ bool NewActionDialog::validateInput()
         return false;
     }
 
-    QString actionsDir = m_petDirPath + "/actions";
-    QString actionDir = actionsDir + "/" + id;
+    QString actionDir = PetPaths::actionsDirectory() + "/" + id;
     if (QDir(actionDir).exists()) {
         QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在或目录已存在，请使用其他 ID。"));
         return false;

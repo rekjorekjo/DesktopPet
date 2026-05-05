@@ -10,6 +10,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QSizePolicy>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -164,6 +165,9 @@ void AboutPage::setupUi()
     m_updateStatusLabel = new QLabel(m_updateCard);
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(theme.textSecondaryColor()));
+    m_updateStatusLabel->setWordWrap(true);
+    m_updateStatusLabel->setMaximumHeight(48);
+    m_updateStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_updateStatusLabel->setVisible(false);
     updateLayout->addWidget(m_updateStatusLabel);
 
@@ -248,5 +252,19 @@ void AboutPage::onNoUpdateAvailable(const QString &latestVersion)
 void AboutPage::onCheckFailed(const QString &errorMessage)
 {
     m_checkUpdateButton->setEnabled(true);
-    m_updateStatusLabel->setText(tr("检查更新失败：%1").arg(errorMessage));
+    QString displayText = elidedStatusText(errorMessage);
+    m_updateStatusLabel->setText(displayText);
+    if (errorMessage.length() > 80) {
+        m_updateStatusLabel->setToolTip(errorMessage);
+    } else {
+        m_updateStatusLabel->setToolTip(QString());
+    }
+}
+
+QString AboutPage::elidedStatusText(const QString &text) const
+{
+    if (text.length() > 80) {
+        return text.left(80) + "...";
+    }
+    return text;
 }

@@ -37,6 +37,8 @@ qt_add_executable(DesktopPet
     core/timedtrigger.h
     services/actionimportservice.cpp
     services/actionimportservice.h
+    services/actionimportworker.cpp
+    services/actionimportworker.h
     services/actionlibraryservice.cpp
     services/actionlibraryservice.h
     services/petcreationservice.cpp

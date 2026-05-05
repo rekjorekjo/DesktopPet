@@ -10,6 +10,7 @@
 #include "core/petaction.h"
 #include "core/petconfigmanager.h"
 #include "core/petplaylist.h"
+#include "services/actionimportworker.h"
 
 class QCheckBox;
 class QComboBox;
@@ -17,9 +18,11 @@ class QFrame;
 class QPushButton;
 class QSpinBox;
 class QTimeEdit;
+class QThread;
 class ActionCategoryListWidget;
 class ActionCategoryTabWidget;
 class ActionLibraryListWidget;
+struct ActionImportResult;
 
 class ActionSettingsPage : public QWidget
 {
@@ -64,6 +67,9 @@ private:
     void clearCategorySelection();
     int findSpeedIndex(double speed) const;
     bool saveCurrentPlaylist();
+
+    void startImportFolderTask(const ActionImportWorker::ImportFolderTask &task);
+    void startImportGifTask(const ActionImportWorker::ImportGifTask &task);
 
 private slots:
     void onActionLibraryContextMenu(const QPoint &pos);
@@ -139,6 +145,7 @@ private:
     PetPlaylist m_playlist;
     bool m_loadedSuccessfully;
     bool m_updatingCategoryList = false;
+    QThread *m_importThread = nullptr;
 };
 
 #endif // ACTIONSETTINGSPAGE_H

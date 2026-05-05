@@ -135,9 +135,7 @@ bool PetPaths::ensureDefaultPetConfig()
         info.canvasSize = QSize(400, 400);
         info.displaySize = QSize(200, 200);
 
-        QList<PetAction> actions;
-
-        if (!PetConfigManager::savePetJson(petJsonPath, info, actions)) {
+        if (!PetConfigManager::savePetInfoJson(petJsonPath, info)) {
             qWarning() << "Failed to create default pet.json";
             return false;
         }

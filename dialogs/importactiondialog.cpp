@@ -301,51 +301,29 @@ void ImportActionDialog::updateExtraConfigVisibility()
 
 void ImportActionDialog::onBrowseFolder()
 {
-    QString actionsDir = m_petDirPath + "/actions";
     QString selectedFolder = QFileDialog::getExistingDirectory(
         this,
         tr("选择动作文件夹"),
-        actionsDir
+        QString()
     );
 
     if (selectedFolder.isEmpty()) {
         return;
     }
 
-    QDir petDir(m_petDirPath);
-    QString petRoot = petDir.canonicalPath();
-    if (petRoot.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("宠物目录不存在。"));
-        return;
-    }
-
-    QDir actionsDirObj(petDir.filePath("actions"));
-    QString actionsRoot = actionsDirObj.canonicalPath();
-    if (actionsRoot.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("actions 目录不存在。"));
-        return;
-    }
-
     QDir selectedDir(selectedFolder);
-    QString selected = selectedDir.canonicalPath();
-    if (selected.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("选择的文件夹无效。"));
+    if (!selectedDir.exists()) {
+        QMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
         return;
     }
 
-    if (!selected.startsWith(actionsRoot + "/") && selected != actionsRoot) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择当前宠物目录下的 actions 文件夹。"));
-        return;
-    }
-
-    if (selected == actionsRoot) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择 actions 下的具体动作文件夹。"));
+    int frameCount = scanFrameCount(selectedFolder);
+    if (frameCount == 0) {
+        QMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
         return;
     }
 
     m_folderEdit->setText(selectedFolder);
-
-    int frameCount = scanFrameCount(selectedFolder);
     m_frameCountLabel->setText(QString::number(frameCount));
 }
 

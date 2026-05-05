@@ -22,6 +22,9 @@ struct PetBasicInfo
 class PetConfigManager
 {
 public:
+    static bool loadPetInfoJson(const QString &filePath, PetBasicInfo &info);
+    static bool savePetInfoJson(const QString &filePath, const PetBasicInfo &info);
+
     static bool loadPetJson(const QString &filePath, PetBasicInfo &info, QList<PetAction> &actions);
     static bool savePetJson(const QString &filePath, const PetBasicInfo &info, const QList<PetAction> &actions);
 
@@ -29,6 +32,8 @@ public:
     static bool savePlaylistToJson(const QString &filePath, const PetPlaylist &playlist);
 
     static bool loadPetFromDirectory(const QString &petDirPath, PetBasicInfo &info, QList<PetAction> &actions, PetPlaylist &playlist);
+
+    static QStringList scanFrameFiles(const QString &folderPath);
 
 private:
     static QJsonObject actionToJson(const PetAction &action);
@@ -38,7 +43,6 @@ private:
     static PetActionRef jsonToActionRef(const QJsonObject &obj);
 
     static void scanActionFrames(PetAction &action);
-    static QStringList scanFrameFiles(const QString &folderPath);
     static bool naturalSortLessThan(const QString &a, const QString &b);
 };
 

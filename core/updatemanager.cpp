@@ -8,6 +8,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QUrl>
+#include <QtGlobal>
 
 UpdateManager::UpdateManager(QObject *parent)
     : QObject(parent)
@@ -42,7 +43,9 @@ void UpdateManager::onReplyFinished(QNetworkReply *reply)
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
-        emit checkFailed(reply->errorString());
+        QString rawError = reply->errorString();
+        qWarning() << "Update check failed:" << rawError;
+        emit checkFailed(friendlyErrorMessage(rawError));
         return;
     }
 
@@ -51,12 +54,14 @@ void UpdateManager::onReplyFinished(QNetworkReply *reply)
     QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
 
     if (parseError.error != QJsonParseError::NoError) {
-        emit checkFailed(tr("解析响应失败"));
+        qWarning() << "Update check failed: JSON parse error";
+        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
         return;
     }
 
     if (!doc.isObject()) {
-        emit checkFailed(tr("响应格式错误"));
+        qWarning() << "Update check failed: Invalid response format";
+        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
         return;
     }
 
@@ -65,7 +70,8 @@ void UpdateManager::onReplyFinished(QNetworkReply *reply)
     QString htmlUrl = obj["html_url"].toString();
 
     if (tagName.isEmpty()) {
-        emit checkFailed(tr("未找到版本信息"));
+        qWarning() << "Update check failed: No version info found";
+        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
         return;
     }
 
@@ -75,4 +81,17 @@ void UpdateManager::onReplyFinished(QNetworkReply *reply)
     } else {
         emit noUpdateAvailable(tagName);
     }
+}
+
+QString UpdateManager::friendlyErrorMessage(const QString &rawError) const
+{
+    if (rawError.contains("SSL", Qt::CaseInsensitive)
+        || rawError.contains("TLS", Qt::CaseInsensitive)
+        || rawError.contains("libssl", Qt::CaseInsensitive)
+        || rawError.contains("CRYPTO_", Qt::CaseInsensitive)
+        || rawError.contains("openssl", Qt::CaseInsensitive)) {
+        return tr("检查更新失败，当前环境的 SSL 组件不可用，请检查运行环境。");
+    }
+
+    return tr("检查更新失败，请检查网络连接或稍后重试。");
 }

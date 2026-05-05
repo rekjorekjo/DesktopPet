@@ -19,6 +19,81 @@ PetBasicInfo::PetBasicInfo()
 {
 }
 
+bool PetConfigManager::loadPetInfoJson(const QString &filePath, PetBasicInfo &info)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        return false;
+    }
+
+    if (!doc.isObject()) {
+        return false;
+    }
+
+    QJsonObject root = doc.object();
+
+    info.id = root.value("id").toString();
+    info.name = root.value("name").toString();
+
+    if (root.contains("canvasSize")) {
+        QJsonObject canvasObj = root.value("canvasSize").toObject();
+        info.canvasSize.setWidth(canvasObj.value("width").toInt(400));
+        info.canvasSize.setHeight(canvasObj.value("height").toInt(400));
+    }
+
+    if (root.contains("displaySize")) {
+        QJsonObject displayObj = root.value("displaySize").toObject();
+        info.displaySize.setWidth(displayObj.value("width").toInt(200));
+        info.displaySize.setHeight(displayObj.value("height").toInt(200));
+    }
+
+    return true;
+}
+
+bool PetConfigManager::savePetInfoJson(const QString &filePath, const PetBasicInfo &info)
+{
+    QJsonObject root;
+
+    root["id"] = info.id;
+    root["name"] = info.name;
+
+    QJsonObject canvasObj;
+    canvasObj["width"] = info.canvasSize.width();
+    canvasObj["height"] = info.canvasSize.height();
+    root["canvasSize"] = canvasObj;
+
+    QJsonObject displayObj;
+    displayObj["width"] = info.displaySize.width();
+    displayObj["height"] = info.displaySize.height();
+    root["displaySize"] = displayObj;
+
+    QJsonDocument doc(root);
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        return false;
+    }
+
+    QByteArray jsonData = doc.toJson(QJsonDocument::Indented);
+    qint64 bytesWritten = file.write(jsonData);
+    file.close();
+
+    if (bytesWritten != jsonData.size()) {
+        return false;
+    }
+
+    return true;
+}
+
 bool PetConfigManager::loadPetJson(const QString &filePath, PetBasicInfo &info, QList<PetAction> &actions)
 {
     QFile file(filePath);

@@ -1,6 +1,7 @@
 #ifndef ACTIONIMPORTSERVICE_H
 #define ACTIONIMPORTSERVICE_H
 
+#include <QMetaType>
 #include <QString>
 #include <QList>
 
@@ -17,6 +18,8 @@ struct ActionImportResult
     bool warning = false;
     QString message;
 };
+
+Q_DECLARE_METATYPE(ActionImportResult)
 
 class ActionImportService
 {

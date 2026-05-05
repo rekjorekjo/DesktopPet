@@ -35,6 +35,7 @@ private:
     void applyTheme();
     void loadPetInfo();
     void updateInfoDisplay();
+    void updatePreviewForPet(const QString &petId);
     void setRunningStatus(bool running);
     void connectSignals();
     void updateButtonStates();
@@ -48,6 +49,7 @@ private slots:
     void onCreatePet();
     void onPetListItemClicked(QListWidgetItem *item);
     void onPetListContextMenu(const QPoint &pos);
+    void onSwitchToPet();
     void onEditPet();
 
 private:

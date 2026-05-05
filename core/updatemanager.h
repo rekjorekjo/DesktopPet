@@ -26,6 +26,8 @@ private slots:
     void onReplyFinished(QNetworkReply *reply);
 
 private:
+    QString friendlyErrorMessage(const QString &rawError) const;
+
     QNetworkAccessManager *m_networkManager;
 };
 

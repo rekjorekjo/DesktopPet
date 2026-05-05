@@ -1,5 +1,6 @@
 #include "actionsettingspage.h"
 
+#include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actionlibrarylistwidget.h"
@@ -34,18 +35,7 @@ void ActionSettingsPage::loadGlobalActionLibrary()
     for (const QString &actionId : actionFolders) {
         QString actionDir = actionsDir + "/" + actionId;
 
-        QStringList filters;
-        filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-
-        QDir frameDir(actionDir);
-        frameDir.setNameFilters(filters);
-        frameDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-
-        QStringList frameNames = frameDir.entryList(QDir::Files, QDir::Name);
-        QStringList frameFiles;
-        for (const QString &frameName : frameNames) {
-            frameFiles.append(frameDir.filePath(frameName));
-        }
+        QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
 
         if (frameFiles.isEmpty()) {
             continue;

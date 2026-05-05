@@ -22,6 +22,10 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
     TimedTriggerMode timedTriggerMode,
     const QString &triggerTime)
 {
+    Q_UNUSED(petInfo);
+    Q_UNUSED(currentActions);
+    Q_UNUSED(fps);
+
     ActionImportResult result;
     result.success = false;
     result.message = QString();
@@ -29,15 +33,6 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
     if (actionId.isEmpty()) {
         result.message = QObject::tr("动作 ID 不能为空。");
         return result;
-    }
-
-    for (const PetAction &existing : currentActions) {
-        if (existing.id == actionId) {
-            if (existing.enabled) {
-                result.message = QObject::tr("该动作已添加到当前宠物。");
-                return result;
-            }
-        }
     }
 
     QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
@@ -55,36 +50,6 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
 
     if (frameFiles.isEmpty()) {
         result.message = QObject::tr("动作目录中没有图片帧。");
-        return result;
-    }
-
-    bool foundExisting = false;
-    for (PetAction &action : currentActions) {
-        if (action.id == actionId) {
-            action.enabled = true;
-            action.fps = fps;
-            action.frameCount = frameFiles.size();
-            action.frameFiles = frameFiles;
-            foundExisting = true;
-            break;
-        }
-    }
-
-    if (!foundExisting) {
-        PetAction newAction;
-        newAction.id = actionId;
-        newAction.name = actionId;
-        newAction.folderPath = actionId;
-        newAction.fps = fps;
-        newAction.frameCount = frameFiles.size();
-        newAction.frameFiles = frameFiles;
-        newAction.enabled = true;
-        currentActions.append(newAction);
-    }
-
-    QString petJsonPath = QDir(petDir).filePath("pet.json");
-    if (!PetConfigManager::savePetJson(petJsonPath, petInfo, currentActions)) {
-        result.message = QObject::tr("保存 pet.json 失败。");
         return result;
     }
 
@@ -118,16 +83,12 @@ ActionImportResult ActionImportService::registerExistingAction(
     TimedTriggerMode timedTriggerMode,
     const QString &triggerTime)
 {
+    Q_UNUSED(petInfo);
+    Q_UNUSED(currentActions);
+
     ActionImportResult result;
     result.success = false;
     result.message = QString();
-
-    for (const PetAction &existing : currentActions) {
-        if (existing.id == actionId) {
-            result.message = QObject::tr("动作 ID 已存在，请使用其他 ID。");
-            return result;
-        }
-    }
 
     QString targetActionDir = PetPaths::actionsDirectory() + "/" + actionId;
     if (QDir(targetActionDir).exists()) {
@@ -169,23 +130,7 @@ ActionImportResult ActionImportService::registerExistingAction(
         return result;
     }
 
-    PetAction newAction;
-    newAction.id = actionId;
-    newAction.name = actionId;
-    newAction.folderPath = actionId;
-    newAction.fps = fps;
-    newAction.frameCount = frameFiles.size();
-    newAction.enabled = true;
-
-    QList<PetAction> updatedActions = currentActions;
-    updatedActions.append(newAction);
-
-    QString petJsonPath = QDir(petDir).filePath("pet.json");
-    if (!PetConfigManager::savePetJson(petJsonPath, petInfo, updatedActions)) {
-        targetDir.removeRecursively();
-        result.message = QObject::tr("保存 pet.json 失败。");
-        return result;
-    }
+    Q_UNUSED(fps);
 
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
@@ -218,16 +163,12 @@ ActionImportResult ActionImportService::importGifAction(
     TimedTriggerMode timedTriggerMode,
     const QString &triggerTime)
 {
+    Q_UNUSED(petInfo);
+    Q_UNUSED(currentActions);
+
     ActionImportResult result;
     result.success = false;
     result.message = QString();
-
-    for (const PetAction &existing : currentActions) {
-        if (existing.id == actionId) {
-            result.message = QObject::tr("动作 ID 已存在，请使用其他 ID。");
-            return result;
-        }
-    }
 
     QString actionsDir = PetPaths::actionsDirectory();
     QString actionDir = actionsDir + "/" + actionId;
@@ -244,23 +185,7 @@ ActionImportResult ActionImportService::importGifAction(
         return result;
     }
 
-    PetAction newAction;
-    newAction.id = actionId;
-    newAction.name = actionId;
-    newAction.folderPath = actionId;
-    newAction.fps = fps;
-    newAction.frameCount = extractResult.frameCount;
-    newAction.enabled = true;
-
-    QList<PetAction> updatedActions = currentActions;
-    updatedActions.append(newAction);
-
-    QString petJsonPath = QDir(petDir).filePath("pet.json");
-    if (!PetConfigManager::savePetJson(petJsonPath, petInfo, updatedActions)) {
-        QDir(actionDir).removeRecursively();
-        result.message = QObject::tr("保存 pet.json 失败。");
-        return result;
-    }
+    Q_UNUSED(fps);
 
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {

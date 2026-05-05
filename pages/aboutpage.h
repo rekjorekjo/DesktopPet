@@ -29,6 +29,7 @@ private slots:
 private:
     void setupUi();
     void applyTheme();
+    QString elidedStatusText(const QString &text) const;
 
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;

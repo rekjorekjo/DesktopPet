@@ -12,35 +12,13 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
     PetPlaylist playlist,
     const QString &actionId)
 {
+    Q_UNUSED(actions);
+
     ActionLibraryOperationResult result;
     result.success = false;
     result.warning = false;
 
-    bool found = false;
-    for (PetAction &action : actions) {
-        if (action.id == actionId) {
-            action.enabled = false;
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        result.message = QObject::tr("找不到动作: %1").arg(actionId);
-        return result;
-    }
-
     int removedCount = playlist.removeActionReferences(actionId);
-
-    QString petJsonPath = QDir(petDir).filePath("pet.json");
-    PetBasicInfo info;
-    QList<PetAction> existingActions;
-    PetConfigManager::loadPetJson(petJsonPath, info, existingActions);
-
-    if (!PetConfigManager::savePetJson(petJsonPath, info, actions)) {
-        result.message = QObject::tr("保存 pet.json 失败。");
-        return result;
-    }
 
     QString playlistPath = QDir(petDir).filePath("playlist.json");
     if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
@@ -49,7 +27,7 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
     }
 
     result.success = true;
-    result.message = QObject::tr("已禁用动作 %1，清理了 %2 个分类引用。").arg(actionId).arg(removedCount);
+    result.message = QObject::tr("已从当前宠物移除动作 %1，清理了 %2 个分类引用。").arg(actionId).arg(removedCount);
     return result;
 }
 
@@ -59,45 +37,15 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
     PetPlaylist playlist,
     const QString &actionId)
 {
+    Q_UNUSED(actions);
+
     ActionLibraryOperationResult result;
     result.success = false;
     result.warning = false;
 
-    PetAction targetAction;
-    bool found = false;
-    for (const PetAction &action : actions) {
-        if (action.id == actionId) {
-            targetAction = action;
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        result.message = QObject::tr("找不到动作: %1").arg(actionId);
-        return result;
-    }
-
-    QString actionDir = PetPaths::resolveActionDirectory(targetAction);
-
-    for (int i = actions.size() - 1; i >= 0; --i) {
-        if (actions[i].id == actionId) {
-            actions.removeAt(i);
-            break;
-        }
-    }
+    QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
 
     int removedCount = playlist.removeActionReferences(actionId);
-
-    QString petJsonPath = QDir(petDir).filePath("pet.json");
-    PetBasicInfo info;
-    QList<PetAction> existingActions;
-    PetConfigManager::loadPetJson(petJsonPath, info, existingActions);
-
-    if (!PetConfigManager::savePetJson(petJsonPath, info, actions)) {
-        result.message = QObject::tr("保存 pet.json 失败。");
-        return result;
-    }
 
     QString playlistPath = QDir(petDir).filePath("playlist.json");
     if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {

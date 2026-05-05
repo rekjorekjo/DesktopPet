@@ -115,7 +115,7 @@ GifExtractResult GifFrameExtractor::extractGifToFrames(
             break;
         }
 
-        QString framePath = outputDir + QString("/%1.png").arg(frameIndex);
+        QString framePath = outputDir + QString("/%1.png").arg(frameIndex, 5, 10, QChar('0'));
         if (!frame.save(framePath, "PNG")) {
             result.errorMessage = QObject::tr("无法保存帧：%1").arg(frameIndex);
             return result;

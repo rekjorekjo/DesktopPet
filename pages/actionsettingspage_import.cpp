@@ -1,23 +1,15 @@
 #include "actionsettingspage.h"
 
-#include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "dialogs/newactiondialog.h"
 #include "dialogs/importactiondialog.h"
 #include "services/actionimportservice.h"
+#include "services/actionimportworker.h"
+#include "widgets/actionlibrarylistwidget.h"
 
 #include <QApplication>
-#include <QDir>
 #include <QMessageBox>
-
-namespace {
-class ScopedWaitCursor
-{
-public:
-    ScopedWaitCursor() { QApplication::setOverrideCursor(Qt::WaitCursor); }
-    ~ScopedWaitCursor() { QApplication::restoreOverrideCursor(); }
-};
-}
+#include <QThread>
 
 void ActionSettingsPage::onNewAction()
 {
@@ -28,41 +20,19 @@ void ActionSettingsPage::onNewAction()
     dialog->setWindowModality(Qt::WindowModal);
 
     connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
-        QList<PetAction> petActions;
-        PetBasicInfo petInfo = m_petInfo;
-        PetConfigManager::loadPetJson(QDir(petDir).filePath("pet.json"), petInfo, petActions);
+        ActionImportWorker::ImportGifTask task;
+        task.petDir = petDir;
+        task.currentPlaylist = m_playlist;
+        task.gifPath = dialog->gifPath();
+        task.actionId = dialog->actionId();
+        task.fps = dialog->fps();
+        task.targetCategory = dialog->targetCategory();
+        task.timedIntervalSeconds = dialog->timedIntervalSeconds();
+        task.emotionName = dialog->emotionName();
+        task.timedTriggerMode = dialog->timedTriggerMode();
+        task.triggerTime = dialog->triggerTime();
 
-        ActionImportResult result;
-        {
-            ScopedWaitCursor wait;
-            result = ActionImportService::importGifAction(
-                petDir,
-                m_petInfo,
-                petActions,
-                m_playlist,
-                dialog->gifPath(),
-                dialog->actionId(),
-                dialog->fps(),
-                dialog->targetCategory(),
-                dialog->timedIntervalSeconds(),
-                dialog->emotionName(),
-                dialog->timedTriggerMode(),
-                dialog->triggerTime()
-            );
-        }
-
-        if (!result.success) {
-            QMessageBox::warning(this, tr("新建动作失败"), result.message);
-            return;
-        }
-
-        QMessageBox::information(this, tr("提示"), result.message);
-
-        initData();
-        if (m_loadedSuccessfully) {
-            refreshActionLibraryList();
-            refreshCurrentCategoryList();
-        }
+        startImportGifTask(task);
     });
 
     dialog->open();
@@ -77,42 +47,128 @@ void ActionSettingsPage::onImportAction()
     dialog->setWindowModality(Qt::WindowModal);
 
     connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
-        QList<PetAction> petActions;
-        PetBasicInfo petInfo = m_petInfo;
-        PetConfigManager::loadPetJson(QDir(petDir).filePath("pet.json"), petInfo, petActions);
+        ActionImportWorker::ImportFolderTask task;
+        task.petDir = petDir;
+        task.currentPlaylist = m_playlist;
+        task.actionFolderPath = dialog->actionFolderPath();
+        task.actionId = dialog->actionId();
+        task.fps = dialog->fps();
+        task.targetCategory = dialog->targetCategory();
+        task.timedIntervalSeconds = dialog->timedIntervalSeconds();
+        task.emotionName = dialog->emotionName();
+        task.timedTriggerMode = dialog->timedTriggerMode();
+        task.triggerTime = dialog->triggerTime();
 
-        ActionImportResult result;
-        {
-            ScopedWaitCursor wait;
-            result = ActionImportService::registerExistingAction(
-                petDir,
-                m_petInfo,
-                petActions,
-                m_playlist,
-                dialog->actionId(),
-                dialog->actionFolderPath(),
-                dialog->fps(),
-                dialog->targetCategory(),
-                dialog->timedIntervalSeconds(),
-                dialog->emotionName(),
-                dialog->timedTriggerMode(),
-                dialog->triggerTime()
-            );
-        }
-
-        if (!result.success) {
-            QMessageBox::warning(this, tr("导入动作失败"), result.message);
-            return;
-        }
-
-        QMessageBox::information(this, tr("提示"), result.message);
-
-        initData();
-        if (m_loadedSuccessfully) {
-            refreshActionLibraryList();
-            refreshCurrentCategoryList();
-        }
+        startImportFolderTask(task);
     });
 
     dialog->open();
+}
+
+void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportFolderTask &task)
+{
+    m_newActionButton->setEnabled(false);
+    m_importActionButton->setEnabled(false);
+    m_actionLibraryList->setEnabled(false);
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    QThread *thread = new QThread;
+    ActionImportWorker *worker = new ActionImportWorker(task);
+
+    worker->moveToThread(thread);
+
+    connect(thread, &QThread::started, worker, &ActionImportWorker::processImportFolder);
+
+    connect(worker, &ActionImportWorker::finished, this, [this, thread](const ActionImportResult &result) {
+        QApplication::restoreOverrideCursor();
+
+        m_newActionButton->setEnabled(true);
+        m_importActionButton->setEnabled(true);
+        m_actionLibraryList->setEnabled(true);
+
+        if (!result.success) {
+            QMessageBox::warning(this, tr("导入动作失败"), result.message);
+        } else if (result.warning) {
+            QMessageBox::warning(this, tr("提示"), result.message);
+        } else {
+            QMessageBox::information(this, tr("提示"), result.message);
+        }
+
+        if (result.success) {
+            initData();
+            if (m_loadedSuccessfully) {
+                refreshActionLibraryList();
+                refreshCurrentCategoryList();
+            }
+        }
+
+        thread->quit();
+    });
+
+    connect(thread, &QThread::finished, this, [this, thread]() {
+        if (m_importThread == thread) {
+            m_importThread = nullptr;
+        }
+    });
+
+    connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+    m_importThread = thread;
+    thread->start();
+}
+
+void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifTask &task)
+{
+    m_newActionButton->setEnabled(false);
+    m_importActionButton->setEnabled(false);
+    m_actionLibraryList->setEnabled(false);
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    QThread *thread = new QThread;
+    ActionImportWorker *worker = new ActionImportWorker(task);
+
+    worker->moveToThread(thread);
+
+    connect(thread, &QThread::started, worker, &ActionImportWorker::processImportGif);
+
+    connect(worker, &ActionImportWorker::finished, this, [this, thread](const ActionImportResult &result) {
+        QApplication::restoreOverrideCursor();
+
+        m_newActionButton->setEnabled(true);
+        m_importActionButton->setEnabled(true);
+        m_actionLibraryList->setEnabled(true);
+
+        if (!result.success) {
+            QMessageBox::warning(this, tr("新建动作失败"), result.message);
+        } else if (result.warning) {
+            QMessageBox::warning(this, tr("新建动作"), result.message);
+        } else {
+            QMessageBox::information(this, tr("新建动作"), result.message);
+        }
+
+        if (result.success) {
+            initData();
+            if (m_loadedSuccessfully) {
+                refreshActionLibraryList();
+                refreshCurrentCategoryList();
+            }
+        }
+
+        thread->quit();
+    });
+
+    connect(thread, &QThread::finished, this, [this, thread]() {
+        if (m_importThread == thread) {
+            m_importThread = nullptr;
+        }
+    });
+
+    connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+    m_importThread = thread;
+    thread->start();
 }

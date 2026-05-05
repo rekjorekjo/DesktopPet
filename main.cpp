@@ -3,6 +3,7 @@
 #include "core/petwidget.h"
 #include "core/settingswindow.h"
 #include "core/traymanager.h"
+#include "services/actionimportservice.h"
 
 #include <QApplication>
 #include <QIcon>
@@ -11,6 +12,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    qRegisterMetaType<ActionImportResult>("ActionImportResult");
 
     QIcon appIcon(":/icons/app_icon.ico");
     QApplication::setWindowIcon(appIcon);

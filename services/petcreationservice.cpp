@@ -46,7 +46,6 @@ PetCreationResult PetCreationService::createPet(
     info.canvasSize = canvasSize.isValid() ? canvasSize : QSize(400, 400);
     info.displaySize = displaySize.isValid() ? displaySize : QSize(200, 200);
 
-    QList<PetAction> actions;
     PetPlaylist playlist;
 
     QDir actionsDir(PetPaths::actionsDirectory());
@@ -56,25 +55,11 @@ PetCreationResult PetCreationService::createPet(
     for (const QString &actionFolder : actionFolders) {
         QString actionPath = PetPaths::actionsDirectory() + "/" + actionFolder;
 
-        QDir frameDir(actionPath);
-        QStringList frameFiles = frameDir.entryList(
-            QStringList() << "*.png" << "*.jpg" << "*.jpeg" << "*.webp",
-            QDir::Files
-        );
+        QStringList frameFiles = PetConfigManager::scanFrameFiles(actionPath);
 
         if (frameFiles.isEmpty()) {
             continue;
         }
-
-        PetAction action;
-        action.id = actionFolder;
-        action.name = actionFolder;
-        action.folderPath = actionFolder;
-        action.fps = 12;
-        action.enabled = true;
-        action.frameCount = frameFiles.size();
-
-        actions.append(action);
 
         PetActionRef ref;
         ref.actionId = actionFolder;
@@ -92,7 +77,7 @@ PetCreationResult PetCreationService::createPet(
     }
 
     QString petJsonPath = targetDir + "/pet.json";
-    if (!PetConfigManager::savePetJson(petJsonPath, info, actions)) {
+    if (!PetConfigManager::savePetInfoJson(petJsonPath, info)) {
         result.message = QObject::tr("保存 pet.json 失败。");
         return result;
     }
