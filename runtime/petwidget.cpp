@@ -7,6 +7,7 @@
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QRandomGenerator>
@@ -251,31 +252,21 @@ void PetWidget::loadGlobalActionLibrary()
 {
     m_actions.clear();
 
-    QString actionsDir = PetPaths::actionsDirectory();
-    QDir dir(actionsDir);
-    if (!dir.exists()) {
+    const QString actionsDirPath = PetPaths::actionsDirectory();
+    QDir actionsDir(actionsDirPath);
+    if (!actionsDir.exists()) {
         return;
     }
 
-    QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    const QStringList actionFolders = actionsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
     for (const QString &actionId : actionFolders) {
-        QString actionDir = actionsDir + "/" + actionId;
+        const QString actionDirPath = actionsDir.filePath(actionId);
+        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDirPath);
 
-        QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
-
-        if (frameFiles.isEmpty()) {
+        if (!action.isValid()) {
             continue;
         }
-
-        PetAction action;
-        action.id = actionId;
-        action.name = actionId;
-        action.folderPath = actionId;
-        action.fps = 12;
-        action.frameCount = frameFiles.size();
-        action.frameFiles = frameFiles;
-        action.enabled = true;
 
         m_actions.append(action);
     }

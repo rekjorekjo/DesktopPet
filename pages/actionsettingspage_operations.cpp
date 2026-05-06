@@ -1,14 +1,12 @@
 #include "actionsettingspage.h"
 
-#include "core/petconfigmanager.h"
-#include "core/petpaths.h"
+#include "services/actionlibraryservice.h"
 #include "theme/thememanager.h"
 #include "widgets/actionlibrarylistwidget.h"
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actioncategorytabwidget.h"
 
 #include <QAction>
-#include <QDir>
 #include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMenu>
@@ -103,7 +101,7 @@ void ActionSettingsPage::onDeleteLibraryAction()
     QMessageBox::StandardButton reply = QMessageBox::question(
         this,
         tr("删除动作"),
-        tr("确定要删除动作 %1 吗？\n\n动作将从全局动作库中删除，并从当前宠物的所有分类中移除！此操作不可撤销！").arg(actionId),
+        tr("确定要删除动作 %1 吗？\n\n动作将从全局动作库中删除，并从所有宠物的播放列表中移除！此操作不可撤销！").arg(actionId),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No
     );
@@ -112,30 +110,22 @@ void ActionSettingsPage::onDeleteLibraryAction()
         return;
     }
 
-    QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
-    QDir dir(actionDir);
-
-    int removedCount = m_playlist.removeActionReferences(actionId);
-
-    QString playlistPath = PetPaths::currentPetDirectory() + "/playlist.json";
-    PetConfigManager::savePlaylistToJson(playlistPath, m_playlist);
-
-    bool deleteSuccess = true;
-    if (dir.exists()) {
-        deleteSuccess = dir.removeRecursively();
+    ActionLibraryOperationResult result = ActionLibraryService::deleteAction(actionId);
+    if (!result.success) {
+        QMessageBox::warning(this, tr("删除动作失败"), result.message);
+        return;
     }
 
     initData();
     refreshActionLibraryList();
     refreshCurrentCategoryList();
 
-    if (deleteSuccess) {
-        QMessageBox::information(this, tr("成功"),
-            tr("已删除动作 %1，清理了 %2 个分类引用。").arg(actionId).arg(removedCount));
-    } else {
-        QMessageBox::warning(this, tr("部分成功"),
-            tr("已清理 %1 个分类引用，但删除动作目录失败。").arg(removedCount));
+    if (result.warning) {
+        QMessageBox::warning(this, tr("删除动作"), result.message);
+        return;
     }
+
+    QMessageBox::information(this, tr("删除动作"), result.message);
 }
 
 void ActionSettingsPage::onMoveUp()

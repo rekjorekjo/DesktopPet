@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
+#include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -369,6 +371,152 @@ void PetConfigManager::scanActionFrames(PetAction &action)
     QStringList frameFiles = scanFrameFiles(absoluteFolderPath);
     action.frameFiles = frameFiles;
     action.frameCount = frameFiles.size();
+    action.frameSize = detectFrameSize(frameFiles);
+    loadActionMetadata(absoluteFolderPath, action);
+    action.frameCount = frameFiles.size();
+    action.frameFiles = frameFiles;
+}
+
+bool PetConfigManager::loadActionMetadata(const QString &actionDirPath, PetAction &action)
+{
+    QString filePath = QDir(actionDirPath).filePath("action.json");
+    
+    if (!QFile::exists(filePath)) {
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open action.json:" << filePath << file.errorString();
+        return false;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Failed to parse action.json:" << filePath << parseError.errorString();
+        return false;
+    }
+    
+    if (!doc.isObject()) {
+        qWarning() << "action.json is not a JSON object:" << filePath;
+        return false;
+    }
+
+    QJsonObject root = doc.object();
+
+    QString metadataId = root.value("id").toString().trimmed();
+    if (action.id.isEmpty()) {
+        action.id = metadataId;
+    }
+
+    QString metadataName = root.value("name").toString().trimmed();
+    if (!metadataName.isEmpty()) {
+        action.name = metadataName;
+    } else if (action.name.isEmpty()) {
+        action.name = action.id;
+    }
+
+    action.fps = normalizedFps(root.value("fps").toInt(action.fps > 0 ? action.fps : 12));
+
+    QJsonObject frameSizeObj = root.value("frameSize").toObject();
+    QSize frameSize(
+        frameSizeObj.value("width").toInt(-1),
+        frameSizeObj.value("height").toInt(-1)
+    );
+    if (frameSize.isValid() && !frameSize.isEmpty()) {
+        action.frameSize = frameSize;
+    }
+
+    if (action.folderPath.isEmpty()) {
+        action.folderPath = action.id;
+    }
+
+    return true;
+}
+
+bool PetConfigManager::saveActionMetadata(const QString &actionDirPath, const PetAction &action)
+{
+    QDir actionDir(actionDirPath);
+    if (!actionDir.exists()) {
+        qWarning() << "saveActionMetadata: action directory does not exist:" << actionDirPath;
+        return false;
+    }
+
+    QJsonObject root;
+    root["id"] = action.id;
+    root["name"] = action.name.trimmed().isEmpty() ? action.id : action.name.trimmed();
+    root["fps"] = normalizedFps(action.fps);
+    root["frameCount"] = action.frameFiles.isEmpty() ? action.frameCount : action.frameFiles.size();
+
+    QSize frameSize = action.frameSize;
+    if (!frameSize.isValid() || frameSize.isEmpty()) {
+        frameSize = detectFrameSize(action.frameFiles);
+    }
+
+    if (frameSize.isValid() && !frameSize.isEmpty()) {
+        QJsonObject frameSizeObj;
+        frameSizeObj["width"] = frameSize.width();
+        frameSizeObj["height"] = frameSize.height();
+        root["frameSize"] = frameSizeObj;
+    }
+
+    QJsonDocument doc(root);
+
+    QFile file(actionDir.filePath("action.json"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << "saveActionMetadata: failed to open action.json for writing:" << file.fileName() << file.errorString();
+        return false;
+    }
+
+    QByteArray jsonData = doc.toJson(QJsonDocument::Indented);
+    qint64 bytesWritten = file.write(jsonData);
+    file.close();
+
+    if (bytesWritten != jsonData.size()) {
+        qWarning() << "saveActionMetadata: incomplete write to action.json, expected" << jsonData.size() << "bytes, wrote" << bytesWritten;
+        return false;
+    }
+
+    return true;
+}
+
+PetAction PetConfigManager::loadGlobalActionFromDirectory(const QString &actionId, const QString &actionDirPath)
+{
+    QStringList frameFiles = scanFrameFiles(actionDirPath);
+    if (frameFiles.isEmpty()) {
+        return PetAction();
+    }
+
+    PetAction action;
+    action.id = actionId;
+    action.name = actionId;
+    action.folderPath = actionId;
+    action.fps = 12;
+    action.frameFiles = frameFiles;
+    action.frameCount = frameFiles.size();
+    action.frameSize = detectFrameSize(frameFiles);
+    action.enabled = true;
+
+    loadActionMetadata(actionDirPath, action);
+
+    action.id = actionId;
+    if (action.name.trimmed().isEmpty()) {
+        action.name = actionId;
+    }
+    action.folderPath = actionId;
+    action.frameFiles = frameFiles;
+    action.frameCount = frameFiles.size();
+    action.enabled = true;
+
+    if (!action.frameSize.isValid() || action.frameSize.isEmpty()) {
+        action.frameSize = detectFrameSize(frameFiles);
+    }
+
+    return action;
 }
 
 QStringList PetConfigManager::scanFrameFiles(const QString &folderPath)
@@ -391,29 +539,93 @@ QStringList PetConfigManager::scanFrameFiles(const QString &folderPath)
 
 bool PetConfigManager::naturalSortLessThan(const QString &a, const QString &b)
 {
-    QString baseA = QFileInfo(a).completeBaseName();
-    QString baseB = QFileInfo(b).completeBaseName();
+    const QString baseA = QFileInfo(a).completeBaseName();
+    const QString baseB = QFileInfo(b).completeBaseName();
 
-    bool okA = false;
-    bool okB = false;
-    int numA = baseA.toInt(&okA);
-    int numB = baseB.toInt(&okB);
+    int indexA = 0;
+    int indexB = 0;
 
-    if (okA && okB) {
-        if (numA != numB) {
-            return numA < numB;
+    while (indexA < baseA.size() && indexB < baseB.size()) {
+        const QChar charA = baseA.at(indexA);
+        const QChar charB = baseB.at(indexB);
+
+        if (charA.isDigit() && charB.isDigit()) {
+            const int digitStartA = indexA;
+            const int digitStartB = indexB;
+
+            while (indexA < baseA.size() && baseA.at(indexA).isDigit()) {
+                ++indexA;
+            }
+            while (indexB < baseB.size() && baseB.at(indexB).isDigit()) {
+                ++indexB;
+            }
+
+            QString numberA = baseA.mid(digitStartA, indexA - digitStartA);
+            QString numberB = baseB.mid(digitStartB, indexB - digitStartB);
+
+            while (numberA.size() > 1 && numberA.startsWith('0')) {
+                numberA.remove(0, 1);
+            }
+            while (numberB.size() > 1 && numberB.startsWith('0')) {
+                numberB.remove(0, 1);
+            }
+
+            if (numberA.size() != numberB.size()) {
+                return numberA.size() < numberB.size();
+            }
+
+            const int numberCompare = QString::compare(numberA, numberB);
+            if (numberCompare != 0) {
+                return numberCompare < 0;
+            }
+
+            continue;
         }
-        return a < b;
+
+        const ushort foldedA = charA.toLower().unicode();
+        const ushort foldedB = charB.toLower().unicode();
+        if (foldedA != foldedB) {
+            return foldedA < foldedB;
+        }
+
+        ++indexA;
+        ++indexB;
     }
 
-    if (okA) {
-        return true;
-    }
-    if (okB) {
-        return false;
+    if (baseA.size() != baseB.size()) {
+        return baseA.size() < baseB.size();
     }
 
-    return baseA < baseB;
+    return QFileInfo(a).fileName() < QFileInfo(b).fileName();
+}
+
+int PetConfigManager::normalizedFps(int fps)
+{
+    if (fps < 1) {
+        return 12;
+    }
+    if (fps > 60) {
+        return 60;
+    }
+    return fps;
+}
+
+QSize PetConfigManager::detectFrameSize(const QStringList &frameFiles)
+{
+    for (const QString &frameFile : frameFiles) {
+        QImageReader reader(frameFile);
+        QSize size = reader.size();
+        if (size.isValid() && !size.isEmpty()) {
+            return size;
+        }
+
+        QImage image = reader.read();
+        if (!image.isNull()) {
+            return image.size();
+        }
+    }
+
+    return QSize();
 }
 
 QJsonObject PetConfigManager::actionToJson(const PetAction &action)
@@ -434,7 +646,7 @@ PetAction PetConfigManager::jsonToAction(const QJsonObject &obj)
     action.id = obj.value("id").toString();
     action.name = obj.value("name").toString();
     action.folderPath = obj.value("folderPath").toString();
-    action.fps = obj.value("fps").toInt(24);
+    action.fps = obj.value("fps").toInt(12);
     action.frameCount = obj.value("frameCount").toInt(1);
     action.enabled = obj.value("enabled").toBool(true);
     return action;

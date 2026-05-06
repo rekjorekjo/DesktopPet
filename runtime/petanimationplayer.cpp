@@ -9,9 +9,9 @@ PetAnimationPlayer::PetAnimationPlayer(QObject *parent)
     , m_loop(false)
     , m_playing(false)
     , m_paused(false)
-    , m_intervalMs(42)
+    , m_intervalMs(83)
     , m_speedMultiplier(1.0)
-    , m_baseFps(24)
+    , m_baseFps(12)
 {
     connect(m_timer, &QTimer::timeout, this, &PetAnimationPlayer::nextFrame);
 }
@@ -53,7 +53,12 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
 
     int fps = action.fps;
     if (fps <= 0) {
-        fps = 24;
+        fps = 12;
+    }
+    if (fps < 1) {
+        fps = 1;
+    } else if (fps > 60) {
+        fps = 60;
     }
     m_baseFps = fps;
 

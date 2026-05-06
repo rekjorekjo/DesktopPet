@@ -34,6 +34,10 @@ public:
 
     static bool loadPetFromDirectory(const QString &petDirPath, PetBasicInfo &info, QList<PetAction> &actions, PetPlaylist &playlist);
 
+    static bool loadActionMetadata(const QString &actionDirPath, PetAction &action);
+    static bool saveActionMetadata(const QString &actionDirPath, const PetAction &action);
+    static PetAction loadGlobalActionFromDirectory(const QString &actionId, const QString &actionDirPath);
+
     static QStringList scanFrameFiles(const QString &folderPath);
 
 private:
@@ -45,6 +49,8 @@ private:
 
     static void scanActionFrames(PetAction &action);
     static bool naturalSortLessThan(const QString &a, const QString &b);
+    static int normalizedFps(int fps);
+    static QSize detectFrameSize(const QStringList &frameFiles);
 };
 
 #endif // PETCONFIGMANAGER_H

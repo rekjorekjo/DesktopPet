@@ -1,5 +1,6 @@
 #include "importactiondialog.h"
 
+#include "core/petconfigmanager.h"
 #include "theme/thememanager.h"
 
 #include <QDir>
@@ -377,15 +378,5 @@ bool ImportActionDialog::validateActionId(const QString &id)
 
 int ImportActionDialog::scanFrameCount(const QString &folderPath)
 {
-    QDir dir(folderPath);
-    if (!dir.exists()) {
-        return 0;
-    }
-
-    QStringList filters;
-    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-    dir.setNameFilters(filters);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-
-    return dir.entryList().size();
+    return PetConfigManager::scanFrameFiles(folderPath).size();
 }

@@ -34,21 +34,11 @@ void ActionSettingsPage::loadGlobalActionLibrary()
 
     for (const QString &actionId : actionFolders) {
         QString actionDir = actionsDir + "/" + actionId;
+        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDir);
 
-        QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
-
-        if (frameFiles.isEmpty()) {
+        if (!action.isValid()) {
             continue;
         }
-
-        PetAction action;
-        action.id = actionId;
-        action.name = actionId;
-        action.folderPath = actionId;
-        action.fps = 12;
-        action.frameCount = frameFiles.size();
-        action.frameFiles = frameFiles;
-        action.enabled = true;
 
         m_actionLibrary.append(action);
     }

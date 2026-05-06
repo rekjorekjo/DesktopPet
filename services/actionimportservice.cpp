@@ -8,6 +8,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 
 ActionImportResult ActionImportService::registerGlobalActionToPet(
     const QString &petDir,
@@ -35,18 +36,14 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
         return result;
     }
 
-    QString actionDir = PetPaths::actionsDirectory() + "/" + actionId;
+    QDir actionsDir(PetPaths::actionsDirectory());
+    QString actionDir = actionsDir.filePath(actionId);
     if (!QDir(actionDir).exists()) {
         result.message = QObject::tr("动作资源目录不存在。");
         return result;
     }
 
-    QDir dir(actionDir);
-    QStringList filters;
-    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-    dir.setNameFilters(filters);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    QStringList frameFiles = dir.entryList();
+    const QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
 
     if (frameFiles.isEmpty()) {
         result.message = QObject::tr("动作目录中没有图片帧。");
@@ -90,7 +87,8 @@ ActionImportResult ActionImportService::registerExistingAction(
     result.success = false;
     result.message = QString();
 
-    QString targetActionDir = PetPaths::actionsDirectory() + "/" + actionId;
+    QDir actionsDir(PetPaths::actionsDirectory());
+    QString targetActionDir = actionsDir.filePath(actionId);
     if (QDir(targetActionDir).exists()) {
         result.message = QObject::tr("动作目录已存在，请使用其他 ID。");
         return result;
@@ -104,20 +102,21 @@ ActionImportResult ActionImportService::registerExistingAction(
 
     QDir sourceDir(folderPath);
     if (!sourceDir.exists()) {
+        targetDir.removeRecursively();
         result.message = QObject::tr("源动作文件夹不存在。");
         return result;
     }
 
-    QStringList filters;
-    filters << "*.png" << "*.jpg" << "*.jpeg" << "*.webp";
-    sourceDir.setNameFilters(filters);
-    sourceDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    QStringList frameFiles = sourceDir.entryList();
+    const QStringList frameFiles = PetConfigManager::scanFrameFiles(folderPath);
+    if (frameFiles.isEmpty()) {
+        targetDir.removeRecursively();
+        result.message = QObject::tr("源动作文件夹中没有图片帧。");
+        return result;
+    }
 
     bool copySuccess = true;
-    for (const QString &frameFile : frameFiles) {
-        QString srcPath = folderPath + "/" + frameFile;
-        QString destPath = targetActionDir + "/" + frameFile;
+    for (const QString &srcPath : frameFiles) {
+        const QString destPath = targetDir.filePath(QFileInfo(srcPath).fileName());
         if (!QFile::copy(srcPath, destPath)) {
             copySuccess = false;
             break;
@@ -130,7 +129,19 @@ ActionImportResult ActionImportService::registerExistingAction(
         return result;
     }
 
-    Q_UNUSED(fps);
+    PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, targetActionDir);
+    if (!action.isValid()) {
+        targetDir.removeRecursively();
+        result.message = QObject::tr("读取动作帧失败。");
+        return result;
+    }
+    action.fps = fps;
+
+    if (!PetConfigManager::saveActionMetadata(targetActionDir, action)) {
+        targetDir.removeRecursively();
+        result.message = QObject::tr("保存动作元数据失败。");
+        return result;
+    }
 
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {
@@ -170,8 +181,8 @@ ActionImportResult ActionImportService::importGifAction(
     result.success = false;
     result.message = QString();
 
-    QString actionsDir = PetPaths::actionsDirectory();
-    QString actionDir = actionsDir + "/" + actionId;
+    QDir actionsDir(PetPaths::actionsDirectory());
+    QString actionDir = actionsDir.filePath(actionId);
 
     if (QDir(actionDir).exists()) {
         result.message = QObject::tr("动作目录已存在，请使用其他 ID。");
@@ -185,7 +196,19 @@ ActionImportResult ActionImportService::importGifAction(
         return result;
     }
 
-    Q_UNUSED(fps);
+    PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDir);
+    if (!action.isValid()) {
+        QDir(actionDir).removeRecursively();
+        result.message = QObject::tr("读取动作帧失败。");
+        return result;
+    }
+    action.fps = fps;
+
+    if (!PetConfigManager::saveActionMetadata(actionDir, action)) {
+        QDir(actionDir).removeRecursively();
+        result.message = QObject::tr("保存动作元数据失败。");
+        return result;
+    }
 
     PetPlaylist updatedPlaylist = currentPlaylist;
     if (targetCategory != TargetCategory::None) {

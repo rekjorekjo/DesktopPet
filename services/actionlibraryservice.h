@@ -12,6 +12,10 @@ struct ActionLibraryOperationResult
     bool success = false;
     bool warning = false;
     QString message;
+    int removedReferenceCount = 0;
+    int cleanedPetCount = 0;
+    int failedPlaylistCount = 0;
+    bool actionDirectoryDeleted = false;
 };
 
 class ActionLibraryService
@@ -21,6 +25,10 @@ public:
         const QString &petDir,
         QList<PetAction> actions,
         PetPlaylist playlist,
+        const QString &actionId
+    );
+
+    static ActionLibraryOperationResult deleteAction(
         const QString &actionId
     );
 

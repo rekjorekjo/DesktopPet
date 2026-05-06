@@ -1,8 +1,9 @@
 #include "petaction.h"
 
 PetAction::PetAction()
-    : fps(15)
+    : fps(12)
     , frameCount(0)
+    , frameSize()
     , enabled(true)
 {
 }
@@ -13,6 +14,7 @@ PetAction::PetAction(const QString &actionId, const QString &actionName, const Q
     , folderPath(path)
     , fps(actionFps)
     , frameCount(frames)
+    , frameSize()
     , enabled(true)
 {
 }
