@@ -1,5 +1,27 @@
 #include "petanimationplayer.h"
 
+int PetAnimationPlayer::clampFps(int fps)
+{
+    if (fps < MinFps) {
+        return MinFps;
+    }
+    if (fps > MaxFps) {
+        return MaxFps;
+    }
+    return fps;
+}
+
+int PetAnimationPlayer::calculateIntervalMs(int fps, double speedMultiplier)
+{
+    int clampedFps = clampFps(fps);
+    double effectiveFps = clampedFps * speedMultiplier;
+    int interval = static_cast<int>(1000.0 / effectiveFps);
+    if (interval < MinIntervalMs) {
+        interval = MinIntervalMs;
+    }
+    return interval;
+}
+
 PetAnimationPlayer::PetAnimationPlayer(QObject *parent)
     : QObject(parent)
     , m_timer(new QTimer(this))
@@ -9,9 +31,9 @@ PetAnimationPlayer::PetAnimationPlayer(QObject *parent)
     , m_loop(false)
     , m_playing(false)
     , m_paused(false)
-    , m_intervalMs(83)
+    , m_intervalMs(calculateIntervalMs(DefaultFps, 1.0))
     , m_speedMultiplier(1.0)
-    , m_baseFps(12)
+    , m_baseFps(DefaultFps)
 {
     connect(m_timer, &QTimer::timeout, this, &PetAnimationPlayer::nextFrame);
 }
@@ -53,20 +75,10 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
 
     int fps = action.fps;
     if (fps <= 0) {
-        fps = 12;
+        fps = DefaultFps;
     }
-    if (fps < 1) {
-        fps = 1;
-    } else if (fps > 60) {
-        fps = 60;
-    }
-    m_baseFps = fps;
-
-    double effectiveFps = fps * m_speedMultiplier;
-    m_intervalMs = static_cast<int>(1000.0 / effectiveFps);
-    if (m_intervalMs < 16) {
-        m_intervalMs = 16;
-    }
+    m_baseFps = clampFps(fps);
+    m_intervalMs = calculateIntervalMs(m_baseFps, m_speedMultiplier);
 
     return true;
 }
@@ -137,12 +149,7 @@ void PetAnimationPlayer::setSpeedMultiplier(double multiplier)
     }
 
     m_speedMultiplier = multiplier;
-
-    double effectiveFps = m_baseFps * m_speedMultiplier;
-    m_intervalMs = static_cast<int>(1000.0 / effectiveFps);
-    if (m_intervalMs < 16) {
-        m_intervalMs = 16;
-    }
+    m_intervalMs = calculateIntervalMs(m_baseFps, m_speedMultiplier);
 
     if (m_playing && !m_paused && m_timer->isActive()) {
         m_timer->setInterval(m_intervalMs);

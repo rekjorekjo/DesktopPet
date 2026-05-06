@@ -124,7 +124,7 @@ PetImportResult PetImportService::importPet(
         }
 
         for (const QString &actionId : allActionIds) {
-            QString actionDir = actionsDir + "/" + actionId;
+            QString actionDir = actionsDirectory.filePath(actionId);
             if (!QDir(actionDir).exists()) {
                 hasMissingActions = true;
                 break;

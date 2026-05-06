@@ -33,7 +33,7 @@ void ActionSettingsPage::loadGlobalActionLibrary()
     QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
     for (const QString &actionId : actionFolders) {
-        QString actionDir = actionsDir + "/" + actionId;
+        QString actionDir = dir.filePath(actionId);
         PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDir);
 
         if (!action.isValid()) {

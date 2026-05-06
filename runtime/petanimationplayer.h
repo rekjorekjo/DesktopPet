@@ -38,6 +38,14 @@ private slots:
     void nextFrame();
 
 private:
+    static constexpr int DefaultFps = 12;
+    static constexpr int MinFps = 1;
+    static constexpr int MaxFps = 60;
+    static constexpr int MinIntervalMs = 16;
+
+    static int clampFps(int fps);
+    static int calculateIntervalMs(int fps, double speedMultiplier);
+
     QList<QPixmap> m_frames;
     QTimer *m_timer;
     int m_currentFrameIndex;

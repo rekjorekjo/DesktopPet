@@ -9,6 +9,24 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QRegularExpression>
+
+namespace {
+bool isValidActionId(const QString &actionId)
+{
+    if (actionId.isEmpty()) {
+        return false;
+    }
+    if (actionId == "." || actionId == "..") {
+        return false;
+    }
+    if (actionId.contains("/") || actionId.contains("\\")) {
+        return false;
+    }
+    static QRegularExpression re("^[a-zA-Z0-9_-]+$");
+    return re.match(actionId).hasMatch();
+}
+}
 
 ActionImportResult ActionImportService::registerGlobalActionToPet(
     const QString &petDir,
@@ -31,8 +49,8 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
     result.success = false;
     result.message = QString();
 
-    if (actionId.isEmpty()) {
-        result.message = QObject::tr("动作 ID 不能为空。");
+    if (!isValidActionId(actionId)) {
+        result.message = QObject::tr("动作 ID 格式无效，只能包含字母、数字、下划线和短横线。");
         return result;
     }
 
@@ -86,6 +104,11 @@ ActionImportResult ActionImportService::registerExistingAction(
     ActionImportResult result;
     result.success = false;
     result.message = QString();
+
+    if (!isValidActionId(actionId)) {
+        result.message = QObject::tr("动作 ID 格式无效，只能包含字母、数字、下划线和短横线。");
+        return result;
+    }
 
     QDir actionsDir(PetPaths::actionsDirectory());
     QString targetActionDir = actionsDir.filePath(actionId);
@@ -180,6 +203,11 @@ ActionImportResult ActionImportService::importGifAction(
     ActionImportResult result;
     result.success = false;
     result.message = QString();
+
+    if (!isValidActionId(actionId)) {
+        result.message = QObject::tr("动作 ID 格式无效，只能包含字母、数字、下划线和短横线。");
+        return result;
+    }
 
     QDir actionsDir(PetPaths::actionsDirectory());
     QString actionDir = actionsDir.filePath(actionId);

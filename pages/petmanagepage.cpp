@@ -219,7 +219,7 @@ void PetManagePage::loadPetInfo()
         QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
         for (const QString &actionId : actionFolders) {
-            QString actionDir = actionsDir + "/" + actionId;
+            QString actionDir = dir.filePath(actionId);
             PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDir);
 
             if (!action.isValid()) {
@@ -446,7 +446,7 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
                     continue;
                 }
 
-                QString actionDir = actionsDir + "/" + actionId;
+                QString actionDir = dir.filePath(actionId);
                 QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
 
                 if (!frameFiles.isEmpty()) {
