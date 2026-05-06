@@ -1197,6 +1197,6 @@ QString ThemeManager::glassScrollAreaStyleSheet() const
 QString ThemeManager::glassTitleLabelStyleSheet() const
 {
     ThemePalette p = currentPalette();
-    return QString("color: %1; background-color: transparent; padding: 28px 28px 0 28px;")
+    return QString("color: %1; background-color: transparent;")
         .arg(p.titleText);
 }

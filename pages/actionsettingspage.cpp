@@ -64,6 +64,8 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_triggerTimeEdit(nullptr)
     , m_loadedSuccessfully(false)
 {
+    setAttribute(Qt::WA_StyledBackground, false);
+    setAutoFillBackground(false);
     setupUi();
     initData();
     connectSignals();
@@ -86,6 +88,7 @@ ActionSettingsPage::~ActionSettingsPage()
 void ActionSettingsPage::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -94,10 +97,10 @@ void ActionSettingsPage::setupUi()
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setStyleSheet(theme.pageStyleSheet());
+    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(24, 10, 24, 20);
@@ -111,18 +114,15 @@ void ActionSettingsPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(QString(
-        "color: %1;"
-        "background-color: transparent;"
-        "padding: 0;"
-        "margin: 0;"
-    ).arg(theme.textPrimaryColor()));
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     titleLayout->addWidget(m_titleLabel);
 
+    titleLayout->addStretch();
+
     m_saveConfigButton = new QPushButton(tr("保存配置"), m_contentWidget);
     m_saveConfigButton->setMinimumHeight(32);
-    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_saveConfigButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     titleLayout->addWidget(m_saveConfigButton);
 
     m_saveAndApplyButton = new QPushButton(tr("保存并应用"), m_contentWidget);
@@ -130,30 +130,29 @@ void ActionSettingsPage::setupUi()
     m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
     titleLayout->addWidget(m_saveAndApplyButton);
 
-    titleLayout->addStretch();
-
     contentLayout->addLayout(titleLayout);
 
     QSplitter *splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
     splitter->setStyleSheet(theme.splitterStyleSheet());
     splitter->setHandleWidth(1);
 
-    QWidget *leftPanel = new QWidget(splitter);
-    leftPanel->setMinimumWidth(240);
-    QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
-    leftLayout->setContentsMargins(0, 0, 0, 0);
+    m_libraryCard = new GlassCardWidget(splitter);
+    m_libraryCard->setObjectName("libraryCard");
+    m_libraryCard->setMinimumWidth(240);
+    QVBoxLayout *leftLayout = new QVBoxLayout(m_libraryCard);
+    leftLayout->setContentsMargins(16, 16, 16, 16);
     leftLayout->setSpacing(12);
 
     QHBoxLayout *libraryTitleLayout = new QHBoxLayout();
     libraryTitleLayout->setSpacing(12);
 
-    m_libraryTitleLabel = new QLabel(tr("动作库"), leftPanel);
+    m_libraryTitleLabel = new QLabel(tr("动作库"), m_libraryCard);
     QFont libTitleFont = m_libraryTitleLabel->font();
     libTitleFont.setPointSize(12);
     libTitleFont.setBold(true);
     m_libraryTitleLabel->setFont(libTitleFont);
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textPrimaryColor()));
+                                         .arg(p.subtitleText));
     libraryTitleLayout->addWidget(m_libraryTitleLabel);
     libraryTitleLayout->addStretch();
     leftLayout->addLayout(libraryTitleLayout);
@@ -161,21 +160,21 @@ void ActionSettingsPage::setupUi()
     QHBoxLayout *libraryButtonLayout = new QHBoxLayout();
     libraryButtonLayout->setSpacing(8);
 
-    m_newActionButton = new QPushButton(tr("新建动作"), leftPanel);
+    m_newActionButton = new QPushButton(tr("新建动作"), m_libraryCard);
     m_newActionButton->setMinimumHeight(40);
     m_newActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_newActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     libraryButtonLayout->addWidget(m_newActionButton);
 
-    m_importActionButton = new QPushButton(tr("导入动作"), leftPanel);
+    m_importActionButton = new QPushButton(tr("导入动作"), m_libraryCard);
     m_importActionButton->setMinimumHeight(40);
     m_importActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_importActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     libraryButtonLayout->addWidget(m_importActionButton);
 
     leftLayout->addLayout(libraryButtonLayout);
 
-    m_actionLibraryList = new ActionLibraryListWidget(leftPanel);
+    m_actionLibraryList = new ActionLibraryListWidget(m_libraryCard);
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_actionLibraryList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_actionLibraryList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -185,23 +184,24 @@ void ActionSettingsPage::setupUi()
     m_actionLibraryList->setToolTip(tr("右键动作可添加到当前分类，或拖拽到右侧分类"));
     leftLayout->addWidget(m_actionLibraryList, 1);
 
-    splitter->addWidget(leftPanel);
+    splitter->addWidget(m_libraryCard);
 
-    QWidget *rightPanel = new QWidget(splitter);
-    QVBoxLayout *rightLayout = new QVBoxLayout(rightPanel);
-    rightLayout->setContentsMargins(0, 0, 0, 0);
+    m_configCard = new GlassCardWidget(splitter);
+    m_configCard->setObjectName("configCard");
+    QVBoxLayout *rightLayout = new QVBoxLayout(m_configCard);
+    rightLayout->setContentsMargins(16, 16, 16, 16);
     rightLayout->setSpacing(12);
 
-    m_configTitleLabel = new QLabel(tr("动作分类配置"), rightPanel);
+    m_configTitleLabel = new QLabel(tr("动作分类配置"), m_configCard);
     QFont configTitleFont = m_configTitleLabel->font();
     configTitleFont.setPointSize(12);
     configTitleFont.setBold(true);
     m_configTitleLabel->setFont(configTitleFont);
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     rightLayout->addWidget(m_configTitleLabel);
 
-    m_categoryTabs = new ActionCategoryTabWidget(rightPanel);
+    m_categoryTabs = new ActionCategoryTabWidget(m_configCard);
     m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
 
     m_dailyActionList = new ActionCategoryListWidget(m_categoryTabs);
@@ -246,24 +246,28 @@ void ActionSettingsPage::setupUi()
 
     rightLayout->addWidget(m_categoryTabs, 1);
 
-    m_moveUpButton = new QPushButton(tr("上移"), rightPanel);
+    m_moveUpButton = new QPushButton(tr("上移"), m_configCard);
     m_moveUpButton->setMinimumHeight(32);
-    m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_moveUpButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_moveUpButton->hide();
 
-    m_moveDownButton = new QPushButton(tr("下移"), rightPanel);
+    m_moveDownButton = new QPushButton(tr("下移"), m_configCard);
     m_moveDownButton->setMinimumHeight(32);
-    m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_moveDownButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_moveDownButton->hide();
 
-    m_removeButton = new QPushButton(tr("移除"), rightPanel);
+    m_removeButton = new QPushButton(tr("移除"), m_configCard);
     m_removeButton->setMinimumHeight(32);
-    m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_removeButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_removeButton->hide();
 
-    m_actionConfigPanel = new QFrame(rightPanel);
+    m_actionConfigPanel = new GlassCardWidget(m_configCard);
     m_actionConfigPanel->setObjectName("actionConfigPanel");
-    m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
+    m_actionConfigPanel->setBorderRadius(10);
+    m_actionConfigPanel->setBackgroundOpacity(60);
+    m_actionConfigPanel->setHighlightOpacity(30);
+    m_actionConfigPanel->setShadowOpacity(20);
+    m_actionConfigPanel->setBorderOpacity(70);
     QVBoxLayout *configPanelOuterLayout = new QVBoxLayout(m_actionConfigPanel);
     configPanelOuterLayout->setContentsMargins(16, 10, 16, 10);
     configPanelOuterLayout->setSpacing(8);
@@ -430,7 +434,7 @@ void ActionSettingsPage::setupUi()
 
     rightLayout->addWidget(m_actionConfigPanel);
 
-    splitter->addWidget(rightPanel);
+    splitter->addWidget(m_configCard);
     splitter->setSizes({250, 500});
 
     contentLayout->addWidget(splitter, 1);
@@ -561,21 +565,16 @@ void ActionSettingsPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
-    m_contentWidget->setStyleSheet(theme.pageStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
-    m_titleLabel->setStyleSheet(QString(
-        "color: %1;"
-        "background-color: transparent;"
-        "padding: 0;"
-        "margin: 0;"
-    ).arg(p.titleText));
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
 
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.subtitleText));
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_newActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_importActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));
@@ -585,13 +584,12 @@ void ActionSettingsPage::applyTheme()
     m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
 
-    m_moveUpButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_moveDownButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_removeButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_saveConfigButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_moveUpButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_moveDownButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_removeButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_saveConfigButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
 
-    m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                               .arg(p.subtitleText));
     m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());

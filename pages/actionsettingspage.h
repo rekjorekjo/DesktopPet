@@ -11,10 +11,10 @@
 #include "models/petaction.h"
 #include "models/petplaylist.h"
 #include "services/actionimportworker.h"
+#include "widgets/glasscardwidget.h"
 
 class QCheckBox;
 class QComboBox;
-class QFrame;
 class QPushButton;
 class QSpinBox;
 class QTimeEdit;
@@ -104,11 +104,13 @@ private:
     QLabel *m_titleLabel;
 
     QLabel *m_libraryTitleLabel;
+    GlassCardWidget *m_libraryCard;
     ActionLibraryListWidget *m_actionLibraryList;
     QPushButton *m_newActionButton;
     QPushButton *m_importActionButton;
 
     QLabel *m_configTitleLabel;
+    GlassCardWidget *m_configCard;
     ActionCategoryTabWidget *m_categoryTabs;
     ActionCategoryListWidget *m_dailyActionList;
     ActionCategoryListWidget *m_randomActionList;
@@ -121,7 +123,7 @@ private:
     QPushButton *m_saveConfigButton;
     QPushButton *m_saveAndApplyButton;
 
-    QFrame *m_actionConfigPanel;
+    GlassCardWidget *m_actionConfigPanel;
     QLabel *m_actionConfigTitleLabel;
     QCheckBox *m_loopCheckBox;
     QLabel *m_repeatLabel;

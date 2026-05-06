@@ -9,7 +9,7 @@
 #include <QScrollArea>
 #include <QWidget>
 
-class QFrame;
+#include "widgets/glasscardwidget.h"
 
 struct ApiConfig
 {
@@ -48,9 +48,9 @@ private:
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
     QLabel *m_titleLabel;
-    QFrame *m_statusCard;
-    QFrame *m_editorCard;
-    QFrame *m_profilesCard;
+    GlassCardWidget *m_statusCard;
+    GlassCardWidget *m_editorCard;
+    GlassCardWidget *m_profilesCard;
     QLabel *m_editorCardTitle;
     QLabel *m_profilesCardTitle;
     QLabel *m_apiKeyLabel;
