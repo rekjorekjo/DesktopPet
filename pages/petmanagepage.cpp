@@ -64,8 +64,8 @@ void PetManagePage::connectSignals()
 void PetManagePage::setupUi()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(16);
+    mainLayout->setContentsMargins(28, 20, 28, 28);
+    mainLayout->setSpacing(20);
 
     QHBoxLayout *headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(16);
@@ -83,18 +83,30 @@ void PetManagePage::setupUi()
     m_startButton = new QPushButton(tr("开始"), this);
     m_startButton->setObjectName("primaryButton");
     m_startButton->setEnabled(false);
+    m_startButton->setMinimumHeight(36);
     headerLayout->addWidget(m_startButton);
 
     m_pauseButton = new QPushButton(tr("暂停"), this);
     m_pauseButton->setObjectName("secondaryButton");
     m_pauseButton->setEnabled(false);
+    m_pauseButton->setMinimumHeight(36);
     headerLayout->addWidget(m_pauseButton);
 
     m_reloadButton = new QPushButton(tr("重新加载"), this);
     m_reloadButton->setObjectName("secondaryButton");
+    m_reloadButton->setMinimumHeight(36);
     headerLayout->addWidget(m_reloadButton);
 
     mainLayout->addLayout(headerLayout);
+
+    QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setSpacing(20);
+
+    m_petListCard = new QFrame(this);
+    m_petListCard->setObjectName("petListCard");
+    QVBoxLayout *petListCardLayout = new QVBoxLayout(m_petListCard);
+    petListCardLayout->setContentsMargins(16, 16, 16, 16);
+    petListCardLayout->setSpacing(12);
 
     QHBoxLayout *petListHeaderLayout = new QHBoxLayout();
     petListHeaderLayout->setSpacing(12);
@@ -105,29 +117,44 @@ void PetManagePage::setupUi()
 
     petListHeaderLayout->addStretch();
 
-    m_createPetButton = new QPushButton(tr("新建宠物"), this);
+    m_createPetButton = new QPushButton(tr("新建"), this);
     m_createPetButton->setObjectName("secondaryButton");
-    m_createPetButton->setMinimumHeight(36);
+    m_createPetButton->setMinimumHeight(32);
     petListHeaderLayout->addWidget(m_createPetButton);
 
-    m_importPetButton = new QPushButton(tr("导入宠物"), this);
+    m_importPetButton = new QPushButton(tr("导入"), this);
     m_importPetButton->setObjectName("secondaryButton");
-    m_importPetButton->setMinimumHeight(36);
+    m_importPetButton->setMinimumHeight(32);
     petListHeaderLayout->addWidget(m_importPetButton);
 
-    mainLayout->addLayout(petListHeaderLayout);
+    petListCardLayout->addLayout(petListHeaderLayout);
 
     m_petListWidget = new QListWidget(this);
     m_petListWidget->setObjectName("petListWidget");
     m_petListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_petListWidget->setMinimumHeight(120);
-    mainLayout->addWidget(m_petListWidget);
+    m_petListWidget->setMinimumHeight(200);
+    petListCardLayout->addWidget(m_petListWidget);
+
+    contentLayout->addWidget(m_petListCard, 1);
 
     m_infoCard = new QFrame(this);
     m_infoCard->setObjectName("infoCard");
     QVBoxLayout *cardLayout = new QVBoxLayout(m_infoCard);
-    cardLayout->setContentsMargins(16, 16, 16, 16);
-    cardLayout->setSpacing(12);
+    cardLayout->setContentsMargins(20, 20, 20, 20);
+    cardLayout->setSpacing(10);
+
+    QLabel *infoCardTitle = new QLabel(tr("宠物信息"), this);
+    infoCardTitle->setObjectName("infoCardTitle");
+    QFont titleFont = infoCardTitle->font();
+    titleFont.setPointSize(12);
+    titleFont.setBold(true);
+    infoCardTitle->setFont(titleFont);
+    cardLayout->addWidget(infoCardTitle);
+
+    QFrame *separator = new QFrame(this);
+    separator->setFrameShape(QFrame::HLine);
+    separator->setFixedHeight(1);
+    cardLayout->addWidget(separator);
 
     m_petNameLabel = new QLabel(this);
     m_petNameLabel->setObjectName("infoLabel");
@@ -162,9 +189,11 @@ void PetManagePage::setupUi()
     m_statusLabel->setObjectName("infoLabel");
     cardLayout->addWidget(m_statusLabel);
 
-    mainLayout->addWidget(m_infoCard);
+    cardLayout->addStretch();
 
-    mainLayout->addStretch();
+    contentLayout->addWidget(m_infoCard, 1);
+
+    mainLayout->addLayout(contentLayout, 1);
 
     setLayout(mainLayout);
 }
@@ -180,12 +209,26 @@ void PetManagePage::applyTheme()
     m_currentPetLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent; margin-left: 16px;")
                                          .arg(p.accent));
 
-    m_petListTitleLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent;")
-                                           .arg(p.subtitleText));
+    m_petListCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
 
-    m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
+    m_petListTitleLabel->setStyleSheet(QString("font-size: 14px; font-weight: bold; color: %1; border: none; background: transparent;")
+                                           .arg(p.textPrimary));
 
-    QString infoStyle = QString("font-size: 14px; color: %1; border: none; background: transparent;")
+    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+
+    QLabel *infoCardTitle = m_infoCard->findChild<QLabel *>("infoCardTitle");
+    if (infoCardTitle) {
+        infoCardTitle->setStyleSheet(QString("font-size: 14px; font-weight: bold; color: %1; border: none; background: transparent;")
+                                         .arg(p.textPrimary));
+    }
+
+    QFrame *separator = m_infoCard->findChild<QFrame *>();
+    if (separator && separator->frameShape() == QFrame::HLine) {
+        separator->setStyleSheet(QString("background-color: %1; border: none;")
+                                     .arg(p.separator));
+    }
+
+    QString infoStyle = QString("font-size: 13px; color: %1; border: none; background: transparent;")
                                 .arg(p.textSecondary);
 
     m_petNameLabel->setStyleSheet(infoStyle);
@@ -197,11 +240,11 @@ void PetManagePage::applyTheme()
     m_globalActionCountLabel->setStyleSheet(infoStyle);
     m_statusLabel->setStyleSheet(infoStyle);
 
-    m_createPetButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_importPetButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_createPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_importPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_startButton->setStyleSheet(theme.primaryButtonStyleSheet());
-    m_pauseButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_reloadButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_pauseButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_reloadButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_petListWidget->setStyleSheet(theme.listWidgetStyleSheet());
 }
 

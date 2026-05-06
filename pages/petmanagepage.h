@@ -61,6 +61,7 @@ private:
     QLabel *m_currentPetLabel;
     QLabel *m_petListTitleLabel;
 
+    QFrame *m_petListCard;
     QListWidget *m_petListWidget;
 
     QFrame *m_infoCard;
