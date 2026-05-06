@@ -108,6 +108,14 @@ struct ThemePalette
     QString info;
 
     QString selectionBackground;
+
+    QString glassBackground;
+    QString glassBackgroundStrong;
+    QString glassBorder;
+    QString glassHighlight;
+    QString glassShadow;
+    QString glassTextPrimary;
+    QString glassTextSecondary;
 };
 
 class ThemeManager : public QObject
@@ -165,6 +173,11 @@ public:
     QString dialogStyleSheet() const;
     QString timeEditStyleSheet() const;
 
+    QString glassCardStyleSheet(int borderRadius = 12, int opacity = 40) const;
+    QString glassPanelStyleSheet(int borderRadius = 8, int opacity = 30) const;
+    QString glassButtonStyleSheet(int borderRadius = 6, int opacity = 35) const;
+    QString glassSidebarItemStyleSheet(int borderRadius = 8, int opacity = 25) const;
+
 signals:
     void themeChanged();
 
@@ -175,6 +188,9 @@ private:
 
     void loadThemes();
     ThemePalette getDefaultPalette() const;
+
+    static int extractColorComponent(const QString &hexColor, int index);
+    static QString colorToRgba(const QString &hexColor, int alpha);
 
     QPixmap drawArrowIcon(bool up, const QColor &color, int width, int height) const;
     QPixmap drawCheckboxIcon(bool checked, const QColor &bgColor,

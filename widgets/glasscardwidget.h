@@ -1,0 +1,59 @@
+#ifndef GLASSCARDWIDGET_H
+#define GLASSCARDWIDGET_H
+
+#include <QFrame>
+#include <QColor>
+#include <QPainterPath>
+
+class GlassCardWidget : public QFrame
+{
+    Q_OBJECT
+    Q_PROPERTY(int borderRadius READ borderRadius WRITE setBorderRadius)
+    Q_PROPERTY(int backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
+    Q_PROPERTY(bool showHighlight READ showHighlight WRITE setShowHighlight)
+    Q_PROPERTY(bool showShadow READ showShadow WRITE setShowShadow)
+
+public:
+    explicit GlassCardWidget(QWidget *parent = nullptr);
+    explicit GlassCardWidget(const QString &title, QWidget *parent = nullptr);
+
+    int borderRadius() const;
+    void setBorderRadius(int radius);
+
+    int backgroundOpacity() const;
+    void setBackgroundOpacity(int opacity);
+
+    bool showHighlight() const;
+    void setShowHighlight(bool show);
+
+    bool showShadow() const;
+    void setShowShadow(bool show);
+
+    void setTitle(const QString &title);
+    QString title() const;
+
+    void setContentWidget(QWidget *widget);
+    QWidget *contentWidget() const;
+
+public slots:
+    void applyTheme();
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+
+private:
+    void init();
+    QPainterPath createRoundedRectPath(const QRect &rect, int radius) const;
+    QColor applyOpacity(const QColor &color, int opacity) const;
+
+private:
+    int m_borderRadius;
+    int m_backgroundOpacity;
+    bool m_showHighlight;
+    bool m_showShadow;
+    QString m_title;
+    QWidget *m_contentWidget;
+};
+
+#endif // GLASSCARDWIDGET_H
