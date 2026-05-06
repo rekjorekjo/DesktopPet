@@ -3,8 +3,8 @@
 
 #include <QObject>
 
-#include "core/actioncategory.h"
-#include "core/petplaylist.h"
+#include "models/actioncategory.h"
+#include "models/petplaylist.h"
 #include "services/actionimportservice.h"
 
 struct PetAction;

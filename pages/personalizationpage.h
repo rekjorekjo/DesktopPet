@@ -2,13 +2,14 @@
 #define PERSONALIZATIONPAGE_H
 
 #include <QCheckBox>
-#include <QComboBox>
 #include <QLabel>
 #include <QScrollArea>
 #include <QSlider>
 #include <QWidget>
 
+class NoWheelListWidget;
 class QFrame;
+class QListWidgetItem;
 
 class PersonalizationPage : public QWidget
 {
@@ -25,7 +26,7 @@ signals:
     void petOpacityChanged(double opacity);
 
 private slots:
-    void onThemeChanged(int index);
+    void onThemeItemClicked(QListWidgetItem *item);
     void onOpacityChanged(int value);
     void onAutoStartOnBootChanged(bool enabled);
     void onAutoPlayOnLaunchChanged(bool enabled);
@@ -35,6 +36,8 @@ private:
     void setupUi();
     void connectSignals();
     void applyTheme();
+    void populateThemeLists();
+    bool isLightTheme(const QString &themeId) const;
 
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
@@ -42,8 +45,11 @@ private:
 
     QFrame *m_appearanceCard;
     QLabel *m_appearanceCardTitle;
-    QLabel *m_themeLabel;
-    QComboBox *m_themeComboBox;
+    QLabel *m_themeHintLabel;
+    QLabel *m_lightThemeLabel;
+    NoWheelListWidget *m_lightThemeList;
+    QLabel *m_darkThemeLabel;
+    NoWheelListWidget *m_darkThemeList;
 
     QFrame *m_displayCard;
     QLabel *m_displayCardTitle;

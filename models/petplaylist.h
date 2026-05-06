@@ -5,25 +5,18 @@
 #include <QMap>
 #include <QString>
 
-#include "core/timedtrigger.h"
+#include "models/timedtrigger.h"
 
 struct PetActionRef
 {
     QString actionId;
     QString displayName;
     bool loop;
-    // repeat 规则：
-    // - repeat = 0 表示无限循环
-    // - repeat = 1 表示播放一次
-    // - repeat = 2 表示播放两次
-    // - repeat > 10 也视为无限循环
     int repeat;
     int intervalSeconds;
     QString emotion;
-    // 移动配置
     bool moveEnabled;
     double movementSpeed;
-    // 动画播放速度
     double animationSpeed;
     TimedTriggerMode timedTriggerMode;
     QString triggerTime;

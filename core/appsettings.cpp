@@ -98,6 +98,18 @@ void AppSettings::setOpenSettingsOnLaunch(bool enabled)
     settings.setValue("startup/openSettingsOnLaunch", enabled);
 }
 
+int AppSettings::themeIndex()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    return settings.value("ui/themeIndex", 0).toInt();
+}
+
+void AppSettings::setThemeIndex(int index)
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("ui/themeIndex", index);
+}
+
 double AppSettings::clampScale(double scale)
 {
     if (scale < 0.5) {

@@ -4,8 +4,8 @@
 #include <QList>
 #include <QString>
 
-#include "core/petaction.h"
-#include "core/petplaylist.h"
+#include "models/petaction.h"
+#include "models/petplaylist.h"
 
 struct ActionLibraryOperationResult
 {

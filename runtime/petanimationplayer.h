@@ -7,7 +7,7 @@
 #include <QSize>
 #include <QTimer>
 
-#include "core/petaction.h"
+#include "models/petaction.h"
 
 class PetAnimationPlayer : public QObject
 {

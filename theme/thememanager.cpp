@@ -1,5 +1,7 @@
 #include "thememanager.h"
 
+#include "core/appsettings.h"
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -17,6 +19,10 @@ ThemeManager::ThemeManager()
     : m_currentThemeIndex(0)
 {
     loadThemes();
+    int savedIndex = AppSettings::themeIndex();
+    if (savedIndex >= 0 && savedIndex < m_themeIds.size()) {
+        m_currentThemeIndex = savedIndex;
+    }
 }
 
 void ThemeManager::loadThemes()
@@ -93,6 +99,74 @@ void ThemeManager::loadThemes()
         palette.iconPrimary = themeObj["iconPrimary"].toString("#374151");
         palette.iconOnAccent = themeObj["iconOnAccent"].toString("#ffffff");
         palette.iconMuted = themeObj["iconMuted"].toString("#9ca3af");
+
+        palette.accent = themeObj["accent"].toString(palette.buttonPrimary);
+        palette.accentHover = themeObj["accentHover"].toString(palette.buttonHover);
+        palette.accentPressed = themeObj["accentPressed"].toString(palette.buttonPressed);
+        palette.accentSoft = themeObj["accentSoft"].toString(palette.sidebarSelectedBg);
+
+        palette.cardHoverBackground = themeObj["cardHoverBackground"].toString(palette.secondaryHover);
+        palette.cardBorder = themeObj["cardBorder"].toString(palette.border);
+        palette.separator = themeObj["separator"].toString(palette.border);
+
+        palette.titleText = themeObj["titleText"].toString(palette.textPrimary);
+        palette.subtitleText = themeObj["subtitleText"].toString(palette.textPrimary);
+        palette.textMuted = themeObj["textMuted"].toString(palette.textSecondary);
+        palette.linkText = themeObj["linkText"].toString(palette.buttonPrimary);
+        palette.placeholderText = themeObj["placeholderText"].toString(palette.textSecondary);
+        palette.disabledText = themeObj["disabledText"].toString(palette.textSecondary);
+
+        palette.buttonPrimaryHover = themeObj["buttonPrimaryHover"].toString(palette.buttonHover);
+        palette.buttonPrimaryPressed = themeObj["buttonPrimaryPressed"].toString(palette.buttonPressed);
+
+        palette.buttonSecondaryBg = themeObj["buttonSecondaryBg"].toString(palette.cardBackground);
+        palette.buttonSecondaryText = themeObj["buttonSecondaryText"].toString(palette.textPrimary);
+        palette.buttonSecondaryBorder = themeObj["buttonSecondaryBorder"].toString(palette.border);
+        palette.buttonSecondaryHover = themeObj["buttonSecondaryHover"].toString(palette.secondaryHover);
+        palette.buttonSecondaryPressed = themeObj["buttonSecondaryPressed"].toString(palette.secondaryHover);
+
+        palette.dangerPressed = themeObj["dangerPressed"].toString(palette.dangerBackground);
+
+        palette.inputText = themeObj["inputText"].toString(palette.textPrimary);
+        palette.inputBorder = themeObj["inputBorder"].toString(palette.border);
+        palette.inputHoverBorder = themeObj["inputHoverBorder"].toString(palette.border);
+        palette.inputFocusBorder = themeObj["inputFocusBorder"].toString(palette.buttonPrimary);
+
+        palette.listBackground = themeObj["listBackground"].toString(palette.inputBackground);
+        palette.listText = themeObj["listText"].toString(palette.textPrimary);
+        palette.listHoverBg = themeObj["listHoverBg"].toString(palette.secondaryHover);
+        palette.listSelectedBg = themeObj["listSelectedBg"].toString(palette.sidebarSelectedBg);
+        palette.listSelectedText = themeObj["listSelectedText"].toString(palette.sidebarSelectedText);
+        palette.listDisabledText = themeObj["listDisabledText"].toString(palette.textSecondary);
+
+        palette.tabText = themeObj["tabText"].toString(palette.textSecondary);
+        palette.tabHoverBg = themeObj["tabHoverBg"].toString(palette.secondaryHover);
+        palette.tabSelectedBg = themeObj["tabSelectedBg"].toString(palette.cardBackground);
+        palette.tabSelectedText = themeObj["tabSelectedText"].toString(palette.textPrimary);
+        palette.tabBorder = themeObj["tabBorder"].toString(palette.border);
+
+        palette.menuBackground = themeObj["menuBackground"].toString(palette.cardBackground);
+        palette.menuText = themeObj["menuText"].toString(palette.textPrimary);
+        palette.menuHoverBg = themeObj["menuHoverBg"].toString(palette.sidebarSelectedBg);
+        palette.menuHoverText = themeObj["menuHoverText"].toString(palette.sidebarSelectedText);
+        palette.menuSeparator = themeObj["menuSeparator"].toString(palette.border);
+
+        palette.checkboxBorder = themeObj["checkboxBorder"].toString(palette.border);
+        palette.checkboxCheckedBg = themeObj["checkboxCheckedBg"].toString(palette.buttonPrimary);
+        palette.checkboxCheckColor = themeObj["checkboxCheckColor"].toString(palette.buttonPrimaryText);
+
+        palette.scrollTrack = themeObj["scrollTrack"].toString(palette.pageBackground);
+        palette.scrollHandleHover = themeObj["scrollHandleHover"].toString(palette.textSecondary);
+        palette.sliderGroove = themeObj["sliderGroove"].toString(palette.border);
+        palette.sliderHandle = themeObj["sliderHandle"].toString(palette.buttonPrimary);
+        palette.sliderHandleHover = themeObj["sliderHandleHover"].toString(palette.buttonHover);
+
+        palette.success = themeObj["success"].toString("#22c55e");
+        palette.warning = themeObj["warning"].toString("#f59e0b");
+        palette.error = themeObj["error"].toString("#ef4444");
+        palette.info = themeObj["info"].toString("#3b82f6");
+
+        palette.selectionBackground = themeObj["selectionBackground"].toString(palette.sidebarSelectedBg);
         
         m_themeIds.append(id);
         m_themeNames.append(name);
@@ -135,6 +209,75 @@ ThemePalette ThemeManager::getDefaultPalette() const
     p.iconPrimary = "#374151";
     p.iconOnAccent = "#FFFFFF";
     p.iconMuted = "#9CA3AF";
+
+    p.accent = "#2F80ED";
+    p.accentHover = "#1E6AD4";
+    p.accentPressed = "#1459B3";
+    p.accentSoft = "#EAF3FF";
+
+    p.cardHoverBackground = "#F3F4F6";
+    p.cardBorder = "#E5EAF0";
+    p.separator = "#E5EAF0";
+
+    p.titleText = "#1F2937";
+    p.subtitleText = "#374151";
+    p.textMuted = "#6B7280";
+    p.linkText = "#2F80ED";
+    p.placeholderText = "#9CA3AF";
+    p.disabledText = "#9CA3AF";
+
+    p.buttonPrimaryHover = "#1E6AD4";
+    p.buttonPrimaryPressed = "#1459B3";
+
+    p.buttonSecondaryBg = "#FFFFFF";
+    p.buttonSecondaryText = "#1F2937";
+    p.buttonSecondaryBorder = "#E5EAF0";
+    p.buttonSecondaryHover = "#F3F4F6";
+    p.buttonSecondaryPressed = "#E5E7EB";
+
+    p.dangerPressed = "#FCA5A5";
+
+    p.inputText = "#1F2937";
+    p.inputBorder = "#E5EAF0";
+    p.inputHoverBorder = "#D1D5DB";
+    p.inputFocusBorder = "#2F80ED";
+
+    p.listBackground = "#FFFFFF";
+    p.listText = "#1F2937";
+    p.listHoverBg = "#F3F4F6";
+    p.listSelectedBg = "#EAF3FF";
+    p.listSelectedText = "#2F80ED";
+    p.listDisabledText = "#9CA3AF";
+
+    p.tabText = "#6B7280";
+    p.tabHoverBg = "#F3F4F6";
+    p.tabSelectedBg = "#FFFFFF";
+    p.tabSelectedText = "#1F2937";
+    p.tabBorder = "#E5EAF0";
+
+    p.menuBackground = "#FFFFFF";
+    p.menuText = "#1F2937";
+    p.menuHoverBg = "#EAF3FF";
+    p.menuHoverText = "#2F80ED";
+    p.menuSeparator = "#E5EAF0";
+
+    p.checkboxBorder = "#D1D5DB";
+    p.checkboxCheckedBg = "#2F80ED";
+    p.checkboxCheckColor = "#FFFFFF";
+
+    p.scrollTrack = "#F3F4F6";
+    p.scrollHandleHover = "#9CA3AF";
+    p.sliderGroove = "#E5EAF0";
+    p.sliderHandle = "#2F80ED";
+    p.sliderHandleHover = "#1E6AD4";
+
+    p.success = "#22C55E";
+    p.warning = "#F59E0B";
+    p.error = "#EF4444";
+    p.info = "#3B82F6";
+
+    p.selectionBackground = "#EAF3FF";
+
     return p;
 }
 
@@ -156,6 +299,7 @@ void ThemeManager::setThemeByIndex(int index)
 {
     if (index >= 0 && index < m_themeIds.size() && index != m_currentThemeIndex) {
         m_currentThemeIndex = index;
+        AppSettings::setThemeIndex(index);
         emit themeChanged();
     }
 }
@@ -171,6 +315,14 @@ QString ThemeManager::themeName(int index) const
         return m_themeNames.at(index);
     }
     return tr("浅色");
+}
+
+QString ThemeManager::themeIdAt(int index) const
+{
+    if (index >= 0 && index < m_themeIds.size()) {
+        return m_themeIds.at(index);
+    }
+    return QString();
 }
 
 QStringList ThemeManager::availableThemes() const
@@ -312,7 +464,10 @@ QString ThemeManager::cardStyleSheet(const QString &objectName) const
         "  border: 1px solid %3;"
         "  border-radius: 10px;"
         "}"
-    ).arg(objectName, p.cardBackground, p.border);
+        "QFrame#%1:hover {"
+        "  background-color: %4;"
+        "}"
+    ).arg(objectName, p.cardBackground, p.cardBorder, p.cardHoverBackground);
 }
 
 QString ThemeManager::checkBoxStyleSheet() const
@@ -349,13 +504,21 @@ QString ThemeManager::checkBoxStyleSheet() const
         "  border: 2px solid %6;"
         "  image: url(:/icons/checkmark_white.svg);"
         "}"
+        "QCheckBox:disabled {"
+        "  color: %7;"
+        "}"
+        "QCheckBox::indicator:disabled {"
+        "  background-color: %2;"
+        "  border: 2px solid %3;"
+        "}"
     )
-    .arg(p.textPrimary)         // %1
-    .arg(p.inputBackground)     // %2
-    .arg(p.iconMuted)           // %3
-    .arg(p.buttonPrimary)       // %4
-    .arg(p.cardBackground)      // %5
-    .arg(p.buttonHover);        // %6
+    .arg(p.textPrimary)           // %1
+    .arg(p.inputBackground)       // %2
+    .arg(p.checkboxBorder)        // %3
+    .arg(p.checkboxCheckedBg)     // %4
+    .arg(p.cardBackground)        // %5
+    .arg(p.accentHover)           // %6
+    .arg(p.disabledText);         // %7
 }
 
 QString ThemeManager::primaryButtonStyleSheet() const
@@ -375,7 +538,13 @@ QString ThemeManager::primaryButtonStyleSheet() const
         "QPushButton:pressed {"
         "  background-color: %4;"
         "}"
-    ).arg(p.buttonPrimary, p.buttonPrimaryText, p.buttonHover, p.buttonPressed);
+        "QPushButton:disabled {"
+        "  background-color: %5;"
+        "  color: %6;"
+        "  border: 1px solid %7;"
+        "}"
+    ).arg(p.buttonPrimary, p.buttonPrimaryText, p.buttonPrimaryHover, p.buttonPrimaryPressed,
+          p.buttonSecondaryBg, p.disabledText, p.buttonSecondaryBorder);
 }
 
 QString ThemeManager::secondaryButtonStyleSheet() const
@@ -392,7 +561,16 @@ QString ThemeManager::secondaryButtonStyleSheet() const
         "QPushButton:hover {"
         "  background-color: %4;"
         "}"
-    ).arg(p.cardBackground, p.textPrimary, p.border, p.secondaryHover);
+        "QPushButton:pressed {"
+        "  background-color: %5;"
+        "}"
+        "QPushButton:disabled {"
+        "  background-color: %1;"
+        "  color: %6;"
+        "  border: 1px solid %3;"
+        "}"
+    ).arg(p.buttonSecondaryBg, p.buttonSecondaryText, p.buttonSecondaryBorder,
+          p.buttonSecondaryHover, p.buttonSecondaryPressed, p.disabledText);
 }
 
 QString ThemeManager::dangerButtonStyleSheet() const
@@ -409,7 +587,16 @@ QString ThemeManager::dangerButtonStyleSheet() const
         "QPushButton:hover {"
         "  background-color: %4;"
         "}"
-    ).arg(p.dangerBackground, p.dangerText, p.dangerBorder, p.dangerHover);
+        "QPushButton:pressed {"
+        "  background-color: %5;"
+        "}"
+        "QPushButton:disabled {"
+        "  background-color: %1;"
+        "  color: %6;"
+        "  border: 1px solid %3;"
+        "}"
+    ).arg(p.dangerBackground, p.dangerText, p.dangerBorder, p.dangerHover,
+          p.dangerPressed, p.disabledText);
 }
 
 QString ThemeManager::lineEditStyleSheet() const
@@ -422,11 +609,17 @@ QString ThemeManager::lineEditStyleSheet() const
         "  border: 1px solid %3;"
         "  border-radius: 6px;"
         "  padding: 0 12px;"
+        "  placeholder-text-color: %6;"
+        "  selection-background-color: %7;"
         "}"
-        "QLineEdit:focus {"
+        "QLineEdit:hover {"
         "  border-color: %4;"
         "}"
-    ).arg(p.inputBackground, p.textPrimary, p.border, p.buttonPrimary);
+        "QLineEdit:focus {"
+        "  border-color: %5;"
+        "}"
+    ).arg(p.inputBackground, p.inputText, p.inputBorder, p.inputHoverBorder,
+          p.inputFocusBorder, p.placeholderText, p.selectionBackground);
 }
 
 QString ThemeManager::scrollAreaStyleSheet() const
@@ -434,10 +627,15 @@ QString ThemeManager::scrollAreaStyleSheet() const
     ThemePalette p = currentPalette();
     return QString(
         "QScrollArea { background-color: %1; border: none; }"
-        "QScrollBar:vertical { width: 10px; }"
-        "QScrollBar::handle:vertical { background: %2; border-radius: 5px; min-height: 20px; }"
+        "QScrollBar:vertical { width: 10px; background: %2; }"
+        "QScrollBar::handle:vertical { background: %3; border-radius: 5px; min-height: 20px; }"
+        "QScrollBar::handle:vertical:hover { background: %4; }"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
-    ).arg(p.pageBackground, p.scrollHandle);
+        "QScrollBar:horizontal { height: 10px; background: %2; }"
+        "QScrollBar::handle:horizontal { background: %3; border-radius: 5px; min-width: 20px; }"
+        "QScrollBar::handle:horizontal:hover { background: %4; }"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }"
+    ).arg(p.pageBackground, p.scrollTrack, p.scrollHandle, p.scrollHandleHover);
 }
 
 QString ThemeManager::pageStyleSheet() const
@@ -449,7 +647,7 @@ QString ThemeManager::titleLabelStyleSheet() const
 {
     ThemePalette p = currentPalette();
     return QString("color: %1; background-color: %2; padding: 28px 28px 0 28px;")
-        .arg(p.textPrimary, p.pageBackground);
+        .arg(p.titleText, p.pageBackground);
 }
 
 QString ThemeManager::comboBoxStyleSheet() const
@@ -475,10 +673,10 @@ QString ThemeManager::comboBoxStyleSheet() const
         "  border: none;"
         "  border-top-right-radius: 8px;"
         "  border-bottom-right-radius: 8px;"
-        "  background-color: %4;"
+        "  background-color: %5;"
         "}"
         "QComboBox::drop-down:hover {"
-        "  background-color: %5;"
+        "  background-color: %6;"
         "}"
         "QComboBox::down-arrow {"
         "  image: url(:/icons/combo_down_white.svg);"
@@ -486,21 +684,24 @@ QString ThemeManager::comboBoxStyleSheet() const
         "  height: 6px;"
         "}"
         "QComboBox QAbstractItemView {"
-        "  background-color: %1;"
-        "  color: %2;"
+        "  background-color: %7;"
+        "  color: %8;"
         "  border: 1px solid %3;"
-        "  selection-background-color: %6;"
-        "  selection-color: %7;"
+        "  selection-background-color: %9;"
+        "  selection-color: %10;"
         "  outline: none;"
         "}"
     ).arg(
-        p.cardBackground,        // %1
-        p.textPrimary,           // %2
-        p.border,                // %3
-        p.buttonPrimary,         // %4
-        p.buttonHover,           // %5
-        p.sidebarSelectedBg,     // %6
-        p.sidebarSelectedText    // %7
+        p.inputBackground,       // %1
+        p.inputText,             // %2
+        p.inputBorder,           // %3
+        p.inputHoverBorder,      // %4
+        p.accent,                // %5
+        p.accentHover,           // %6
+        p.menuBackground,        // %7
+        p.menuText,              // %8
+        p.listSelectedBg,        // %9
+        p.listSelectedText       // %10
     );
 }
 
@@ -519,16 +720,19 @@ QString ThemeManager::spinBoxStyleSheet() const
         "QSpinBox:hover, QDoubleSpinBox:hover {"
         "  border-color: %4;"
         "}"
+        "QSpinBox:focus, QDoubleSpinBox:focus {"
+        "  border-color: %5;"
+        "}"
         "QSpinBox::up-button, QDoubleSpinBox::up-button {"
         "  subcontrol-origin: border;"
         "  subcontrol-position: top right;"
         "  width: 28px;"
         "  border: none;"
         "  border-top-right-radius: 8px;"
-        "  background-color: %4;"
+        "  background-color: %6;"
         "}"
         "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {"
-        "  background-color: %5;"
+        "  background-color: %7;"
         "}"
         "QSpinBox::down-button, QDoubleSpinBox::down-button {"
         "  subcontrol-origin: border;"
@@ -536,10 +740,10 @@ QString ThemeManager::spinBoxStyleSheet() const
         "  width: 28px;"
         "  border: none;"
         "  border-bottom-right-radius: 8px;"
-        "  background-color: %4;"
+        "  background-color: %6;"
         "}"
         "QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {"
-        "  background-color: %5;"
+        "  background-color: %7;"
         "}"
         "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {"
         "  image: url(:/icons/spin_up_white.svg);"
@@ -552,11 +756,13 @@ QString ThemeManager::spinBoxStyleSheet() const
         "  height: 6px;"
         "}"
     ).arg(
-        p.cardBackground,    // %1
-        p.textPrimary,       // %2
-        p.border,            // %3
-        p.buttonPrimary,     // %4
-        p.buttonHover        // %5
+        p.inputBackground,     // %1
+        p.inputText,           // %2
+        p.inputBorder,         // %3
+        p.inputHoverBorder,    // %4
+        p.inputFocusBorder,    // %5
+        p.accent,              // %6
+        p.accentHover          // %7
     );
 }
 
@@ -583,7 +789,7 @@ QString ThemeManager::sliderStyleSheet() const
         "  background: %2;"
         "  border-radius: 3px;"
         "}"
-    ).arg(p.border, p.buttonPrimary, p.buttonHover);
+    ).arg(p.sliderGroove, p.sliderHandle, p.sliderHandleHover);
 }
 
 QString ThemeManager::listWidgetStyleSheet() const
@@ -607,7 +813,10 @@ QString ThemeManager::listWidgetStyleSheet() const
         "QListWidget::item:hover {"
         "  background-color: %6;"
         "}"
-    ).arg(p.inputBackground, p.textPrimary, p.border, p.sidebarSelectedBg, p.sidebarSelectedText, p.pageBackground);
+        "QListWidget::item:disabled {"
+        "  color: %7;"
+        "}"
+    ).arg(p.listBackground, p.listText, p.inputBorder, p.listSelectedBg, p.listSelectedText, p.listHoverBg, p.listDisabledText);
 }
 
 QString ThemeManager::menuStyleSheet() const
@@ -632,15 +841,16 @@ QString ThemeManager::menuStyleSheet() const
         "}"
         "QMenu::separator {"
         "  height: 1px;"
-        "  background-color: %3;"
+        "  background-color: %6;"
         "  margin: 4px 8px;"
         "}"
     ).arg(
-        p.cardBackground,
-        p.textPrimary,
+        p.menuBackground,
+        p.menuText,
         p.border,
-        p.sidebarSelectedBg,
-        p.sidebarSelectedText
+        p.menuHoverBg,
+        p.menuHoverText,
+        p.menuSeparator
     );
 }
 
@@ -672,15 +882,15 @@ QString ThemeManager::tabWidgetStyleSheet() const
         "  margin-right: 2px;"
         "}"
         "QTabBar::tab:selected {"
-        "  background-color: %2;"
-        "  color: %5;"
+        "  background-color: %5;"
+        "  color: %6;"
         "  border: 1px solid %1;"
         "  border-bottom: none;"
         "}"
         "QTabBar::tab:hover:!selected {"
-        "  background-color: %6;"
+        "  background-color: %7;"
         "}"
-    ).arg(p.border, p.inputBackground, p.pageBackground, p.textSecondary, p.textPrimary, p.secondaryHover);
+    ).arg(p.tabBorder, p.cardBackground, p.pageBackground, p.tabText, p.tabSelectedBg, p.tabSelectedText, p.tabHoverBg);
 }
 
 QString ThemeManager::dialogStyleSheet() const
@@ -692,8 +902,16 @@ QString ThemeManager::dialogStyleSheet() const
         "}"
         "QLabel {"
         "  background-color: transparent;"
+        "  color: %2;"
         "}"
-    ).arg(p.pageBackground);
+        "QToolTip {"
+        "  background-color: %3;"
+        "  color: %2;"
+        "  border: 1px solid %4;"
+        "  border-radius: 4px;"
+        "  padding: 4px 8px;"
+        "}"
+    ).arg(p.pageBackground, p.textPrimary, p.cardBackground, p.border);
 }
 
 QString ThemeManager::timeEditStyleSheet() const
@@ -707,17 +925,20 @@ QString ThemeManager::timeEditStyleSheet() const
         "  border-radius: 4px;"
         "  padding: 4px 8px;"
         "}"
-        "QTimeEdit:focus {"
+        "QTimeEdit:hover {"
         "  border-color: %4;"
         "}"
+        "QTimeEdit:focus {"
+        "  border-color: %5;"
+        "}"
         "QTimeEdit::up-button, QTimeEdit::down-button {"
-        "  background-color: %5;"
+        "  background-color: %6;"
         "  border: none;"
         "  width: 16px;"
         "}"
         "QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {"
-        "  background-color: %6;"
+        "  background-color: %7;"
         "}"
     )
-    .arg(p.inputBackground, p.textPrimary, p.border, p.buttonPrimary, p.cardBackground, p.secondaryHover);
+    .arg(p.inputBackground, p.inputText, p.inputBorder, p.inputHoverBorder, p.inputFocusBorder, p.accent, p.accentHover);
 }

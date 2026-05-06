@@ -40,6 +40,7 @@ ApiConfigPage::~ApiConfigPage() {}
 void ApiConfigPage::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -80,7 +81,7 @@ void ApiConfigPage::setupUi()
     m_currentApiProfileLabel->setFont(statusTitleFont);
     m_currentApiProfileLabel->setStyleSheet(
         QString("color: %1; border: none; background: transparent;")
-            .arg(theme.textPrimaryColor()));
+            .arg(p.accent));
     statusLayout->addWidget(m_currentApiProfileLabel);
 
     contentLayout->addWidget(m_statusCard);
@@ -98,12 +99,12 @@ void ApiConfigPage::setupUi()
     editorTitleFont.setBold(true);
     m_editorCardTitle->setFont(editorTitleFont);
     m_editorCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textPrimaryColor()));
+                                   .arg(p.subtitleText));
     editorLayout->addWidget(m_editorCardTitle);
 
     m_apiKeyLabel = new QLabel(tr("API Key:"), m_editorCard);
     m_apiKeyLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textSecondaryColor()));
+                                   .arg(p.textSecondary));
     editorLayout->addWidget(m_apiKeyLabel);
 
     m_apiKeyEdit = new QLineEdit(m_editorCard);
@@ -115,7 +116,7 @@ void ApiConfigPage::setupUi()
 
     m_baseUrlLabel = new QLabel(tr("Base URL:"), m_editorCard);
     m_baseUrlLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
     editorLayout->addWidget(m_baseUrlLabel);
 
     m_baseUrlEdit = new QLineEdit(m_editorCard);
@@ -126,7 +127,7 @@ void ApiConfigPage::setupUi()
 
     m_modelLabel = new QLabel(tr("Model:"), m_editorCard);
     m_modelLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                  .arg(theme.textSecondaryColor()));
+                                  .arg(p.textSecondary));
     editorLayout->addWidget(m_modelLabel);
 
     m_modelEdit = new QLineEdit(m_editorCard);
@@ -155,7 +156,7 @@ void ApiConfigPage::setupUi()
     profilesTitleFont.setBold(true);
     m_profilesCardTitle->setFont(profilesTitleFont);
     m_profilesCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                     .arg(theme.textPrimaryColor()));
+                                     .arg(p.subtitleText));
     profilesLayout->addWidget(m_profilesCardTitle);
 
     m_apiProfileList = new QListWidget(m_profilesCard);
@@ -201,6 +202,7 @@ void ApiConfigPage::refreshTheme()
 void ApiConfigPage::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
     m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
@@ -211,18 +213,18 @@ void ApiConfigPage::applyTheme()
     m_profilesCard->setStyleSheet(theme.cardStyleSheet("profilesCard"));
 
     m_currentApiProfileLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                                .arg(theme.textPrimaryColor()));
+                                                .arg(p.accent));
     m_editorCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textPrimaryColor()));
+                                       .arg(p.subtitleText));
     m_profilesCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textPrimaryColor()));
+                                         .arg(p.subtitleText));
 
     m_apiKeyLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textSecondaryColor()));
+                                   .arg(p.textSecondary));
     m_baseUrlLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
     m_modelLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                  .arg(theme.textSecondaryColor()));
+                                  .arg(p.textSecondary));
 
     m_apiKeyEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_baseUrlEdit->setStyleSheet(theme.lineEditStyleSheet());

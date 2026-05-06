@@ -1,7 +1,7 @@
 #include "actionimportworker.h"
 
-#include "core/petaction.h"
 #include "core/petconfigmanager.h"
+#include "models/petaction.h"
 #include "services/actionimportservice.h"
 
 ActionImportWorker::ActionImportWorker(const ImportFolderTask &task, QObject *parent)

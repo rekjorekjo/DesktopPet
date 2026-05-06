@@ -11,30 +11,30 @@ qt_add_executable(DesktopPet
     main.cpp
     core/appsettings.cpp
     core/appsettings.h
-    core/actioncategory.h
     core/appversion.h
-    core/petaction.cpp
-    core/petaction.h
-    core/petanimationplayer.cpp
-    core/petanimationplayer.h
     core/petconfigmanager.cpp
     core/petconfigmanager.h
     core/petpaths.cpp
     core/petpaths.h
-    core/petplaylist.cpp
-    core/petplaylist.h
-    core/petwidget.cpp
-    core/petwidget.h
-    core/settingswindow.cpp
-    core/settingswindow.h
-    core/traymanager.cpp
-    core/traymanager.h
-    core/updatemanager.cpp
-    core/updatemanager.h
-    core/gifframeextractor.cpp
-    core/gifframeextractor.h
-    core/timedtrigger.cpp
-    core/timedtrigger.h
+    models/actioncategory.h
+    models/petaction.cpp
+    models/petaction.h
+    models/petplaylist.cpp
+    models/petplaylist.h
+    models/timedtrigger.cpp
+    models/timedtrigger.h
+    runtime/petanimationplayer.cpp
+    runtime/petanimationplayer.h
+    runtime/petwidget.cpp
+    runtime/petwidget.h
+    runtime/traymanager.cpp
+    runtime/traymanager.h
+    utils/gifframeextractor.cpp
+    utils/gifframeextractor.h
+    utils/updatemanager.cpp
+    utils/updatemanager.h
+    ui/settingswindow.cpp
+    ui/settingswindow.h
     services/actionimportservice.cpp
     services/actionimportservice.h
     services/actionimportworker.cpp
@@ -43,6 +43,10 @@ qt_add_executable(DesktopPet
     services/actionlibraryservice.h
     services/petcreationservice.cpp
     services/petcreationservice.h
+    services/petimportservice.cpp
+    services/petimportservice.h
+    services/petlibraryservice.cpp
+    services/petlibraryservice.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
@@ -58,6 +62,8 @@ qt_add_executable(DesktopPet
     dialogs/importactiondialog.h
     dialogs/newpetdialog.cpp
     dialogs/newpetdialog.h
+    dialogs/importpetdialog.cpp
+    dialogs/importpetdialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/personalizationpage.cpp
@@ -72,6 +78,8 @@ qt_add_executable(DesktopPet
     widgets/actioncategorytabwidget.h
     widgets/actionlibrarylistwidget.cpp
     widgets/actionlibrarylistwidget.h
+    widgets/nowheellistwidget.cpp
+    widgets/nowheellistwidget.h
 )
 
 qt_add_resources(DesktopPet "app_resources"

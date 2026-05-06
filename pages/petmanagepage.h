@@ -3,9 +3,9 @@
 
 #include <QWidget>
 
-#include "core/petaction.h"
 #include "core/petconfigmanager.h"
-#include "core/petplaylist.h"
+#include "models/petaction.h"
+#include "models/petplaylist.h"
 
 class QLabel;
 class QPushButton;
@@ -41,20 +41,25 @@ private:
     void updateButtonStates();
     void refreshPetList();
     QString petDisplayName(const QString &petId) const;
+    QString firstEnabledPetId() const;
 
     int usablePetActionCount() const;
     int globalActionResourceCount() const;
 
 private slots:
     void onCreatePet();
+    void onImportPet();
     void onPetListItemClicked(QListWidgetItem *item);
     void onPetListContextMenu(const QPoint &pos);
     void onSwitchToPet();
     void onEditPet();
+    void onDisablePet();
+    void onDeletePet();
 
 private:
     QLabel *m_titleLabel;
     QLabel *m_currentPetLabel;
+    QLabel *m_petListTitleLabel;
 
     QListWidget *m_petListWidget;
 
@@ -69,6 +74,7 @@ private:
     QLabel *m_statusLabel;
 
     QPushButton *m_createPetButton;
+    QPushButton *m_importPetButton;
     QPushButton *m_startButton;
     QPushButton *m_pauseButton;
     QPushButton *m_reloadButton;

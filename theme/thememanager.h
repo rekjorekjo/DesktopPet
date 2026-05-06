@@ -40,6 +40,74 @@ struct ThemePalette
     QString iconPrimary;
     QString iconOnAccent;
     QString iconMuted;
+
+    QString accent;
+    QString accentHover;
+    QString accentPressed;
+    QString accentSoft;
+
+    QString cardHoverBackground;
+    QString cardBorder;
+    QString separator;
+
+    QString titleText;
+    QString subtitleText;
+    QString textMuted;
+    QString linkText;
+    QString placeholderText;
+    QString disabledText;
+
+    QString buttonPrimaryHover;
+    QString buttonPrimaryPressed;
+
+    QString buttonSecondaryBg;
+    QString buttonSecondaryText;
+    QString buttonSecondaryBorder;
+    QString buttonSecondaryHover;
+    QString buttonSecondaryPressed;
+
+    QString dangerPressed;
+
+    QString inputText;
+    QString inputBorder;
+    QString inputHoverBorder;
+    QString inputFocusBorder;
+
+    QString listBackground;
+    QString listText;
+    QString listHoverBg;
+    QString listSelectedBg;
+    QString listSelectedText;
+    QString listDisabledText;
+
+    QString tabText;
+    QString tabHoverBg;
+    QString tabSelectedBg;
+    QString tabSelectedText;
+    QString tabBorder;
+
+    QString menuBackground;
+    QString menuText;
+    QString menuHoverBg;
+    QString menuHoverText;
+    QString menuSeparator;
+
+    QString checkboxBorder;
+    QString checkboxCheckedBg;
+    QString checkboxCheckColor;
+
+    QString scrollTrack;
+    QString scrollHandleHover;
+    QString sliderGroove;
+    QString sliderHandle;
+    QString sliderHandleHover;
+
+    QString success;
+    QString warning;
+    QString error;
+    QString info;
+
+    QString selectionBackground;
 };
 
 class ThemeManager : public QObject
@@ -53,6 +121,7 @@ public:
     void setThemeByIndex(int index);
     int themeCount() const;
     QString themeName(int index) const;
+    QString themeIdAt(int index) const;
     QStringList availableThemes() const;
 
     ThemePalette currentPalette() const;

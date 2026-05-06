@@ -3,8 +3,11 @@
 #include "core/appsettings.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "dialogs/importpetdialog.h"
 #include "dialogs/newpetdialog.h"
 #include "services/petcreationservice.h"
+#include "services/petimportservice.h"
+#include "services/petlibraryservice.h"
 #include "theme/thememanager.h"
 
 #include <QDir>
@@ -16,6 +19,7 @@
 #include <QPushButton>
 #include <QSet>
 #include <QVBoxLayout>
+#include <QFile>
 
 PetManagePage::PetManagePage(QWidget *parent)
     : QWidget(parent)
@@ -36,6 +40,7 @@ PetManagePage::~PetManagePage()
 void PetManagePage::connectSignals()
 {
     connect(m_createPetButton, &QPushButton::clicked, this, &PetManagePage::onCreatePet);
+    connect(m_importPetButton, &QPushButton::clicked, this, &PetManagePage::onImportPet);
 
     connect(m_startButton, &QPushButton::clicked, this, [this]() {
         setRunningStatus(true);
@@ -91,9 +96,26 @@ void PetManagePage::setupUi()
 
     mainLayout->addLayout(headerLayout);
 
-    QLabel *petListTitle = new QLabel(tr("宠物列表"), this);
-    petListTitle->setObjectName("sectionTitleLabel");
-    mainLayout->addWidget(petListTitle);
+    QHBoxLayout *petListHeaderLayout = new QHBoxLayout();
+    petListHeaderLayout->setSpacing(12);
+
+    m_petListTitleLabel = new QLabel(tr("宠物列表"), this);
+    m_petListTitleLabel->setObjectName("sectionTitleLabel");
+    petListHeaderLayout->addWidget(m_petListTitleLabel);
+
+    petListHeaderLayout->addStretch();
+
+    m_createPetButton = new QPushButton(tr("新建宠物"), this);
+    m_createPetButton->setObjectName("secondaryButton");
+    m_createPetButton->setMinimumHeight(36);
+    petListHeaderLayout->addWidget(m_createPetButton);
+
+    m_importPetButton = new QPushButton(tr("导入宠物"), this);
+    m_importPetButton->setObjectName("secondaryButton");
+    m_importPetButton->setMinimumHeight(36);
+    petListHeaderLayout->addWidget(m_importPetButton);
+
+    mainLayout->addLayout(petListHeaderLayout);
 
     m_petListWidget = new QListWidget(this);
     m_petListWidget->setObjectName("petListWidget");
@@ -142,16 +164,6 @@ void PetManagePage::setupUi()
 
     mainLayout->addWidget(m_infoCard);
 
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
-
-    m_createPetButton = new QPushButton(tr("新建宠物"), this);
-    m_createPetButton->setObjectName("secondaryButton");
-    buttonLayout->addWidget(m_createPetButton);
-
-    buttonLayout->addStretch();
-
-    mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch();
 
     setLayout(mainLayout);
@@ -160,17 +172,21 @@ void PetManagePage::setupUi()
 void PetManagePage::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     m_titleLabel->setStyleSheet(QString("font-size: 20px; font-weight: bold; color: %1; border: none; background: transparent;")
-                                    .arg(theme.textPrimaryColor()));
+                                    .arg(p.titleText));
 
     m_currentPetLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent; margin-left: 16px;")
-                                         .arg(theme.textPrimaryColor()));
+                                         .arg(p.accent));
+
+    m_petListTitleLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent;")
+                                           .arg(p.subtitleText));
 
     m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
 
     QString infoStyle = QString("font-size: 14px; color: %1; border: none; background: transparent;")
-                                .arg(theme.textSecondaryColor());
+                                .arg(p.textSecondary);
 
     m_petNameLabel->setStyleSheet(infoStyle);
     m_petIdLabel->setStyleSheet(infoStyle);
@@ -182,6 +198,7 @@ void PetManagePage::applyTheme()
     m_statusLabel->setStyleSheet(infoStyle);
 
     m_createPetButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_importPetButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_startButton->setStyleSheet(theme.primaryButtonStyleSheet());
     m_pauseButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_reloadButton->setStyleSheet(theme.secondaryButtonStyleSheet());
@@ -311,6 +328,11 @@ void PetManagePage::refreshPetList()
     for (const QString &petId : petFolders) {
         QString petJsonPath = PetPaths::petDirectory(petId) + "/pet.json";
         if (!QFile::exists(petJsonPath)) {
+            continue;
+        }
+
+        PetBasicInfo info;
+        if (PetConfigManager::loadPetInfoJson(petJsonPath, info) && !info.enabled) {
             continue;
         }
 
@@ -546,14 +568,20 @@ void PetManagePage::onPetListContextMenu(const QPoint &pos)
     if (petId == currentPetId) {
         switchAction->setEnabled(false);
     }
-    menu.addSeparator();
     QAction *editAction = menu.addAction(tr("编辑宠物"));
+    menu.addSeparator();
+    QAction *disableAction = menu.addAction(tr("移除宠物"));
+    QAction *deleteAction = menu.addAction(tr("删除宠物"));
 
     QAction *selectedAction = menu.exec(m_petListWidget->mapToGlobal(pos));
     if (selectedAction == switchAction) {
         onSwitchToPet();
     } else if (selectedAction == editAction) {
         onEditPet();
+    } else if (selectedAction == disableAction) {
+        onDisablePet();
+    } else if (selectedAction == deleteAction) {
+        onDeletePet();
     }
 }
 
@@ -647,4 +675,137 @@ void PetManagePage::onEditPet()
 
     refreshPetList();
     QMessageBox::information(this, tr("编辑宠物"), tr("宠物信息已更新。"));
+}
+
+void PetManagePage::onDisablePet()
+{
+    QListWidgetItem *item = m_petListWidget->currentItem();
+    if (!item) {
+        return;
+    }
+
+    QString petId = item->data(Qt::UserRole).toString();
+    if (petId.isEmpty()) {
+        return;
+    }
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("移除宠物"),
+        tr("确定要移除宠物 \"%1\" 吗？\n宠物文件夹不会被删除，但它会从宠物列表隐藏。").arg(petId),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+
+    PetLibraryOperationResult result = PetLibraryService::disablePet(petId);
+
+    if (!result.success) {
+        QMessageBox::warning(this, tr("移除宠物"), result.message);
+        return;
+    }
+
+    if (!result.nextCurrentPetId.isEmpty()) {
+        AppSettings::setCurrentPetId(result.nextCurrentPetId);
+    }
+
+    refreshPetList();
+    loadPetInfo();
+    emit applyConfigRequested();
+
+    QMessageBox::information(this, tr("移除宠物"), result.message);
+}
+
+void PetManagePage::onDeletePet()
+{
+    QListWidgetItem *item = m_petListWidget->currentItem();
+    if (!item) {
+        return;
+    }
+
+    QString petId = item->data(Qt::UserRole).toString();
+    if (petId.isEmpty()) {
+        return;
+    }
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("删除宠物"),
+        tr("确定要删除宠物 \"%1\" 吗？\n该宠物的配置目录会被删除！此操作不可撤销！").arg(petId),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+
+    PetLibraryOperationResult result = PetLibraryService::deletePet(petId);
+
+    if (!result.success) {
+        QMessageBox::warning(this, tr("删除宠物"), result.message);
+        return;
+    }
+
+    if (!result.nextCurrentPetId.isEmpty()) {
+        AppSettings::setCurrentPetId(result.nextCurrentPetId);
+    }
+
+    refreshPetList();
+    loadPetInfo();
+    emit applyConfigRequested();
+
+    QMessageBox::information(this, tr("删除宠物"), result.message);
+}
+
+QString PetManagePage::firstEnabledPetId() const
+{
+    QDir petsDir(PetPaths::petsDirectory());
+    if (!petsDir.exists()) {
+        return QString();
+    }
+
+    QStringList petFolders = petsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    for (const QString &petId : petFolders) {
+        QString petJsonPath = PetPaths::petDirectory(petId) + "/pet.json";
+        PetBasicInfo info;
+        if (PetConfigManager::loadPetInfoJson(petJsonPath, info) && info.enabled) {
+            return petId;
+        }
+    }
+
+    return QString();
+}
+
+void PetManagePage::onImportPet()
+{
+    ImportPetDialog dialog(this);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    PetImportResult result = PetImportService::importPet(
+        dialog.sourceDirectory(),
+        dialog.petId(),
+        dialog.petName(),
+        dialog.canvasSize(),
+        dialog.displaySize()
+    );
+
+    if (!result.success) {
+        QMessageBox::warning(this, tr("导入宠物"), result.message);
+        return;
+    }
+
+    AppSettings::setCurrentPetId(result.petId);
+    refreshPetList();
+    loadPetInfo();
+    emit applyConfigRequested();
+
+    if (result.warning) {
+        QMessageBox::warning(this, tr("导入宠物"), result.message);
+    } else {
+        QMessageBox::information(this, tr("导入宠物"), result.message);
+    }
 }

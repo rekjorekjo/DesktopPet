@@ -5,8 +5,8 @@
 #include <QString>
 #include <QList>
 
-#include "core/actioncategory.h"
-#include "core/petplaylist.h"
+#include "models/actioncategory.h"
+#include "models/petplaylist.h"
 
 struct PetAction;
 struct PetBasicInfo;

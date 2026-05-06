@@ -1,8 +1,8 @@
 #include "newactiondialog.h"
 
-#include "core/gifframeextractor.h"
 #include "core/petpaths.h"
 #include "theme/thememanager.h"
+#include "utils/gifframeextractor.h"
 
 #include <QDir>
 #include <QFile>
@@ -109,6 +109,7 @@ void NewActionDialog::clearForm()
 void NewActionDialog::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     setWindowTitle(tr("新建动作"));
     setMinimumWidth(450);
@@ -120,7 +121,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *gifLayout = new QHBoxLayout();
     QLabel *gifLabel = new QLabel(tr("GIF 文件:"), this);
-    gifLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    gifLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     gifLabel->setFixedWidth(80);
     m_gifPathEdit = new QLineEdit(this);
     m_gifPathEdit->setReadOnly(true);
@@ -134,7 +135,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *idLayout = new QHBoxLayout();
     QLabel *idLabel = new QLabel(tr("动作 ID:"), this);
-    idLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    idLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     idLabel->setFixedWidth(80);
     m_idEdit = new QLineEdit(this);
     m_idEdit->setPlaceholderText(tr("例如: wave, idle_02, happy"));
@@ -145,7 +146,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *fpsLayout = new QHBoxLayout();
     QLabel *fpsLabel = new QLabel(tr("FPS:"), this);
-    fpsLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    fpsLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     fpsLabel->setFixedWidth(80);
     m_fpsSpinBox = new QSpinBox(this);
     m_fpsSpinBox->setRange(1, 60);
@@ -160,10 +161,10 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *frameCountLayout = new QHBoxLayout();
     QLabel *frameCountTitle = new QLabel(tr("帧数量:"), this);
-    frameCountTitle->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    frameCountTitle->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     frameCountTitle->setFixedWidth(80);
     m_frameCountLabel = new QLabel("-", this);
-    m_frameCountLabel->setStyleSheet(QString("color: %1;").arg(theme.textSecondaryColor()));
+    m_frameCountLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
     frameCountLayout->addWidget(frameCountTitle);
     frameCountLayout->addWidget(m_frameCountLabel);
     frameCountLayout->addStretch();
@@ -173,7 +174,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *categoryLayout = new QHBoxLayout();
     QLabel *categoryLabel = new QLabel(tr("添加到分类:"), this);
-    categoryLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    categoryLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     categoryLabel->setFixedWidth(80);
     m_categoryComboBox = new QComboBox(this);
     m_categoryComboBox->addItem(tr("不添加"));
@@ -190,7 +191,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *timedTriggerModeLayout = new QHBoxLayout();
     m_timedTriggerModeLabel = new QLabel(tr("触发方式:"), this);
-    m_timedTriggerModeLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_timedTriggerModeLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     m_timedTriggerModeLabel->setFixedWidth(80);
     m_timedTriggerModeComboBox = new QComboBox(this);
     m_timedTriggerModeComboBox->addItem(tr("每隔一段时间"), static_cast<int>(TimedTriggerMode::Interval));
@@ -204,7 +205,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *timedIntervalLayout = new QHBoxLayout();
     m_timedIntervalLabel = new QLabel(tr("定时间隔:"), this);
-    m_timedIntervalLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_timedIntervalLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     m_timedIntervalLabel->setFixedWidth(80);
     m_timedIntervalSpinBox = new QSpinBox(this);
     m_timedIntervalSpinBox->setRange(10, 86400);
@@ -219,7 +220,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *triggerTimeLayout = new QHBoxLayout();
     m_triggerTimeLabel = new QLabel(tr("播放时间:"), this);
-    m_triggerTimeLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_triggerTimeLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     m_triggerTimeLabel->setFixedWidth(80);
     m_triggerTimeEdit = new QTimeEdit(this);
     m_triggerTimeEdit->setDisplayFormat("HH:mm");
@@ -233,7 +234,7 @@ void NewActionDialog::setupUi()
 
     QHBoxLayout *emotionLayout = new QHBoxLayout();
     m_emotionLabel = new QLabel(tr("情绪类型:"), this);
-    m_emotionLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimaryColor()));
+    m_emotionLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     m_emotionLabel->setFixedWidth(80);
     m_emotionComboBox = new QComboBox(this);
     m_emotionComboBox->addItem("happy");

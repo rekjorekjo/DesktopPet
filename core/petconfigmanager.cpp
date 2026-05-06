@@ -56,6 +56,8 @@ bool PetConfigManager::loadPetInfoJson(const QString &filePath, PetBasicInfo &in
         info.displaySize.setHeight(displayObj.value("height").toInt(200));
     }
 
+    info.enabled = root.value("enabled").toBool(true);
+
     return true;
 }
 
@@ -75,6 +77,8 @@ bool PetConfigManager::savePetInfoJson(const QString &filePath, const PetBasicIn
     displayObj["width"] = info.displaySize.width();
     displayObj["height"] = info.displaySize.height();
     root["displaySize"] = displayObj;
+
+    root["enabled"] = info.enabled;
 
     QJsonDocument doc(root);
 

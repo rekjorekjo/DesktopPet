@@ -8,10 +8,10 @@
 #include <QPoint>
 #include <QWidget>
 
-#include "core/petaction.h"
-#include "core/petanimationplayer.h"
 #include "core/petconfigmanager.h"
-#include "core/petplaylist.h"
+#include "models/petaction.h"
+#include "models/petplaylist.h"
+#include "runtime/petanimationplayer.h"
 
 class QContextMenuEvent;
 class QTimer;

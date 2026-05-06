@@ -1,10 +1,10 @@
 #include "actionimportservice.h"
 
-#include "core/gifframeextractor.h"
-#include "core/petaction.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
-#include "core/petplaylist.h"
+#include "models/petaction.h"
+#include "models/petplaylist.h"
+#include "utils/gifframeextractor.h"
 
 #include <QDir>
 #include <QFile>

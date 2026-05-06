@@ -1,6 +1,6 @@
 #include "updatemanager.h"
 
-#include "appversion.h"
+#include "core/appversion.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>

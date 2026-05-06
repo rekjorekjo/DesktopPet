@@ -148,7 +148,9 @@ void NewPetDialog::setPetIdReadOnly(bool readOnly)
 {
     m_petIdEdit->setReadOnly(readOnly);
     if (readOnly) {
-        m_petIdEdit->setStyleSheet(m_petIdEdit->styleSheet() + " background-color: #f0f0f0;");
+        ThemeManager &theme = ThemeManager::instance();
+        ThemePalette p = theme.currentPalette();
+        m_petIdEdit->setStyleSheet(m_petIdEdit->styleSheet() + QString(" background-color: %1;").arg(p.cardBackground));
     }
 }
 

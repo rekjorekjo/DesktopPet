@@ -1,8 +1,8 @@
 #include "core/appsettings.h"
 #include "core/petpaths.h"
-#include "core/petwidget.h"
-#include "core/settingswindow.h"
-#include "core/traymanager.h"
+#include "runtime/petwidget.h"
+#include "runtime/traymanager.h"
+#include "ui/settingswindow.h"
 #include "services/actionimportservice.h"
 
 #include <QApplication>

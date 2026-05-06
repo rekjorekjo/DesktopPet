@@ -24,6 +24,9 @@ public:
     static bool openSettingsOnLaunch();
     static void setOpenSettingsOnLaunch(bool enabled);
 
+    static int themeIndex();
+    static void setThemeIndex(int index);
+
 private:
     static double clampScale(double scale);
     static double clampOpacity(double opacity);

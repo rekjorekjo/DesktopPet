@@ -2,10 +2,13 @@
 
 #include "core/appsettings.h"
 #include "theme/thememanager.h"
+#include "widgets/nowheellistwidget.h"
 
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QListWidgetItem>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 
 PersonalizationPage::PersonalizationPage(QWidget *parent)
@@ -15,8 +18,11 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_titleLabel(nullptr)
     , m_appearanceCard(nullptr)
     , m_appearanceCardTitle(nullptr)
-    , m_themeLabel(nullptr)
-    , m_themeComboBox(nullptr)
+    , m_themeHintLabel(nullptr)
+    , m_lightThemeLabel(nullptr)
+    , m_lightThemeList(nullptr)
+    , m_darkThemeLabel(nullptr)
+    , m_darkThemeList(nullptr)
     , m_displayCard(nullptr)
     , m_displayCardTitle(nullptr)
     , m_opacityLabel(nullptr)
@@ -29,6 +35,7 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_openSettingsOnLaunchCheckBox(nullptr)
 {
     setupUi();
+    populateThemeLists();
     connectSignals();
 }
 
@@ -37,6 +44,7 @@ PersonalizationPage::~PersonalizationPage() {}
 void PersonalizationPage::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -76,22 +84,46 @@ void PersonalizationPage::setupUi()
     appearanceTitleFont.setBold(true);
     m_appearanceCardTitle->setFont(appearanceTitleFont);
     m_appearanceCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                           .arg(theme.textPrimaryColor()));
+                                           .arg(p.subtitleText));
     appearanceLayout->addWidget(m_appearanceCardTitle);
 
-    QHBoxLayout *themeLayout = new QHBoxLayout();
-    m_themeLabel = new QLabel(tr("配色方案:"), m_appearanceCard);
-    m_themeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                  .arg(theme.textSecondaryColor()));
-    m_themeComboBox = new QComboBox(m_appearanceCard);
-    m_themeComboBox->addItems(theme.availableThemes());
-    m_themeComboBox->setMinimumWidth(160);
-    m_themeComboBox->setCurrentIndex(theme.currentThemeIndex());
-    m_themeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
-    themeLayout->addWidget(m_themeLabel);
-    themeLayout->addWidget(m_themeComboBox);
-    themeLayout->addStretch();
-    appearanceLayout->addLayout(themeLayout);
+    m_themeHintLabel = new QLabel(tr("选择喜欢的配色方案，界面会立即应用。"), m_appearanceCard);
+    m_themeHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                        .arg(p.textSecondary));
+    appearanceLayout->addWidget(m_themeHintLabel);
+
+    QHBoxLayout *themeColumnsLayout = new QHBoxLayout();
+    themeColumnsLayout->setSpacing(16);
+
+    QVBoxLayout *lightLayout = new QVBoxLayout();
+    lightLayout->setSpacing(8);
+    m_lightThemeLabel = new QLabel(tr("浅色主题"), m_appearanceCard);
+    m_lightThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")
+                                         .arg(p.textPrimary));
+    lightLayout->addWidget(m_lightThemeLabel);
+
+    m_lightThemeList = new NoWheelListWidget(m_appearanceCard);
+    m_lightThemeList->setMinimumHeight(220);
+    m_lightThemeList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_lightThemeList->setStyleSheet(theme.listWidgetStyleSheet());
+    lightLayout->addWidget(m_lightThemeList);
+
+    QVBoxLayout *darkLayout = new QVBoxLayout();
+    darkLayout->setSpacing(8);
+    m_darkThemeLabel = new QLabel(tr("深色主题"), m_appearanceCard);
+    m_darkThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")
+                                        .arg(p.textPrimary));
+    darkLayout->addWidget(m_darkThemeLabel);
+
+    m_darkThemeList = new NoWheelListWidget(m_appearanceCard);
+    m_darkThemeList->setMinimumHeight(220);
+    m_darkThemeList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());
+    darkLayout->addWidget(m_darkThemeList);
+
+    themeColumnsLayout->addLayout(lightLayout, 1);
+    themeColumnsLayout->addLayout(darkLayout, 1);
+    appearanceLayout->addLayout(themeColumnsLayout);
 
     contentLayout->addWidget(m_appearanceCard);
 
@@ -108,13 +140,13 @@ void PersonalizationPage::setupUi()
     displayTitleFont.setBold(true);
     m_displayCardTitle->setFont(displayTitleFont);
     m_displayCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     displayLayout->addWidget(m_displayCardTitle);
 
     QHBoxLayout *opacityLayout = new QHBoxLayout();
     m_opacityLabel = new QLabel(tr("桌宠透明度:"), m_displayCard);
     m_opacityLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
     m_opacitySlider = new QSlider(Qt::Horizontal, m_displayCard);
     m_opacitySlider->setRange(20, 100);
     m_opacitySlider->setValue(static_cast<int>(AppSettings::petOpacity() * 100));
@@ -124,7 +156,7 @@ void PersonalizationPage::setupUi()
     m_opacityValueLabel->setMinimumWidth(50);
     m_opacityValueLabel->setText(QString("%1%").arg(m_opacitySlider->value()));
     m_opacityValueLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textSecondaryColor()));
+                                         .arg(p.textSecondary));
     opacityLayout->addWidget(m_opacityLabel);
     opacityLayout->addWidget(m_opacitySlider);
     opacityLayout->addWidget(m_opacityValueLabel);
@@ -146,7 +178,7 @@ void PersonalizationPage::setupUi()
     startupTitleFont.setBold(true);
     m_startupCardTitle->setFont(startupTitleFont);
     m_startupCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     startupLayout->addWidget(m_startupCardTitle);
 
     m_autoStartOnBootCheckBox = new QCheckBox(tr("开机自启动"), m_startupCard);
@@ -174,8 +206,11 @@ void PersonalizationPage::setupUi()
 
 void PersonalizationPage::connectSignals()
 {
-    connect(m_themeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &PersonalizationPage::onThemeChanged);
+    connect(m_lightThemeList, &QListWidget::itemClicked,
+            this, &PersonalizationPage::onThemeItemClicked);
+
+    connect(m_darkThemeList, &QListWidget::itemClicked,
+            this, &PersonalizationPage::onThemeItemClicked);
 
     connect(m_opacitySlider, &QSlider::valueChanged,
             this, &PersonalizationPage::onOpacityChanged);
@@ -190,9 +225,64 @@ void PersonalizationPage::connectSignals()
             this, &PersonalizationPage::onOpenSettingsOnLaunchChanged);
 }
 
-void PersonalizationPage::onThemeChanged(int index)
+bool PersonalizationPage::isLightTheme(const QString &themeId) const
 {
-    ThemeManager::instance().setThemeByIndex(index);
+    if (themeId == "light" || themeId == "freshBlue") {
+        return true;
+    }
+    if (themeId == "dark" || themeId == "simpleGray") {
+        return false;
+    }
+    if (themeId.startsWith("bloom-")) {
+        return !themeId.endsWith("-dark");
+    }
+    return true;
+}
+
+void PersonalizationPage::populateThemeLists()
+{
+    ThemeManager &theme = ThemeManager::instance();
+
+    QSignalBlocker lightBlocker(m_lightThemeList);
+    QSignalBlocker darkBlocker(m_darkThemeList);
+
+    m_lightThemeList->clear();
+    m_darkThemeList->clear();
+
+    QStringList themeNames = theme.availableThemes();
+    int currentThemeIndex = theme.currentThemeIndex();
+
+    for (int i = 0; i < themeNames.size(); ++i) {
+        QString themeName = themeNames.at(i);
+        QString themeId = theme.themeIdAt(i);
+
+        QListWidgetItem *item = new QListWidgetItem(themeName);
+        item->setData(Qt::UserRole, i);
+
+        if (isLightTheme(themeId)) {
+            m_lightThemeList->addItem(item);
+            if (i == currentThemeIndex) {
+                m_lightThemeList->setCurrentItem(item);
+                m_darkThemeList->clearSelection();
+            }
+        } else {
+            m_darkThemeList->addItem(item);
+            if (i == currentThemeIndex) {
+                m_darkThemeList->setCurrentItem(item);
+                m_lightThemeList->clearSelection();
+            }
+        }
+    }
+}
+
+void PersonalizationPage::onThemeItemClicked(QListWidgetItem *item)
+{
+    if (!item) {
+        return;
+    }
+
+    int themeIndex = item->data(Qt::UserRole).toInt();
+    ThemeManager::instance().setThemeByIndex(themeIndex);
 }
 
 void PersonalizationPage::onOpacityChanged(int value)
@@ -242,15 +332,22 @@ void PersonalizationPage::applyTheme()
         "color: %1; border: none; background: transparent;"
     ).arg(p.textSecondary);
 
-    m_appearanceCardTitle->setStyleSheet(sectionTitleStyle);
+    m_appearanceCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                           .arg(p.subtitleText));
     m_displayCardTitle->setStyleSheet(sectionTitleStyle);
     m_startupCardTitle->setStyleSheet(sectionTitleStyle);
 
-    m_themeLabel->setStyleSheet(normalLabelStyle);
+    m_themeHintLabel->setStyleSheet(normalLabelStyle);
+    m_lightThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")
+                                         .arg(p.textPrimary));
+    m_darkThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")
+                                        .arg(p.textPrimary));
+
     m_opacityLabel->setStyleSheet(normalLabelStyle);
     m_opacityValueLabel->setStyleSheet(normalLabelStyle);
 
-    m_themeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    m_lightThemeList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_opacitySlider->setStyleSheet(theme.sliderStyleSheet());
 
     m_autoStartOnBootCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
@@ -263,20 +360,5 @@ void PersonalizationPage::applyTheme()
         m_contentWidget->setStyleSheet(QString("background-color: %1;").arg(p.pageBackground));
     }
 
-    QString currentText = m_themeComboBox->currentText();
-    m_themeComboBox->blockSignals(true);
-    m_themeComboBox->clear();
-    m_themeComboBox->addItems(theme.availableThemes());
-
-    int idx = theme.currentThemeIndex();
-    if (idx >= 0 && idx < m_themeComboBox->count()) {
-        m_themeComboBox->setCurrentIndex(idx);
-    } else if (!currentText.isEmpty()) {
-        int oldIdx = m_themeComboBox->findText(currentText);
-        if (oldIdx >= 0) {
-            m_themeComboBox->setCurrentIndex(oldIdx);
-        }
-    }
-
-    m_themeComboBox->blockSignals(false);
+    populateThemeLists();
 }

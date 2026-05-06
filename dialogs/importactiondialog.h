@@ -9,8 +9,8 @@
 #include <QSpinBox>
 #include <QTimeEdit>
 
-#include "core/actioncategory.h"
-#include "core/timedtrigger.h"
+#include "models/actioncategory.h"
+#include "models/timedtrigger.h"
 
 struct PetAction;
 

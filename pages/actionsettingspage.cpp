@@ -559,6 +559,7 @@ void ActionSettingsPage::reloadData()
 void ActionSettingsPage::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
     m_contentWidget->setStyleSheet(theme.pageStyleSheet());
@@ -568,16 +569,16 @@ void ActionSettingsPage::applyTheme()
         "background-color: transparent;"
         "padding: 0;"
         "margin: 0;"
-    ).arg(theme.textPrimaryColor()));
+    ).arg(p.titleText));
 
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textPrimaryColor()));
+                                         .arg(p.subtitleText));
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
     m_newActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
     m_importActionButton->setStyleSheet(theme.secondaryButtonStyleSheet());
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
     m_dailyActionList->setStyleSheet(theme.listWidgetStyleSheet());
     m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
@@ -592,27 +593,27 @@ void ActionSettingsPage::applyTheme()
 
     m_actionConfigPanel->setStyleSheet(theme.cardStyleSheet("actionConfigPanel"));
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                              .arg(theme.textPrimaryColor()));
+                                              .arg(p.subtitleText));
     m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.textSecondaryColor()));
+                                   .arg(p.textSecondary));
     m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     m_moveEnabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     m_animationSpeedCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                             .arg(theme.textSecondaryColor()));
+                                             .arg(p.textSecondary));
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
 
     m_timedTriggerModeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                               .arg(theme.textPrimaryColor()));
+                                               .arg(p.textPrimary));
     m_timedTriggerModeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     m_timedIntervalLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                            .arg(theme.textPrimaryColor()));
+                                            .arg(p.textPrimary));
     m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     m_triggerTimeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                          .arg(theme.textPrimaryColor()));
+                                          .arg(p.textPrimary));
     m_triggerTimeEdit->setStyleSheet(theme.timeEditStyleSheet());
 }

@@ -1,8 +1,8 @@
 #include "aboutpage.h"
 
 #include "core/appversion.h"
-#include "core/updatemanager.h"
 #include "theme/thememanager.h"
+#include "utils/updatemanager.h"
 
 #include <QDesktopServices>
 #include <QFont>
@@ -48,6 +48,7 @@ AboutPage::~AboutPage() {}
 void AboutPage::setupUi()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -87,7 +88,7 @@ void AboutPage::setupUi()
     infoTitleFont.setBold(true);
     m_infoCardTitle->setFont(infoTitleFont);
     m_infoCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                     .arg(theme.textPrimaryColor()));
+                                     .arg(p.subtitleText));
     infoLayout->addWidget(m_infoCardTitle);
 
     QHBoxLayout *iconTextLayout = new QHBoxLayout();
@@ -109,13 +110,13 @@ void AboutPage::setupUi()
     appNameFont.setBold(true);
     m_appNameLabel->setFont(appNameFont);
     m_appNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.buttonPrimaryColor()));
+                                    .arg(p.accent));
     textLayout->addWidget(m_appNameLabel);
 
     m_descriptionLabel = new QLabel(tr("一个可爱的桌面宠物应用，让你的桌面更生动有趣。"), m_infoCard);
     m_descriptionLabel->setWordWrap(true);
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textSecondaryColor()));
+                                        .arg(p.textSecondary));
     textLayout->addWidget(m_descriptionLabel);
 
     iconTextLayout->addLayout(textLayout, 1);
@@ -136,12 +137,12 @@ void AboutPage::setupUi()
     versionTitleFont.setBold(true);
     m_versionCardTitle->setFont(versionTitleFont);
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     versionLayout->addWidget(m_versionCardTitle);
 
     m_versionLabel = new QLabel(tr("当前版本：") + QString::fromUtf8(APP_VERSION), m_versionCard);
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
     versionLayout->addWidget(m_versionLabel);
 
     contentLayout->addWidget(m_versionCard);
@@ -159,12 +160,12 @@ void AboutPage::setupUi()
     updateTitleFont.setBold(true);
     m_updateCardTitle->setFont(updateTitleFont);
     m_updateCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textPrimaryColor()));
+                                       .arg(p.subtitleText));
     updateLayout->addWidget(m_updateCardTitle);
 
     m_updateStatusLabel = new QLabel(m_updateCard);
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textSecondaryColor()));
+                                         .arg(p.textSecondary));
     m_updateStatusLabel->setWordWrap(true);
     m_updateStatusLabel->setMaximumHeight(48);
     m_updateStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -192,6 +193,7 @@ void AboutPage::refreshTheme()
 void AboutPage::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
     m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
@@ -199,23 +201,23 @@ void AboutPage::applyTheme()
 
     m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
     m_infoCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                     .arg(theme.textPrimaryColor()));
+                                     .arg(p.subtitleText));
     m_appNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.buttonPrimaryColor()));
+                                    .arg(p.accent));
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textSecondaryColor()));
+                                        .arg(p.textSecondary));
 
     m_versionCard->setStyleSheet(theme.cardStyleSheet("versionCard"));
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(theme.textPrimaryColor()));
+                                        .arg(p.subtitleText));
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(theme.textSecondaryColor()));
+                                    .arg(p.textSecondary));
 
     m_updateCard->setStyleSheet(theme.cardStyleSheet("updateCard"));
     m_updateCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(theme.textPrimaryColor()));
+                                       .arg(p.subtitleText));
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(theme.textSecondaryColor()));
+                                         .arg(p.textSecondary));
     m_checkUpdateButton->setStyleSheet(theme.primaryButtonStyleSheet());
 }
 
