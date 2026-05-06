@@ -127,7 +127,7 @@ void ActionSettingsPage::setupUi()
 
     m_saveAndApplyButton = new QPushButton(tr("保存并应用"), m_contentWidget);
     m_saveAndApplyButton->setMinimumHeight(32);
-    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_saveAndApplyButton->setStyleSheet(theme.glassButtonStyleSheet(6, 55));
     titleLayout->addWidget(m_saveAndApplyButton);
 
     contentLayout->addLayout(titleLayout);
@@ -588,7 +588,7 @@ void ActionSettingsPage::applyTheme()
     m_moveDownButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_removeButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_saveConfigButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_saveAndApplyButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_saveAndApplyButton->setStyleSheet(theme.glassButtonStyleSheet(6, 55));
 
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                               .arg(p.subtitleText));

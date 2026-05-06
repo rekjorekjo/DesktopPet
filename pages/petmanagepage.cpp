@@ -74,6 +74,12 @@ void PetManagePage::setupUi()
 
     m_titleLabel = new QLabel(tr("宠物管理"), this);
     m_titleLabel->setObjectName("pageTitleLabel");
+    QFont titleFont = m_titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    m_titleLabel->setFont(titleFont);
+    m_titleLabel->setStyleSheet(ThemeManager::instance().glassTitleLabelStyleSheet());
+    m_titleLabel->setMargin(0);
     headerLayout->addWidget(m_titleLabel);
 
     m_currentPetLabel = new QLabel(this);
@@ -147,10 +153,10 @@ void PetManagePage::setupUi()
 
     QLabel *infoCardTitle = new QLabel(tr("宠物信息"), this);
     infoCardTitle->setObjectName("infoCardTitle");
-    QFont titleFont = infoCardTitle->font();
-    titleFont.setPointSize(12);
-    titleFont.setBold(true);
-    infoCardTitle->setFont(titleFont);
+    QFont infoTitleFont = infoCardTitle->font();
+    infoTitleFont.setPointSize(12);
+    infoTitleFont.setBold(true);
+    infoCardTitle->setFont(infoTitleFont);
     cardLayout->addWidget(infoCardTitle);
 
     QFrame *separator = new QFrame(this);
@@ -205,8 +211,7 @@ void PetManagePage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(QString("font-size: 20px; font-weight: bold; color: %1; border: none; background: transparent;")
-                                    .arg(p.titleText));
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
 
     m_currentPetLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent; margin-left: 16px;")
                                          .arg(p.accent));
@@ -240,7 +245,7 @@ void PetManagePage::applyTheme()
 
     m_createPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_importPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_startButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_startButton->setStyleSheet(theme.glassButtonStyleSheet(6, 55));
     m_pauseButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_reloadButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
     m_petListWidget->setStyleSheet(theme.listWidgetStyleSheet());
