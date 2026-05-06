@@ -23,6 +23,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_petRunning(AppSettings::autoPlayOnLaunch())
     , m_petScaleFactor(1.0)
     , m_idleActionIndex(0)
+    , m_dragging(false)
 {
     setupUi();
 
@@ -59,6 +60,7 @@ void PetWidget::setupUi()
     m_displayLabel->setObjectName("petDisplayLabel");
     m_displayLabel->setAlignment(Qt::AlignCenter);
     m_displayLabel->setScaledContents(false);
+    m_displayLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -97,37 +99,134 @@ bool PetWidget::hasAnyUsableEnabledAction() const
     return false;
 }
 
-void PetWidget::showPetStatusMessage(const QString &text, const QString &color)
+bool PetWidget::hasAnyPlaylistAction() const
 {
-    m_displayLabel->setText(text);
-    m_displayLabel->setStyleSheet(QString("color: %1; background-color: rgba(0, 0, 0, 180); border-radius: 10px;").arg(color));
+    if (!m_playlist.idleActions().isEmpty()) {
+        return true;
+    }
+    if (!m_playlist.randomActions().isEmpty()) {
+        return true;
+    }
+    if (!m_playlist.timedActions().isEmpty()) {
+        return true;
+    }
+    return false;
+}
+
+QString PetWidget::findFirstEnabledPetId() const
+{
+    QString petsDir = PetPaths::petsDirectory();
+    QDir dir(petsDir);
+    if (!dir.exists()) {
+        return QString();
+    }
+
+    QStringList petFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    for (const QString &petId : petFolders) {
+        QString petJsonPath = petsDir + "/" + petId + "/pet.json";
+        if (QFile::exists(petJsonPath)) {
+            PetBasicInfo info;
+            if (PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
+                if (info.enabled) {
+                    return petId;
+                }
+            }
+        }
+    }
+
+    return QString();
+}
+
+bool PetWidget::hasAnyEnabledPet() const
+{
+    return !findFirstEnabledPetId().isEmpty();
+}
+
+void PetWidget::showStatusMessage(const QString &title, const QString &subtitle)
+{
+    QString html;
+    if (subtitle.isEmpty()) {
+        html = QString("<div style='text-align: center;'><b>%1</b></div>").arg(title);
+    } else {
+        html = QString("<div style='text-align: center;'><b>%1</b><br/><span style='font-size: 12px; color: #6B7280;'>%2</span></div>")
+               .arg(title, subtitle);
+    }
+
+    m_displayLabel->setText(html);
+    m_displayLabel->setTextFormat(Qt::RichText);
+    m_displayLabel->setAlignment(Qt::AlignCenter);
+    m_displayLabel->setWordWrap(true);
+    m_displayLabel->setStyleSheet(
+        "QLabel {"
+        "  background-color: rgba(255, 255, 255, 215);"
+        "  color: #4B5563;"
+        "  border: 1px solid rgba(120, 120, 120, 90);"
+        "  border-radius: 12px;"
+        "  padding: 14px 18px;"
+        "  font-size: 14px;"
+        "}"
+    );
+}
+
+void PetWidget::clearStatusMessage()
+{
+    m_displayLabel->clear();
+    m_displayLabel->setStyleSheet("");
 }
 
 bool PetWidget::loadPet(const QString &petDirPath)
 {
     loadGlobalActionLibrary();
 
-    QString petJsonPath = petDirPath + "/pet.json";
-    QString playlistPath = petDirPath + "/playlist.json";
+    QString currentPetId = AppSettings::currentPetId();
+    QString currentPetDir = PetPaths::petDirectory(currentPetId);
+
+    QDir petDir(currentPetDir);
+    QString petJsonPath = currentPetDir + "/pet.json";
+
+    if (!petDir.exists() || !QFile::exists(petJsonPath)) {
+        QString firstEnabledPet = findFirstEnabledPetId();
+        if (!firstEnabledPet.isEmpty()) {
+            AppSettings::setCurrentPetId(firstEnabledPet);
+            currentPetDir = PetPaths::petDirectory(firstEnabledPet);
+            petJsonPath = currentPetDir + "/pet.json";
+        } else {
+            m_petRunning = false;
+            showStatusMessage(tr("尚未创建宠物"), tr("请前往设置 > 宠物管理新建宠物"));
+            return false;
+        }
+    }
 
     bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
+    QString playlistPath = currentPetDir + "/playlist.json";
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
-    if (!petLoaded || !playlistLoaded) {
+    if (!petLoaded) {
         m_petRunning = false;
-        showPetStatusMessage(tr("宠物资源加载失败"), "red");
+        showStatusMessage(tr("宠物配置加载失败"), tr("请前往宠物管理检查配置"));
         return false;
+    }
+
+    if (!playlistLoaded) {
+        m_playlist = PetPlaylist();
     }
 
     if (!hasAnyActionResources()) {
         m_petRunning = false;
-        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
+        showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
         return false;
     }
 
     if (!hasAnyUsableEnabledAction()) {
         m_petRunning = false;
-        showPetStatusMessage(tr("请前往设置新增动作"), "orange");
+        showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+        return false;
+    }
+
+    if (!hasAnyPlaylistAction()) {
+        m_petRunning = false;
+        showStatusMessage(tr("当前宠物暂无动作配置"), tr("请前往动作设置添加动作"));
         return false;
     }
 
@@ -135,12 +234,14 @@ bool PetWidget::loadPet(const QString &petDirPath)
     setFixedSize(displaySize);
     m_displayLabel->setFixedSize(displaySize);
 
+    clearStatusMessage();
+
     if (m_petRunning) {
         playIdleAction();
         m_randomTimer->start(30000);
         m_timedCheckTimer->start(1000);
     } else {
-        showPetStatusMessage(tr("已暂停"), "gray");
+        showStatusMessage(tr("已暂停"), QString());
     }
 
     return true;
@@ -183,14 +284,12 @@ void PetWidget::loadGlobalActionLibrary()
 bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
 {
     if (!action.isValid()) {
-        m_displayLabel->setText("动作无效");
-        m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showStatusMessage(tr("动作无效"), QString());
         return false;
     }
 
     if (!m_player->loadAction(action, currentDisplaySize())) {
-        m_displayLabel->setText("动作加载失败");
-        m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showStatusMessage(tr("动作加载失败"), QString());
         return false;
     }
 
@@ -200,7 +299,7 @@ bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
     m_currentActionRef = ref;
     m_currentActionId = action.id;
 
-    m_displayLabel->setStyleSheet("background-color: rgba(0, 0, 0, 50); border-radius: 10px;");
+    clearStatusMessage();
 
     m_player->play(ref.loop, ref.repeat);
     return true;
@@ -210,8 +309,7 @@ bool PetWidget::playActionByRef(const PetActionRef &ref)
 {
     PetAction action = findActionById(ref.actionId);
     if (!action.isValid()) {
-        m_displayLabel->setText("找不到动作: " + ref.actionId);
-        m_displayLabel->setStyleSheet("color: orange; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+        showStatusMessage(tr("找不到动作"), ref.actionId);
         return false;
     }
 
@@ -255,7 +353,7 @@ void PetWidget::playIdleAction()
         }
     }
 
-    showPetStatusMessage(tr("请前往设置新增动作"), "orange");
+    showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
 }
 
 void PetWidget::startPet()
@@ -383,17 +481,32 @@ PetAction PetWidget::findActionById(const QString &actionId) const
 void PetWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
+        m_dragging = true;
         m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
         event->accept();
+        return;
     }
+    QWidget::mousePressEvent(event);
 }
 
 void PetWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if (event->buttons() & Qt::LeftButton) {
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
         move(event->globalPosition().toPoint() - m_dragPosition);
         event->accept();
+        return;
     }
+    QWidget::mouseMoveEvent(event);
+}
+
+void PetWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_dragging = false;
+        event->accept();
+        return;
+    }
+    QWidget::mouseReleaseEvent(event);
 }
 
 void PetWidget::contextMenuEvent(QContextMenuEvent *event)
@@ -522,6 +635,5 @@ void PetWidget::checkTimedActions()
 
 void PetWidget::onErrorOccurred(const QString &message)
 {
-    m_displayLabel->setText("播放错误: " + message);
-    m_displayLabel->setStyleSheet("color: red; background-color: rgba(0, 0, 0, 180); border-radius: 10px;");
+    showStatusMessage(tr("播放错误"), message);
 }

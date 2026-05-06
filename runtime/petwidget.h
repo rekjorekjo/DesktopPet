@@ -24,6 +24,15 @@ enum class PetPlayMode
     Emotion
 };
 
+enum class PetLoadStatus
+{
+    Ok,
+    NoPet,
+    PetConfigError,
+    NoActionLibrary,
+    NoPlaylistAction
+};
+
 class PetWidget : public QWidget
 {
     Q_OBJECT
@@ -46,6 +55,7 @@ public slots:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
 
 signals:
@@ -69,7 +79,11 @@ private:
     bool playActionByRef(const PetActionRef &ref);
     bool hasAnyActionResources() const;
     bool hasAnyUsableEnabledAction() const;
-    void showPetStatusMessage(const QString &text, const QString &color);
+    bool hasAnyPlaylistAction() const;
+    QString findFirstEnabledPetId() const;
+    bool hasAnyEnabledPet() const;
+    void showStatusMessage(const QString &title, const QString &subtitle);
+    void clearStatusMessage();
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
@@ -90,6 +104,7 @@ private:
     double m_petScaleFactor;
     int m_idleActionIndex;
 
+    bool m_dragging;
     QPoint m_dragPosition;
 };
 
