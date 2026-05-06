@@ -1012,132 +1012,212 @@ QString ThemeManager::timeEditStyleSheet() const
 QString ThemeManager::glassCardStyleSheet(int borderRadius, int opacity) const
 {
     ThemePalette p = currentPalette();
-    QString bgColor = p.glassBackground;
-    QString borderColor = p.glassBorder;
-    QString highlightColor = p.glassHighlight;
-    QString shadowColor = p.glassShadow;
+    int bgR = extractColorComponent(p.glassBackground, 0);
+    int bgG = extractColorComponent(p.glassBackground, 1);
+    int bgB = extractColorComponent(p.glassBackground, 2);
+    int borderR = extractColorComponent(p.glassBorder, 0);
+    int borderG = extractColorComponent(p.glassBorder, 1);
+    int borderB = extractColorComponent(p.glassBorder, 2);
+    int hlR = extractColorComponent(p.glassHighlight, 0);
+    int hlG = extractColorComponent(p.glassHighlight, 1);
+    int hlB = extractColorComponent(p.glassHighlight, 2);
 
     return QString(
-        "QWidget {"
+        "QFrame#glassCard {"
         "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, 80);"
-        "  border-radius: %8px;"
+        "  border: 1px solid rgba(%5, %6, %7, 90);"
+        "  border-top-color: rgba(%8, %9, %10, 60);"
+        "  border-radius: %11px;"
+        "}"
+        "QFrame#glassCard:hover {"
+        "  background-color: rgba(%1, %2, %3, %12);"
+        "  border-color: rgba(%8, %9, %10, 50);"
         "}"
     )
-    .arg(extractColorComponent(bgColor, 0))
-    .arg(extractColorComponent(bgColor, 1))
-    .arg(extractColorComponent(bgColor, 2))
-    .arg(opacity)
-    .arg(extractColorComponent(borderColor, 0))
-    .arg(extractColorComponent(borderColor, 1))
-    .arg(extractColorComponent(borderColor, 2))
-    .arg(borderRadius);
+    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(borderR).arg(borderG).arg(borderB)
+    .arg(hlR).arg(hlG).arg(hlB)
+    .arg(borderRadius)
+    .arg(qMin(opacity + 12, 255));
 }
 
 QString ThemeManager::glassPanelStyleSheet(int borderRadius, int opacity) const
 {
     ThemePalette p = currentPalette();
-    QString bgColor = p.glassBackgroundStrong;
-    QString borderColor = p.glassBorder;
+    int bgR = extractColorComponent(p.glassBackgroundStrong, 0);
+    int bgG = extractColorComponent(p.glassBackgroundStrong, 1);
+    int bgB = extractColorComponent(p.glassBackgroundStrong, 2);
+    int borderR = extractColorComponent(p.glassBorder, 0);
+    int borderG = extractColorComponent(p.glassBorder, 1);
+    int borderB = extractColorComponent(p.glassBorder, 2);
+    int hlR = extractColorComponent(p.glassHighlight, 0);
+    int hlG = extractColorComponent(p.glassHighlight, 1);
+    int hlB = extractColorComponent(p.glassHighlight, 2);
 
     return QString(
-        "QWidget {"
+        "QFrame#glassPanel {"
         "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, 60);"
-        "  border-radius: %8px;"
+        "  border: 1px solid rgba(%5, %6, %7, 70);"
+        "  border-top-color: rgba(%8, %9, %10, 40);"
+        "  border-radius: %11px;"
         "}"
     )
-    .arg(extractColorComponent(bgColor, 0))
-    .arg(extractColorComponent(bgColor, 1))
-    .arg(extractColorComponent(bgColor, 2))
-    .arg(opacity)
-    .arg(extractColorComponent(borderColor, 0))
-    .arg(extractColorComponent(borderColor, 1))
-    .arg(extractColorComponent(borderColor, 2))
+    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(borderR).arg(borderG).arg(borderB)
+    .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius);
 }
 
 QString ThemeManager::glassButtonStyleSheet(int borderRadius, int opacity) const
 {
     ThemePalette p = currentPalette();
-    QString bgColor = p.glassBackground;
-    QString borderColor = p.glassBorder;
-    QString textColor = p.glassTextPrimary;
-    QString hoverColor = p.cardHoverBackground;
+    int bgR = extractColorComponent(p.glassBackground, 0);
+    int bgG = extractColorComponent(p.glassBackground, 1);
+    int bgB = extractColorComponent(p.glassBackground, 2);
+    int borderR = extractColorComponent(p.glassBorder, 0);
+    int borderG = extractColorComponent(p.glassBorder, 1);
+    int borderB = extractColorComponent(p.glassBorder, 2);
+    int hlR = extractColorComponent(p.glassHighlight, 0);
+    int hlG = extractColorComponent(p.glassHighlight, 1);
+    int hlB = extractColorComponent(p.glassHighlight, 2);
 
     return QString(
         "QPushButton {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 100);"
-        "  border-radius: %9px;"
+        "  border: 1px solid rgba(%6, %7, %8, 110);"
+        "  border-top-color: rgba(%9, %10, %11, 50);"
+        "  border-radius: %12px;"
         "  padding: 8px 16px;"
         "}"
         "QPushButton:hover {"
-        "  background-color: %10;"
+        "  background-color: rgba(%9, %10, %11, %13);"
+        "  border-color: rgba(%9, %10, %11, 70);"
         "}"
         "QPushButton:pressed {"
-        "  background-color: rgba(%1, %2, %3, %11);"
+        "  background-color: rgba(%1, %2, %3, %14);"
+        "  border-color: rgba(%6, %7, %8, 140);"
+        "  padding-top: 9px;"
+        "  padding-bottom: 7px;"
+        "}"
+        "QPushButton:disabled {"
+        "  background-color: rgba(%1, %2, %3, %15);"
+        "  color: %16;"
+        "  border-color: rgba(%6, %7, %8, 50);"
         "}"
     )
-    .arg(extractColorComponent(bgColor, 0))
-    .arg(extractColorComponent(bgColor, 1))
-    .arg(extractColorComponent(bgColor, 2))
-    .arg(opacity)
-    .arg(textColor)
-    .arg(extractColorComponent(borderColor, 0))
-    .arg(extractColorComponent(borderColor, 1))
-    .arg(extractColorComponent(borderColor, 2))
+    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(p.glassTextPrimary)
+    .arg(borderR).arg(borderG).arg(borderB)
+    .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius)
-    .arg(hoverColor)
-    .arg(opacity + 20);
+    .arg(qMin(opacity + 15, 255))
+    .arg(qMin(opacity + 25, 255))
+    .arg(qMax(opacity - 10, 20))
+    .arg(p.disabledText);
 }
 
 QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) const
 {
     ThemePalette p = currentPalette();
-    QString bgColor = p.glassBackground;
-    QString borderColor = p.glassBorder;
-    QString textColor = p.sidebarText;
-    QString hoverBg = p.sidebarHoverBg;
-    QString hoverText = p.sidebarHoverText;
-    QString selectedBg = p.sidebarSelectedBg;
-    QString selectedText = p.sidebarSelectedText;
+    int bgR = extractColorComponent(p.glassBackground, 0);
+    int bgG = extractColorComponent(p.glassBackground, 1);
+    int bgB = extractColorComponent(p.glassBackground, 2);
+    int borderR = extractColorComponent(p.glassBorder, 0);
+    int borderG = extractColorComponent(p.glassBorder, 1);
+    int borderB = extractColorComponent(p.glassBorder, 2);
+    int hlR = extractColorComponent(p.glassHighlight, 0);
+    int hlG = extractColorComponent(p.glassHighlight, 1);
+    int hlB = extractColorComponent(p.glassHighlight, 2);
+    int selBgR = extractColorComponent(p.sidebarSelectedBg, 0);
+    int selBgG = extractColorComponent(p.sidebarSelectedBg, 1);
+    int selBgB = extractColorComponent(p.sidebarSelectedBg, 2);
 
     return QString(
         "QListWidget {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 60);"
-        "  border-radius: %9px;"
+        "  border: 1px solid rgba(%6, %7, %8, 70);"
+        "  border-top-color: rgba(%9, %10, %11, 35);"
+        "  border-radius: %12px;"
         "  outline: none;"
         "  padding: 8px 4px;"
         "}"
         "QListWidget::item {"
         "  padding: 12px 16px;"
-        "  border-radius: 6px;"
+        "  border-radius: 8px;"
         "  margin: 2px 4px;"
         "}"
         "QListWidget::item:hover {"
-        "  background-color: %10;"
-        "  color: %11;"
-        "}"
-        "QListWidget::item:selected {"
-        "  background-color: %12;"
+        "  background-color: rgba(%9, %10, %11, 25);"
         "  color: %13;"
         "}"
+        "QListWidget::item:selected {"
+        "  background-color: rgba(%14, %15, %16, %17);"
+        "  color: %18;"
+        "  border: 1px solid rgba(%9, %10, %11, 40);"
+        "}"
     )
-    .arg(extractColorComponent(bgColor, 0))
-    .arg(extractColorComponent(bgColor, 1))
-    .arg(extractColorComponent(bgColor, 2))
-    .arg(opacity)
-    .arg(textColor)
-    .arg(extractColorComponent(borderColor, 0))
-    .arg(extractColorComponent(borderColor, 1))
-    .arg(extractColorComponent(borderColor, 2))
+    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(p.sidebarText)
+    .arg(borderR).arg(borderG).arg(borderB)
+    .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius)
-    .arg(hoverBg)
-    .arg(hoverText)
-    .arg(selectedBg)
-    .arg(selectedText);
+    .arg(p.sidebarHoverText)
+    .arg(selBgR).arg(selBgG).arg(selBgB)
+    .arg(qMin(opacity + 30, 255))
+    .arg(p.sidebarSelectedText);
+}
+
+QString ThemeManager::settingsWindowBackgroundStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    int pageR = extractColorComponent(p.pageBackground, 0);
+    int pageG = extractColorComponent(p.pageBackground, 1);
+    int pageB = extractColorComponent(p.pageBackground, 2);
+    int accentR = extractColorComponent(p.accent, 0);
+    int accentG = extractColorComponent(p.accent, 1);
+    int accentB = extractColorComponent(p.accent, 2);
+
+    int blendR = pageR + (accentR - pageR) * 3 / 20;
+    int blendG = pageG + (accentG - pageG) * 3 / 20;
+    int blendB = pageB + (accentB - pageB) * 3 / 20;
+
+    return QString(
+        "QWidget#centralWidget {"
+        "  background-color: %1;"
+        "}"
+    ).arg(p.pageBackground);
+}
+
+QString ThemeManager::glassPageStyleSheet() const
+{
+    return QString(
+        "QWidget {"
+        "  background-color: transparent;"
+        "}"
+    );
+}
+
+QString ThemeManager::glassScrollAreaStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QScrollArea { background-color: transparent; border: none; }"
+        "QScrollBar:vertical { width: 10px; background: transparent; }"
+        "QScrollBar::handle:vertical { background: %1; border-radius: 5px; min-height: 20px; }"
+        "QScrollBar::handle:vertical:hover { background: %2; }"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
+        "QScrollBar:horizontal { height: 10px; background: transparent; }"
+        "QScrollBar::handle:horizontal { background: %1; border-radius: 5px; min-width: 20px; }"
+        "QScrollBar::handle:horizontal:hover { background: %2; }"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }"
+    ).arg(p.scrollHandle, p.scrollHandleHover);
+}
+
+QString ThemeManager::glassTitleLabelStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString("color: %1; background-color: transparent; padding: 28px 28px 0 28px;")
+        .arg(p.titleText);
 }

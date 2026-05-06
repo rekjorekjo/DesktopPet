@@ -4,11 +4,15 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QLinearGradient>
 
 GlassCardWidget::GlassCardWidget(QWidget *parent)
     : QFrame(parent)
     , m_borderRadius(12)
-    , m_backgroundOpacity(40)
+    , m_backgroundOpacity(50)
+    , m_highlightOpacity(45)
+    , m_shadowOpacity(35)
+    , m_borderOpacity(90)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_contentWidget(nullptr)
@@ -19,13 +23,17 @@ GlassCardWidget::GlassCardWidget(QWidget *parent)
 GlassCardWidget::GlassCardWidget(const QString &title, QWidget *parent)
     : QFrame(parent)
     , m_borderRadius(12)
-    , m_backgroundOpacity(40)
+    , m_backgroundOpacity(50)
+    , m_highlightOpacity(45)
+    , m_shadowOpacity(35)
+    , m_borderOpacity(90)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_title(title)
     , m_contentWidget(nullptr)
 {
     init();
+    ensureInternalLayout();
 }
 
 void GlassCardWidget::init()
@@ -33,18 +41,25 @@ void GlassCardWidget::init()
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
-    mainLayout->setSpacing(8);
+    applyTheme();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &GlassCardWidget::applyTheme);
+}
+
+void GlassCardWidget::ensureInternalLayout()
+{
+    if (layout()) {
+        return;
+    }
+
+    QVBoxLayout *internalLayout = new QVBoxLayout(this);
+    internalLayout->setContentsMargins(16, 16, 16, 16);
+    internalLayout->setSpacing(8);
 
     if (!m_title.isEmpty()) {
         QLabel *titleLabel = new QLabel(m_title, this);
         titleLabel->setObjectName("glassCardTitle");
-        mainLayout->addWidget(titleLabel);
+        internalLayout->addWidget(titleLabel);
     }
-
-    applyTheme();
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &GlassCardWidget::applyTheme);
 }
 
 int GlassCardWidget::borderRadius() const
@@ -69,6 +84,45 @@ void GlassCardWidget::setBackgroundOpacity(int opacity)
 {
     if (m_backgroundOpacity != opacity) {
         m_backgroundOpacity = opacity;
+        update();
+    }
+}
+
+int GlassCardWidget::highlightOpacity() const
+{
+    return m_highlightOpacity;
+}
+
+void GlassCardWidget::setHighlightOpacity(int opacity)
+{
+    if (m_highlightOpacity != opacity) {
+        m_highlightOpacity = opacity;
+        update();
+    }
+}
+
+int GlassCardWidget::shadowOpacity() const
+{
+    return m_shadowOpacity;
+}
+
+void GlassCardWidget::setShadowOpacity(int opacity)
+{
+    if (m_shadowOpacity != opacity) {
+        m_shadowOpacity = opacity;
+        update();
+    }
+}
+
+int GlassCardWidget::borderOpacity() const
+{
+    return m_borderOpacity;
+}
+
+void GlassCardWidget::setBorderOpacity(int opacity)
+{
+    if (m_borderOpacity != opacity) {
+        m_borderOpacity = opacity;
         update();
     }
 }
@@ -121,6 +175,8 @@ void GlassCardWidget::setContentWidget(QWidget *widget)
         m_contentWidget->deleteLater();
     }
 
+    ensureInternalLayout();
+
     m_contentWidget = widget;
     if (m_contentWidget) {
         layout()->addWidget(m_contentWidget);
@@ -135,7 +191,7 @@ QWidget *GlassCardWidget::contentWidget() const
 void GlassCardWidget::applyTheme()
 {
     ThemePalette p = ThemeManager::instance().currentPalette();
-    
+
     QString styleSheet = QString(
         "GlassCardWidget {"
         "  background-color: transparent;"
@@ -163,35 +219,72 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
 
     ThemePalette p = ThemeManager::instance().currentPalette();
 
-    QRect contentRect = rect().adjusted(4, 4, -4, -4);
+    int shadowOffset = 3;
+    QRect contentRect = rect().adjusted(shadowOffset, shadowOffset, -shadowOffset, -shadowOffset);
 
     if (m_showShadow) {
-        QPainterPath shadowPath = createRoundedRectPath(rect(), m_borderRadius);
-        QColor shadowColor = QColor(p.glassShadow);
-        shadowColor.setAlpha(30);
+        QRect shadowRect = rect().adjusted(2, 2, -2, -2);
+        QPainterPath shadowPath = createRoundedRectPath(shadowRect, m_borderRadius);
+        QColor shadowColor(p.glassShadow);
+        shadowColor.setAlpha(m_shadowOpacity);
         painter.fillPath(shadowPath, shadowColor);
     }
 
     QPainterPath bgPath = createRoundedRectPath(contentRect, m_borderRadius);
-    QColor bgColor = QColor(p.glassBackground);
+
+    QColor bgColor(p.glassBackground);
     bgColor.setAlpha(m_backgroundOpacity);
     painter.fillPath(bgPath, bgColor);
 
     if (m_showHighlight) {
-        QRect highlightRect = contentRect.adjusted(0, 0, 0, -contentRect.height() + 2);
-        QPainterPath highlightPath = createRoundedRectPath(highlightRect, m_borderRadius);
-        QColor highlightColor = QColor(p.glassHighlight);
-        highlightColor.setAlpha(20);
+        painter.save();
         painter.setClipPath(bgPath);
-        painter.fillPath(highlightPath, highlightColor);
-        painter.setClipping(false);
+
+        QLinearGradient highlightGradient(
+            contentRect.topLeft(),
+            contentRect.topLeft() + QPointF(0, contentRect.height() * 0.5)
+        );
+
+        QColor hlTopColor(p.glassHighlight);
+        hlTopColor.setAlpha(m_highlightOpacity);
+        QColor hlBottomColor(p.glassHighlight);
+        hlBottomColor.setAlpha(0);
+
+        highlightGradient.setColorAt(0.0, hlTopColor);
+        highlightGradient.setColorAt(1.0, hlBottomColor);
+
+        painter.fillPath(bgPath, highlightGradient);
+
+        QRect topHighlightRect = contentRect.adjusted(2, 1, -2, -contentRect.height() + 3);
+        QPainterPath topHighlightPath = createRoundedRectPath(topHighlightRect, m_borderRadius - 1);
+        QColor topLineColor(p.glassHighlight);
+        topLineColor.setAlpha(m_highlightOpacity * 2 / 3);
+        QPen topLinePen(topLineColor, 1.5);
+        painter.setPen(topLinePen);
+        painter.drawPath(topHighlightPath);
+
+        painter.restore();
     }
 
-    QPen borderPen(QColor(p.glassBorder));
-    borderPen.setWidth(1);
+    QColor borderColor(p.glassBorder);
+    borderColor.setAlpha(m_borderOpacity);
+    QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
     painter.drawPath(bgPath);
+
+    if (m_showHighlight) {
+        QColor topBorderColor(p.glassHighlight);
+        topBorderColor.setAlpha(m_borderOpacity * 2 / 3);
+        QPen topBorderPen(topBorderColor, 1);
+
+        QRectF cr = contentRect;
+        qreal r = m_borderRadius;
+
+        painter.setPen(topBorderPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawLine(QPointF(cr.left() + r, cr.top()), QPointF(cr.right() - r, cr.top()));
+    }
 }
 
 void GlassCardWidget::resizeEvent(QResizeEvent *event)

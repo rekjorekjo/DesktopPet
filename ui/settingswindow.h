@@ -4,12 +4,24 @@
 #include <QListWidget>
 #include <QMainWindow>
 #include <QStackedWidget>
+#include <QPainterPath>
 
 class PetManagePage;
 class ActionSettingsPage;
 class ApiConfigPage;
 class PersonalizationPage;
 class AboutPage;
+
+class GlassBackgroundWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit GlassBackgroundWidget(QWidget *parent = nullptr);
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+};
 
 class SettingsWindow : public QMainWindow
 {
@@ -32,7 +44,7 @@ private:
     void connectSignals();
     void applyTheme();
 
-    QWidget *m_centralWidget;
+    GlassBackgroundWidget *m_centralWidget;
     QListWidget *m_sidebar;
     QStackedWidget *m_stackedWidget;
 

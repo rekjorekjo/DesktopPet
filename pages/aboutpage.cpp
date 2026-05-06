@@ -33,6 +33,8 @@ AboutPage::AboutPage(QWidget *parent)
     , m_checkUpdateButton(nullptr)
     , m_updateManager(nullptr)
 {
+    setAttribute(Qt::WA_StyledBackground, false);
+    setAutoFillBackground(false);
     setupUi();
     m_updateManager = new UpdateManager(this);
     connect(m_updateManager, &UpdateManager::updateAvailable,
@@ -59,25 +61,29 @@ void AboutPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     outerLayout->addWidget(m_titleLabel);
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setStyleSheet(theme.pageStyleSheet());
+    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(28, 20, 28, 28);
     contentLayout->setSpacing(20);
 
-    m_infoCard = new QFrame(m_contentWidget);
+    m_infoCard = new GlassCardWidget(m_contentWidget);
     m_infoCard->setObjectName("infoCard");
-    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_infoCard->setBorderRadius(12);
+    m_infoCard->setBackgroundOpacity(50);
+    m_infoCard->setHighlightOpacity(45);
+    m_infoCard->setShadowOpacity(35);
+    m_infoCard->setBorderOpacity(90);
     QVBoxLayout *infoLayout = new QVBoxLayout(m_infoCard);
     infoLayout->setContentsMargins(24, 24, 24, 24);
     infoLayout->setSpacing(12);
@@ -124,9 +130,13 @@ void AboutPage::setupUi()
 
     contentLayout->addWidget(m_infoCard);
 
-    m_versionCard = new QFrame(m_contentWidget);
+    m_versionCard = new GlassCardWidget(m_contentWidget);
     m_versionCard->setObjectName("versionCard");
-    m_versionCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_versionCard->setBorderRadius(12);
+    m_versionCard->setBackgroundOpacity(50);
+    m_versionCard->setHighlightOpacity(45);
+    m_versionCard->setShadowOpacity(35);
+    m_versionCard->setBorderOpacity(90);
     QVBoxLayout *versionLayout = new QVBoxLayout(m_versionCard);
     versionLayout->setContentsMargins(24, 24, 24, 24);
     versionLayout->setSpacing(12);
@@ -147,9 +157,13 @@ void AboutPage::setupUi()
 
     contentLayout->addWidget(m_versionCard);
 
-    m_updateCard = new QFrame(m_contentWidget);
+    m_updateCard = new GlassCardWidget(m_contentWidget);
     m_updateCard->setObjectName("updateCard");
-    m_updateCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_updateCard->setBorderRadius(12);
+    m_updateCard->setBackgroundOpacity(50);
+    m_updateCard->setHighlightOpacity(45);
+    m_updateCard->setShadowOpacity(35);
+    m_updateCard->setBorderOpacity(90);
     QVBoxLayout *updateLayout = new QVBoxLayout(m_updateCard);
     updateLayout->setContentsMargins(24, 24, 24, 24);
     updateLayout->setSpacing(12);
@@ -195,11 +209,10 @@ void AboutPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
-    m_contentWidget->setStyleSheet(theme.pageStyleSheet());
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
-    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_infoCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                      .arg(p.subtitleText));
     m_appNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
@@ -207,13 +220,11 @@ void AboutPage::applyTheme()
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.textSecondary));
 
-    m_versionCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(p.textSecondary));
 
-    m_updateCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_updateCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                        .arg(p.subtitleText));
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")

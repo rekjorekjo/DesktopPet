@@ -10,6 +10,9 @@ class GlassCardWidget : public QFrame
     Q_OBJECT
     Q_PROPERTY(int borderRadius READ borderRadius WRITE setBorderRadius)
     Q_PROPERTY(int backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
+    Q_PROPERTY(int highlightOpacity READ highlightOpacity WRITE setHighlightOpacity)
+    Q_PROPERTY(int shadowOpacity READ shadowOpacity WRITE setShadowOpacity)
+    Q_PROPERTY(int borderOpacity READ borderOpacity WRITE setBorderOpacity)
     Q_PROPERTY(bool showHighlight READ showHighlight WRITE setShowHighlight)
     Q_PROPERTY(bool showShadow READ showShadow WRITE setShowShadow)
 
@@ -22,6 +25,15 @@ public:
 
     int backgroundOpacity() const;
     void setBackgroundOpacity(int opacity);
+
+    int highlightOpacity() const;
+    void setHighlightOpacity(int opacity);
+
+    int shadowOpacity() const;
+    void setShadowOpacity(int opacity);
+
+    int borderOpacity() const;
+    void setBorderOpacity(int opacity);
 
     bool showHighlight() const;
     void setShowHighlight(bool show);
@@ -44,12 +56,16 @@ protected:
 
 private:
     void init();
+    void ensureInternalLayout();
     QPainterPath createRoundedRectPath(const QRect &rect, int radius) const;
     QColor applyOpacity(const QColor &color, int opacity) const;
 
 private:
     int m_borderRadius;
     int m_backgroundOpacity;
+    int m_highlightOpacity;
+    int m_shadowOpacity;
+    int m_borderOpacity;
     bool m_showHighlight;
     bool m_showShadow;
     QString m_title;

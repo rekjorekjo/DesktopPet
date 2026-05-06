@@ -177,6 +177,10 @@ public:
     QString glassPanelStyleSheet(int borderRadius = 8, int opacity = 30) const;
     QString glassButtonStyleSheet(int borderRadius = 6, int opacity = 35) const;
     QString glassSidebarStyleSheet(int borderRadius = 8, int opacity = 30) const;
+    QString settingsWindowBackgroundStyleSheet() const;
+    QString glassPageStyleSheet() const;
+    QString glassScrollAreaStyleSheet() const;
+    QString glassTitleLabelStyleSheet() const;
 
 signals:
     void themeChanged();

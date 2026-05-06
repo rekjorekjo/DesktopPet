@@ -26,6 +26,8 @@ PetManagePage::PetManagePage(QWidget *parent)
     , m_petListWidget(nullptr)
     , m_loadSuccess(false)
 {
+    setAttribute(Qt::WA_StyledBackground, false);
+    setAutoFillBackground(false);
     setupUi();
     refreshPetList();
     loadPetInfo();
@@ -102,8 +104,13 @@ void PetManagePage::setupUi()
     QHBoxLayout *contentLayout = new QHBoxLayout();
     contentLayout->setSpacing(20);
 
-    m_petListCard = new QFrame(this);
+    m_petListCard = new GlassCardWidget(this);
     m_petListCard->setObjectName("petListCard");
+    m_petListCard->setBorderRadius(12);
+    m_petListCard->setBackgroundOpacity(50);
+    m_petListCard->setHighlightOpacity(45);
+    m_petListCard->setShadowOpacity(35);
+    m_petListCard->setBorderOpacity(90);
     QVBoxLayout *petListCardLayout = new QVBoxLayout(m_petListCard);
     petListCardLayout->setContentsMargins(16, 16, 16, 16);
     petListCardLayout->setSpacing(12);
@@ -137,8 +144,13 @@ void PetManagePage::setupUi()
 
     contentLayout->addWidget(m_petListCard, 1);
 
-    m_infoCard = new QFrame(this);
+    m_infoCard = new GlassCardWidget(this);
     m_infoCard->setObjectName("infoCard");
+    m_infoCard->setBorderRadius(12);
+    m_infoCard->setBackgroundOpacity(50);
+    m_infoCard->setHighlightOpacity(45);
+    m_infoCard->setShadowOpacity(35);
+    m_infoCard->setBorderOpacity(90);
     QVBoxLayout *cardLayout = new QVBoxLayout(m_infoCard);
     cardLayout->setContentsMargins(20, 20, 20, 20);
     cardLayout->setSpacing(10);
@@ -209,12 +221,8 @@ void PetManagePage::applyTheme()
     m_currentPetLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent; margin-left: 16px;")
                                          .arg(p.accent));
 
-    m_petListCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
-
     m_petListTitleLabel->setStyleSheet(QString("font-size: 14px; font-weight: bold; color: %1; border: none; background: transparent;")
                                            .arg(p.textPrimary));
-
-    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
 
     QLabel *infoCardTitle = m_infoCard->findChild<QLabel *>("infoCardTitle");
     if (infoCardTitle) {

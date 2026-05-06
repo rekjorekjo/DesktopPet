@@ -7,8 +7,9 @@
 #include <QSlider>
 #include <QWidget>
 
+#include "widgets/glasscardwidget.h"
+
 class WheelGuardListWidget;
-class QFrame;
 class QListWidgetItem;
 
 class PersonalizationPage : public QWidget
@@ -43,7 +44,7 @@ private:
     QWidget *m_contentWidget;
     QLabel *m_titleLabel;
 
-    QFrame *m_appearanceCard;
+    GlassCardWidget *m_appearanceCard;
     QLabel *m_appearanceCardTitle;
     QLabel *m_themeHintLabel;
     QLabel *m_lightThemeLabel;
@@ -51,13 +52,13 @@ private:
     QLabel *m_darkThemeLabel;
     WheelGuardListWidget *m_darkThemeList;
 
-    QFrame *m_displayCard;
+    GlassCardWidget *m_displayCard;
     QLabel *m_displayCardTitle;
     QLabel *m_opacityLabel;
     QSlider *m_opacitySlider;
     QLabel *m_opacityValueLabel;
 
-    QFrame *m_startupCard;
+    GlassCardWidget *m_startupCard;
     QLabel *m_startupCardTitle;
     QCheckBox *m_autoStartOnBootCheckBox;
     QCheckBox *m_autoPlayOnLaunchCheckBox;

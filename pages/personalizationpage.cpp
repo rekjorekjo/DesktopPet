@@ -34,6 +34,8 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_autoPlayOnLaunchCheckBox(nullptr)
     , m_openSettingsOnLaunchCheckBox(nullptr)
 {
+    setAttribute(Qt::WA_StyledBackground, false);
+    setAutoFillBackground(false);
     setupUi();
     populateThemeLists();
     connectSignals();
@@ -55,25 +57,29 @@ void PersonalizationPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     outerLayout->addWidget(m_titleLabel);
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setStyleSheet(theme.pageStyleSheet());
+    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(28, 20, 28, 28);
     contentLayout->setSpacing(20);
 
-    m_appearanceCard = new QFrame(m_contentWidget);
+    m_appearanceCard = new GlassCardWidget(m_contentWidget);
     m_appearanceCard->setObjectName("appearanceCard");
-    m_appearanceCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_appearanceCard->setBorderRadius(12);
+    m_appearanceCard->setBackgroundOpacity(50);
+    m_appearanceCard->setHighlightOpacity(45);
+    m_appearanceCard->setShadowOpacity(35);
+    m_appearanceCard->setBorderOpacity(90);
     QVBoxLayout *appearanceLayout = new QVBoxLayout(m_appearanceCard);
     appearanceLayout->setContentsMargins(24, 24, 24, 24);
     appearanceLayout->setSpacing(16);
@@ -127,9 +133,13 @@ void PersonalizationPage::setupUi()
 
     contentLayout->addWidget(m_appearanceCard);
 
-    m_displayCard = new QFrame(m_contentWidget);
+    m_displayCard = new GlassCardWidget(m_contentWidget);
     m_displayCard->setObjectName("displayCard");
-    m_displayCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_displayCard->setBorderRadius(12);
+    m_displayCard->setBackgroundOpacity(50);
+    m_displayCard->setHighlightOpacity(45);
+    m_displayCard->setShadowOpacity(35);
+    m_displayCard->setBorderOpacity(90);
     QVBoxLayout *displayLayout = new QVBoxLayout(m_displayCard);
     displayLayout->setContentsMargins(24, 24, 24, 24);
     displayLayout->setSpacing(16);
@@ -165,9 +175,13 @@ void PersonalizationPage::setupUi()
 
     contentLayout->addWidget(m_displayCard);
 
-    m_startupCard = new QFrame(m_contentWidget);
+    m_startupCard = new GlassCardWidget(m_contentWidget);
     m_startupCard->setObjectName("startupCard");
-    m_startupCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_startupCard->setBorderRadius(12);
+    m_startupCard->setBackgroundOpacity(50);
+    m_startupCard->setHighlightOpacity(45);
+    m_startupCard->setShadowOpacity(35);
+    m_startupCard->setBorderOpacity(90);
     QVBoxLayout *startupLayout = new QVBoxLayout(m_startupCard);
     startupLayout->setContentsMargins(24, 24, 24, 24);
     startupLayout->setSpacing(16);
@@ -318,11 +332,7 @@ void PersonalizationPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
-
-    m_appearanceCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
-    m_displayCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
-    m_startupCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
 
     QString sectionTitleStyle = QString(
         "color: %1; border: none; background: transparent;"
@@ -354,10 +364,10 @@ void PersonalizationPage::applyTheme()
     m_autoPlayOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_openSettingsOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
 
-    m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     if (m_contentWidget) {
-        m_contentWidget->setStyleSheet(QString("background-color: %1;").arg(p.pageBackground));
+        m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
     }
 
     populateThemeLists();
