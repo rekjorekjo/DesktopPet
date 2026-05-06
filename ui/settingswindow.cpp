@@ -37,8 +37,8 @@ void SettingsWindow::setupUi()
     m_centralWidget->setObjectName("centralWidget");
 
     QHBoxLayout *mainLayout = new QHBoxLayout(m_centralWidget);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(12);
 
     setupSidebar();
     setupPages();
@@ -61,6 +61,7 @@ void SettingsWindow::setupSidebar()
     m_sidebar->addItem(tr("个性化"));
     m_sidebar->addItem(tr("关于"));
     m_sidebar->setCurrentRow(0);
+    m_sidebar->setContentsMargins(8, 8, 8, 8);
 }
 
 void SettingsWindow::setupPages()
@@ -113,11 +114,12 @@ void SettingsWindow::connectSignals()
 void SettingsWindow::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     m_centralWidget->setStyleSheet(QString("QWidget#centralWidget { background-color: %1; }")
-                                       .arg(theme.pageBackgroundColor()));
+                                       .arg(p.pageBackground));
 
-    m_sidebar->setStyleSheet(theme.sidebarStyleSheet());
+    m_sidebar->setStyleSheet(theme.glassSidebarStyleSheet(8, 35));
 
     if (m_petManagePage) {
         m_petManagePage->refreshTheme();

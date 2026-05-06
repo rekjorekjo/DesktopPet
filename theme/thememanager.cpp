@@ -1093,27 +1093,38 @@ QString ThemeManager::glassButtonStyleSheet(int borderRadius, int opacity) const
     .arg(opacity + 20);
 }
 
-QString ThemeManager::glassSidebarItemStyleSheet(int borderRadius, int opacity) const
+QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) const
 {
     ThemePalette p = currentPalette();
     QString bgColor = p.glassBackground;
-    QString textColor = p.glassTextSecondary;
+    QString borderColor = p.glassBorder;
+    QString textColor = p.sidebarText;
+    QString hoverBg = p.sidebarHoverBg;
+    QString hoverText = p.sidebarHoverText;
     QString selectedBg = p.sidebarSelectedBg;
     QString selectedText = p.sidebarSelectedText;
 
     return QString(
-        "QListWidget::item {"
+        "QListWidget {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border-radius: %6px;"
-        "  padding: 10px 16px;"
+        "  border: 1px solid rgba(%6, %7, %8, 60);"
+        "  border-radius: %9px;"
+        "  outline: none;"
+        "  padding: 8px 4px;"
+        "}"
+        "QListWidget::item {"
+        "  padding: 12px 16px;"
+        "  border-radius: 6px;"
+        "  margin: 2px 4px;"
         "}"
         "QListWidget::item:hover {"
-        "  background-color: rgba(%1, %2, %3, %7);"
+        "  background-color: %10;"
+        "  color: %11;"
         "}"
         "QListWidget::item:selected {"
-        "  background-color: %8;"
-        "  color: %9;"
+        "  background-color: %12;"
+        "  color: %13;"
         "}"
     )
     .arg(extractColorComponent(bgColor, 0))
@@ -1121,8 +1132,12 @@ QString ThemeManager::glassSidebarItemStyleSheet(int borderRadius, int opacity) 
     .arg(extractColorComponent(bgColor, 2))
     .arg(opacity)
     .arg(textColor)
+    .arg(extractColorComponent(borderColor, 0))
+    .arg(extractColorComponent(borderColor, 1))
+    .arg(extractColorComponent(borderColor, 2))
     .arg(borderRadius)
-    .arg(opacity + 15)
+    .arg(hoverBg)
+    .arg(hoverText)
     .arg(selectedBg)
     .arg(selectedText);
 }

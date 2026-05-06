@@ -73,7 +73,7 @@ void PersonalizationPage::setupUi()
 
     m_appearanceCard = new QFrame(m_contentWidget);
     m_appearanceCard->setObjectName("appearanceCard");
-    m_appearanceCard->setStyleSheet(theme.cardStyleSheet("appearanceCard"));
+    m_appearanceCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *appearanceLayout = new QVBoxLayout(m_appearanceCard);
     appearanceLayout->setContentsMargins(24, 24, 24, 24);
     appearanceLayout->setSpacing(16);
@@ -129,7 +129,7 @@ void PersonalizationPage::setupUi()
 
     m_displayCard = new QFrame(m_contentWidget);
     m_displayCard->setObjectName("displayCard");
-    m_displayCard->setStyleSheet(theme.cardStyleSheet("displayCard"));
+    m_displayCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *displayLayout = new QVBoxLayout(m_displayCard);
     displayLayout->setContentsMargins(24, 24, 24, 24);
     displayLayout->setSpacing(16);
@@ -167,7 +167,7 @@ void PersonalizationPage::setupUi()
 
     m_startupCard = new QFrame(m_contentWidget);
     m_startupCard->setObjectName("startupCard");
-    m_startupCard->setStyleSheet(theme.cardStyleSheet("startupCard"));
+    m_startupCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *startupLayout = new QVBoxLayout(m_startupCard);
     startupLayout->setContentsMargins(24, 24, 24, 24);
     startupLayout->setSpacing(16);
@@ -320,9 +320,9 @@ void PersonalizationPage::applyTheme()
 
     m_titleLabel->setStyleSheet(theme.titleLabelStyleSheet());
 
-    m_appearanceCard->setStyleSheet(theme.cardStyleSheet("appearanceCard"));
-    m_displayCard->setStyleSheet(theme.cardStyleSheet("displayCard"));
-    m_startupCard->setStyleSheet(theme.cardStyleSheet("startupCard"));
+    m_appearanceCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_displayCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
+    m_startupCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
 
     QString sectionTitleStyle = QString(
         "color: %1; border: none; background: transparent;"

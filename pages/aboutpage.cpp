@@ -77,7 +77,7 @@ void AboutPage::setupUi()
 
     m_infoCard = new QFrame(m_contentWidget);
     m_infoCard->setObjectName("infoCard");
-    m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
+    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *infoLayout = new QVBoxLayout(m_infoCard);
     infoLayout->setContentsMargins(24, 24, 24, 24);
     infoLayout->setSpacing(12);
@@ -126,7 +126,7 @@ void AboutPage::setupUi()
 
     m_versionCard = new QFrame(m_contentWidget);
     m_versionCard->setObjectName("versionCard");
-    m_versionCard->setStyleSheet(theme.cardStyleSheet("versionCard"));
+    m_versionCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *versionLayout = new QVBoxLayout(m_versionCard);
     versionLayout->setContentsMargins(24, 24, 24, 24);
     versionLayout->setSpacing(12);
@@ -149,7 +149,7 @@ void AboutPage::setupUi()
 
     m_updateCard = new QFrame(m_contentWidget);
     m_updateCard->setObjectName("updateCard");
-    m_updateCard->setStyleSheet(theme.cardStyleSheet("updateCard"));
+    m_updateCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     QVBoxLayout *updateLayout = new QVBoxLayout(m_updateCard);
     updateLayout->setContentsMargins(24, 24, 24, 24);
     updateLayout->setSpacing(12);
@@ -174,7 +174,7 @@ void AboutPage::setupUi()
 
     m_checkUpdateButton = new QPushButton(tr("检查更新"), m_updateCard);
     m_checkUpdateButton->setMinimumHeight(36);
-    m_checkUpdateButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_checkUpdateButton->setStyleSheet(theme.glassButtonStyleSheet(6, 45));
     connect(m_checkUpdateButton, &QPushButton::clicked, this, &AboutPage::onCheckUpdateClicked);
     updateLayout->addWidget(m_checkUpdateButton);
 
@@ -199,7 +199,7 @@ void AboutPage::applyTheme()
     m_scrollArea->setStyleSheet(theme.scrollAreaStyleSheet());
     m_contentWidget->setStyleSheet(theme.pageStyleSheet());
 
-    m_infoCard->setStyleSheet(theme.cardStyleSheet("infoCard"));
+    m_infoCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_infoCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                      .arg(p.subtitleText));
     m_appNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
@@ -207,18 +207,18 @@ void AboutPage::applyTheme()
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.textSecondary));
 
-    m_versionCard->setStyleSheet(theme.cardStyleSheet("versionCard"));
+    m_versionCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));
     m_versionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(p.textSecondary));
 
-    m_updateCard->setStyleSheet(theme.cardStyleSheet("updateCard"));
+    m_updateCard->setStyleSheet(theme.glassCardStyleSheet(12, 50));
     m_updateCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                        .arg(p.subtitleText));
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.textSecondary));
-    m_checkUpdateButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_checkUpdateButton->setStyleSheet(theme.glassButtonStyleSheet(6, 45));
 }
 
 void AboutPage::onCheckUpdateClicked()
