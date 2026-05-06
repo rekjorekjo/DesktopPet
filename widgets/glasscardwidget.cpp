@@ -69,6 +69,7 @@ int GlassCardWidget::borderRadius() const
 
 void GlassCardWidget::setBorderRadius(int radius)
 {
+    radius = qMax(0, radius);
     if (m_borderRadius != radius) {
         m_borderRadius = radius;
         update();
@@ -82,6 +83,7 @@ int GlassCardWidget::backgroundOpacity() const
 
 void GlassCardWidget::setBackgroundOpacity(int opacity)
 {
+    opacity = qBound(0, opacity, 255);
     if (m_backgroundOpacity != opacity) {
         m_backgroundOpacity = opacity;
         update();
@@ -95,6 +97,7 @@ int GlassCardWidget::highlightOpacity() const
 
 void GlassCardWidget::setHighlightOpacity(int opacity)
 {
+    opacity = qBound(0, opacity, 255);
     if (m_highlightOpacity != opacity) {
         m_highlightOpacity = opacity;
         update();
@@ -108,6 +111,7 @@ int GlassCardWidget::shadowOpacity() const
 
 void GlassCardWidget::setShadowOpacity(int opacity)
 {
+    opacity = qBound(0, opacity, 255);
     if (m_shadowOpacity != opacity) {
         m_shadowOpacity = opacity;
         update();
@@ -121,6 +125,7 @@ int GlassCardWidget::borderOpacity() const
 
 void GlassCardWidget::setBorderOpacity(int opacity)
 {
+    opacity = qBound(0, opacity, 255);
     if (m_borderOpacity != opacity) {
         m_borderOpacity = opacity;
         update();
@@ -155,11 +160,31 @@ void GlassCardWidget::setShowShadow(bool show)
 
 void GlassCardWidget::setTitle(const QString &title)
 {
-    if (m_title != title) {
-        m_title = title;
+    if (m_title == title) {
+        return;
+    }
+
+    m_title = title;
+
+    if (!title.isEmpty()) {
+        QLabel *titleLabel = findChild<QLabel *>("glassCardTitle");
+        if (!titleLabel) {
+            if (!layout()) {
+                ensureInternalLayout();
+            } else {
+                titleLabel = new QLabel(title, this);
+                titleLabel->setObjectName("glassCardTitle");
+                qobject_cast<QVBoxLayout *>(layout())->insertWidget(0, titleLabel);
+            }
+        } else {
+            titleLabel->setText(title);
+            titleLabel->show();
+        }
+    } else {
         QLabel *titleLabel = findChild<QLabel *>("glassCardTitle");
         if (titleLabel) {
-            titleLabel->setText(title);
+            titleLabel->clear();
+            titleLabel->hide();
         }
     }
 }

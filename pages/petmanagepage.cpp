@@ -106,11 +106,6 @@ void PetManagePage::setupUi()
 
     m_petListCard = new GlassCardWidget(this);
     m_petListCard->setObjectName("petListCard");
-    m_petListCard->setBorderRadius(12);
-    m_petListCard->setBackgroundOpacity(50);
-    m_petListCard->setHighlightOpacity(45);
-    m_petListCard->setShadowOpacity(35);
-    m_petListCard->setBorderOpacity(90);
     QVBoxLayout *petListCardLayout = new QVBoxLayout(m_petListCard);
     petListCardLayout->setContentsMargins(16, 16, 16, 16);
     petListCardLayout->setSpacing(12);
@@ -146,11 +141,6 @@ void PetManagePage::setupUi()
 
     m_infoCard = new GlassCardWidget(this);
     m_infoCard->setObjectName("infoCard");
-    m_infoCard->setBorderRadius(12);
-    m_infoCard->setBackgroundOpacity(50);
-    m_infoCard->setHighlightOpacity(45);
-    m_infoCard->setShadowOpacity(35);
-    m_infoCard->setBorderOpacity(90);
     QVBoxLayout *cardLayout = new QVBoxLayout(m_infoCard);
     cardLayout->setContentsMargins(20, 20, 20, 20);
     cardLayout->setSpacing(10);

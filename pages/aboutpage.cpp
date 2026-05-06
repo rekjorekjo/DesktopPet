@@ -79,11 +79,6 @@ void AboutPage::setupUi()
 
     m_infoCard = new GlassCardWidget(m_contentWidget);
     m_infoCard->setObjectName("infoCard");
-    m_infoCard->setBorderRadius(12);
-    m_infoCard->setBackgroundOpacity(50);
-    m_infoCard->setHighlightOpacity(45);
-    m_infoCard->setShadowOpacity(35);
-    m_infoCard->setBorderOpacity(90);
     QVBoxLayout *infoLayout = new QVBoxLayout(m_infoCard);
     infoLayout->setContentsMargins(24, 24, 24, 24);
     infoLayout->setSpacing(12);
@@ -132,11 +127,6 @@ void AboutPage::setupUi()
 
     m_versionCard = new GlassCardWidget(m_contentWidget);
     m_versionCard->setObjectName("versionCard");
-    m_versionCard->setBorderRadius(12);
-    m_versionCard->setBackgroundOpacity(50);
-    m_versionCard->setHighlightOpacity(45);
-    m_versionCard->setShadowOpacity(35);
-    m_versionCard->setBorderOpacity(90);
     QVBoxLayout *versionLayout = new QVBoxLayout(m_versionCard);
     versionLayout->setContentsMargins(24, 24, 24, 24);
     versionLayout->setSpacing(12);
@@ -159,11 +149,6 @@ void AboutPage::setupUi()
 
     m_updateCard = new GlassCardWidget(m_contentWidget);
     m_updateCard->setObjectName("updateCard");
-    m_updateCard->setBorderRadius(12);
-    m_updateCard->setBackgroundOpacity(50);
-    m_updateCard->setHighlightOpacity(45);
-    m_updateCard->setShadowOpacity(35);
-    m_updateCard->setBorderOpacity(90);
     QVBoxLayout *updateLayout = new QVBoxLayout(m_updateCard);
     updateLayout->setContentsMargins(24, 24, 24, 24);
     updateLayout->setSpacing(12);

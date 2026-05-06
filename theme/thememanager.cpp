@@ -1169,27 +1169,6 @@ QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) cons
     .arg(p.sidebarSelectedText);
 }
 
-QString ThemeManager::settingsWindowBackgroundStyleSheet() const
-{
-    ThemePalette p = currentPalette();
-    int pageR = extractColorComponent(p.pageBackground, 0);
-    int pageG = extractColorComponent(p.pageBackground, 1);
-    int pageB = extractColorComponent(p.pageBackground, 2);
-    int accentR = extractColorComponent(p.accent, 0);
-    int accentG = extractColorComponent(p.accent, 1);
-    int accentB = extractColorComponent(p.accent, 2);
-
-    int blendR = pageR + (accentR - pageR) * 3 / 20;
-    int blendG = pageG + (accentG - pageG) * 3 / 20;
-    int blendB = pageB + (accentB - pageB) * 3 / 20;
-
-    return QString(
-        "QWidget#centralWidget {"
-        "  background-color: %1;"
-        "}"
-    ).arg(p.pageBackground);
-}
-
 QString ThemeManager::glassPageStyleSheet() const
 {
     return QString(
