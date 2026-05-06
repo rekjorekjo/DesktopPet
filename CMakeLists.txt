@@ -78,8 +78,8 @@ qt_add_executable(DesktopPet
     widgets/actioncategorytabwidget.h
     widgets/actionlibrarylistwidget.cpp
     widgets/actionlibrarylistwidget.h
-    widgets/nowheellistwidget.cpp
-    widgets/nowheellistwidget.h
+    widgets/wheelguardlistwidget.cpp
+    widgets/wheelguardlistwidget.h
 )
 
 qt_add_resources(DesktopPet "app_resources"

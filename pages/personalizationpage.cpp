@@ -2,7 +2,7 @@
 
 #include "core/appsettings.h"
 #include "theme/thememanager.h"
-#include "widgets/nowheellistwidget.h"
+#include "widgets/wheelguardlistwidget.h"
 
 #include <QFont>
 #include <QFrame>
@@ -87,7 +87,7 @@ void PersonalizationPage::setupUi()
                                            .arg(p.subtitleText));
     appearanceLayout->addWidget(m_appearanceCardTitle);
 
-    m_themeHintLabel = new QLabel(tr("选择喜欢的配色方案，界面会立即应用。"), m_appearanceCard);
+    m_themeHintLabel = new QLabel(tr("选择喜欢的配色方案"), m_appearanceCard);
     m_themeHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.textSecondary));
     appearanceLayout->addWidget(m_themeHintLabel);
@@ -102,7 +102,7 @@ void PersonalizationPage::setupUi()
                                          .arg(p.textPrimary));
     lightLayout->addWidget(m_lightThemeLabel);
 
-    m_lightThemeList = new NoWheelListWidget(m_appearanceCard);
+    m_lightThemeList = new WheelGuardListWidget(m_appearanceCard);
     m_lightThemeList->setMinimumHeight(220);
     m_lightThemeList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_lightThemeList->setStyleSheet(theme.listWidgetStyleSheet());
@@ -115,7 +115,7 @@ void PersonalizationPage::setupUi()
                                         .arg(p.textPrimary));
     darkLayout->addWidget(m_darkThemeLabel);
 
-    m_darkThemeList = new NoWheelListWidget(m_appearanceCard);
+    m_darkThemeList = new WheelGuardListWidget(m_appearanceCard);
     m_darkThemeList->setMinimumHeight(220);
     m_darkThemeList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());

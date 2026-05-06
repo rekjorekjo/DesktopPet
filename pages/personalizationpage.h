@@ -7,7 +7,7 @@
 #include <QSlider>
 #include <QWidget>
 
-class NoWheelListWidget;
+class WheelGuardListWidget;
 class QFrame;
 class QListWidgetItem;
 
@@ -47,9 +47,9 @@ private:
     QLabel *m_appearanceCardTitle;
     QLabel *m_themeHintLabel;
     QLabel *m_lightThemeLabel;
-    NoWheelListWidget *m_lightThemeList;
+    WheelGuardListWidget *m_lightThemeList;
     QLabel *m_darkThemeLabel;
-    NoWheelListWidget *m_darkThemeList;
+    WheelGuardListWidget *m_darkThemeList;
 
     QFrame *m_displayCard;
     QLabel *m_displayCardTitle;
