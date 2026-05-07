@@ -14,6 +14,8 @@
 
 struct PetAction;
 
+class SoftDialogTitleBar;
+
 class ImportActionDialog : public QDialog
 {
     Q_OBJECT
@@ -49,6 +51,7 @@ private:
 
     QString m_petDirPath;
 
+    SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_idEdit;
     QLineEdit *m_folderEdit;
     QPushButton *m_browseButton;

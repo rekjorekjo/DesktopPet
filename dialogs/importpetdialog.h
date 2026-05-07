@@ -7,6 +7,7 @@
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
+class SoftDialogTitleBar;
 
 class ImportPetDialog : public QDialog
 {
@@ -32,6 +33,7 @@ private:
     bool validateInput();
     void tryLoadPetConfig();
 
+    SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_directoryEdit;
     QPushButton *m_browseButton;
     QLineEdit *m_petIdEdit;

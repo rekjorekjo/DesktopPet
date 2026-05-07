@@ -110,6 +110,20 @@ void AppSettings::setThemeIndex(int index)
     settings.setValue("ui/themeIndex", index);
 }
 
+int AppSettings::cardGradientStrength()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    int value = settings.value("ui/cardGradientStrength", 35).toInt();
+    return clampGradientStrength(value);
+}
+
+void AppSettings::setCardGradientStrength(int value)
+{
+    value = clampGradientStrength(value);
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("ui/cardGradientStrength", value);
+}
+
 double AppSettings::clampScale(double scale)
 {
     if (scale < 0.5) {
@@ -130,4 +144,15 @@ double AppSettings::clampOpacity(double opacity)
         return 1.0;
     }
     return opacity;
+}
+
+int AppSettings::clampGradientStrength(int value)
+{
+    if (value < 0) {
+        return 0;
+    }
+    if (value > 100) {
+        return 100;
+    }
+    return value;
 }

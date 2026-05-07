@@ -27,9 +27,13 @@ public:
     static int themeIndex();
     static void setThemeIndex(int index);
 
+    static int cardGradientStrength();
+    static void setCardGradientStrength(int value);
+
 private:
     static double clampScale(double scale);
     static double clampOpacity(double opacity);
+    static int clampGradientStrength(int value);
 };
 
 #endif // APPSETTINGS_H

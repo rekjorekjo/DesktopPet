@@ -1,16 +1,19 @@
 #include "settingswindow.h"
 
+#include "core/appsettings.h"
 #include "pages/aboutpage.h"
 #include "pages/actionsettingspage.h"
 #include "pages/apiconfigpage.h"
 #include "pages/personalizationpage.h"
 #include "pages/petmanagepage.h"
 #include "theme/thememanager.h"
+#include "widgets/settingstitlebar.h"
 
 #include <QHBoxLayout>
 #include <QLinearGradient>
 #include <QPainter>
 #include <QVBoxLayout>
+#include <QEvent>
 
 SoftGradientBackgroundWidget::SoftGradientBackgroundWidget(QWidget *parent)
     : QWidget(parent)
@@ -32,25 +35,12 @@ void SoftGradientBackgroundWidget::paintEvent(QPaintEvent *event)
 
     QColor baseColor(p.pageBackground);
     painter.fillRect(rect(), baseColor);
-
-    QColor accentColor(p.accent);
-    accentColor.setAlpha(12);
-    QLinearGradient topGrad(0, 0, width(), height() * 0.4);
-    topGrad.setColorAt(0.0, accentColor);
-    topGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
-    painter.fillRect(rect(), topGrad);
-
-    QColor shadowColor(p.border);
-    shadowColor.setAlpha(8);
-    QLinearGradient bottomGrad(0, height() * 0.7, 0, height());
-    bottomGrad.setColorAt(0.0, QColor(0, 0, 0, 0));
-    bottomGrad.setColorAt(1.0, shadowColor);
-    painter.fillRect(rect(), bottomGrad);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
+    , m_titleBar(nullptr)
     , m_sidebar(nullptr)
     , m_stackedWidget(nullptr)
     , m_petManagePage(nullptr)
@@ -71,17 +61,31 @@ void SettingsWindow::setupUi()
     resize(1000, 650);
     setMinimumSize(800, 520);
 
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowMinMaxButtonsHint);
+    setAttribute(Qt::WA_TranslucentBackground, false);
+
     m_centralWidget = new SoftGradientBackgroundWidget(this);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout(m_centralWidget);
-    mainLayout->setContentsMargins(12, 12, 12, 12);
-    mainLayout->setSpacing(12);
+    QVBoxLayout *rootLayout = new QVBoxLayout(m_centralWidget);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0);
+
+    m_titleBar = new SettingsTitleBar(this);
+    rootLayout->addWidget(m_titleBar);
+
+    QWidget *contentWidget = new QWidget(this);
+    contentWidget->setObjectName("contentWidget");
+    QHBoxLayout *contentLayout = new QHBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(12, 12, 12, 12);
+    contentLayout->setSpacing(12);
 
     setupSidebar();
     setupPages();
 
-    mainLayout->addWidget(m_sidebar);
-    mainLayout->addWidget(m_stackedWidget, 1);
+    contentLayout->addWidget(m_sidebar);
+    contentLayout->addWidget(m_stackedWidget, 1);
+
+    rootLayout->addWidget(contentWidget, 1);
 
     setCentralWidget(m_centralWidget);
     applyTheme();
@@ -146,6 +150,25 @@ void SettingsWindow::connectSignals()
 
     connect(m_personalizationPage, &PersonalizationPage::petOpacityChanged,
             this, &SettingsWindow::petOpacityChanged);
+
+    connect(m_personalizationPage, &PersonalizationPage::cardGradientStrengthChanged,
+            this, [this](int) {
+                if (m_petManagePage) {
+                    m_petManagePage->refreshTheme();
+                }
+                if (m_actionSettingsPage) {
+                    m_actionSettingsPage->refreshTheme();
+                }
+                if (m_apiConfigPage) {
+                    m_apiConfigPage->refreshTheme();
+                }
+                if (m_personalizationPage) {
+                    m_personalizationPage->refreshTheme();
+                }
+                if (m_aboutPage) {
+                    m_aboutPage->refreshTheme();
+                }
+            });
 }
 
 void SettingsWindow::applyTheme()
@@ -153,6 +176,10 @@ void SettingsWindow::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
 
     m_centralWidget->update();
+
+    if (m_titleBar) {
+        m_titleBar->applyTheme();
+    }
 
     m_sidebar->setStyleSheet(theme.softSidebarStyleSheet(8, 35));
 
@@ -173,4 +200,14 @@ void SettingsWindow::applyTheme()
     if (m_aboutPage) {
         m_aboutPage->refreshTheme();
     }
+}
+
+void SettingsWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        if (m_titleBar) {
+            m_titleBar->applyTheme();
+        }
+    }
+    QMainWindow::changeEvent(event);
 }

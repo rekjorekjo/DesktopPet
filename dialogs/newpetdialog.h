@@ -6,6 +6,7 @@
 
 class QLineEdit;
 class QSpinBox;
+class SoftDialogTitleBar;
 
 class NewPetDialog : public QDialog
 {
@@ -33,6 +34,7 @@ private:
     void setupUi();
     bool validateInput();
 
+    SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_petIdEdit;
     QLineEdit *m_petNameEdit;
     QSpinBox *m_canvasWidthSpinBox;

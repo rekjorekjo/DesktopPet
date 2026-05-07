@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "theme/thememanager.h"
+#include "widgets/softdialogtitlebar.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -16,6 +17,7 @@
 
 ImportPetDialog::ImportPetDialog(QWidget *parent)
     : QDialog(parent)
+    , m_titleBar(nullptr)
     , m_directoryEdit(nullptr)
     , m_browseButton(nullptr)
     , m_petIdEdit(nullptr)
@@ -67,68 +69,77 @@ void ImportPetDialog::setupUi()
 
     setWindowTitle(tr("导入宠物"));
     setMinimumWidth(450);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
     setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(16);
-    mainLayout->setContentsMargins(24, 20, 24, 20);
+    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_titleBar = new SoftDialogTitleBar(tr("导入宠物"), this);
+    mainLayout->addWidget(m_titleBar);
+
+    QWidget *contentWidget = new QWidget(this);
+    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
+    contentLayout->setSpacing(16);
+    contentLayout->setContentsMargins(24, 20, 24, 20);
 
     QHBoxLayout *dirLayout = new QHBoxLayout();
-    QLabel *dirLabel = new QLabel(tr("宠物目录:"), this);
+    QLabel *dirLabel = new QLabel(tr("宠物目录:"), contentWidget);
     dirLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     dirLabel->setFixedWidth(80);
-    m_directoryEdit = new QLineEdit(this);
+    m_directoryEdit = new QLineEdit(contentWidget);
     m_directoryEdit->setReadOnly(true);
     m_directoryEdit->setStyleSheet(theme.lineEditStyleSheet());
-    m_browseButton = new QPushButton(tr("选择"), this);
+    m_browseButton = new QPushButton(tr("选择"), contentWidget);
     m_browseButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     dirLayout->addWidget(dirLabel);
     dirLayout->addWidget(m_directoryEdit);
     dirLayout->addWidget(m_browseButton);
-    mainLayout->addLayout(dirLayout);
+    contentLayout->addLayout(dirLayout);
 
     QHBoxLayout *idLayout = new QHBoxLayout();
-    QLabel *idLabel = new QLabel(tr("宠物 ID:"), this);
+    QLabel *idLabel = new QLabel(tr("宠物 ID:"), contentWidget);
     idLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     idLabel->setFixedWidth(80);
-    m_petIdEdit = new QLineEdit(this);
+    m_petIdEdit = new QLineEdit(contentWidget);
     m_petIdEdit->setPlaceholderText(tr("例如: my_pet, cat_01"));
     m_petIdEdit->setStyleSheet(theme.lineEditStyleSheet());
     idLayout->addWidget(idLabel);
     idLayout->addWidget(m_petIdEdit);
-    mainLayout->addLayout(idLayout);
+    contentLayout->addLayout(idLayout);
 
     QHBoxLayout *nameLayout = new QHBoxLayout();
-    QLabel *nameLabel = new QLabel(tr("宠物名称:"), this);
+    QLabel *nameLabel = new QLabel(tr("宠物名称:"), contentWidget);
     nameLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
     nameLabel->setFixedWidth(80);
-    m_petNameEdit = new QLineEdit(this);
+    m_petNameEdit = new QLineEdit(contentWidget);
     m_petNameEdit->setPlaceholderText(tr("可选，默认使用宠物 ID"));
     m_petNameEdit->setStyleSheet(theme.lineEditStyleSheet());
     nameLayout->addWidget(nameLabel);
     nameLayout->addWidget(m_petNameEdit);
-    mainLayout->addLayout(nameLayout);
+    contentLayout->addLayout(nameLayout);
 
-    mainLayout->addSpacing(8);
+    contentLayout->addSpacing(8);
 
-    QLabel *canvasLabel = new QLabel(tr("画布尺寸:"), this);
+    QLabel *canvasLabel = new QLabel(tr("画布尺寸:"), contentWidget);
     canvasLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
-    mainLayout->addWidget(canvasLabel);
+    contentLayout->addWidget(canvasLabel);
 
     QHBoxLayout *canvasLayout = new QHBoxLayout();
     canvasLayout->addSpacing(80);
-    QLabel *canvasWidthLabel = new QLabel(tr("宽度:"), this);
+    QLabel *canvasWidthLabel = new QLabel(tr("宽度:"), contentWidget);
     canvasWidthLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
-    m_canvasWidthSpinBox = new QSpinBox(this);
+    m_canvasWidthSpinBox = new QSpinBox(contentWidget);
     m_canvasWidthSpinBox->setRange(100, 2000);
     m_canvasWidthSpinBox->setValue(400);
     m_canvasWidthSpinBox->setMinimumWidth(100);
     m_canvasWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    QLabel *canvasHeightLabel = new QLabel(tr("高度:"), this);
+    QLabel *canvasHeightLabel = new QLabel(tr("高度:"), contentWidget);
     canvasHeightLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
-    m_canvasHeightSpinBox = new QSpinBox(this);
+    m_canvasHeightSpinBox = new QSpinBox(contentWidget);
     m_canvasHeightSpinBox->setRange(100, 2000);
     m_canvasHeightSpinBox->setValue(400);
     m_canvasHeightSpinBox->setMinimumWidth(100);
@@ -139,24 +150,24 @@ void ImportPetDialog::setupUi()
     canvasLayout->addWidget(canvasHeightLabel);
     canvasLayout->addWidget(m_canvasHeightSpinBox);
     canvasLayout->addStretch();
-    mainLayout->addLayout(canvasLayout);
+    contentLayout->addLayout(canvasLayout);
 
-    QLabel *displayLabel = new QLabel(tr("显示尺寸:"), this);
+    QLabel *displayLabel = new QLabel(tr("显示尺寸:"), contentWidget);
     displayLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
-    mainLayout->addWidget(displayLabel);
+    contentLayout->addWidget(displayLabel);
 
     QHBoxLayout *displayLayout = new QHBoxLayout();
     displayLayout->addSpacing(80);
-    QLabel *displayWidthLabel = new QLabel(tr("宽度:"), this);
+    QLabel *displayWidthLabel = new QLabel(tr("宽度:"), contentWidget);
     displayWidthLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
-    m_displayWidthSpinBox = new QSpinBox(this);
+    m_displayWidthSpinBox = new QSpinBox(contentWidget);
     m_displayWidthSpinBox->setRange(50, 1000);
     m_displayWidthSpinBox->setValue(200);
     m_displayWidthSpinBox->setMinimumWidth(100);
     m_displayWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    QLabel *displayHeightLabel = new QLabel(tr("高度:"), this);
+    QLabel *displayHeightLabel = new QLabel(tr("高度:"), contentWidget);
     displayHeightLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
-    m_displayHeightSpinBox = new QSpinBox(this);
+    m_displayHeightSpinBox = new QSpinBox(contentWidget);
     m_displayHeightSpinBox->setRange(50, 1000);
     m_displayHeightSpinBox->setValue(200);
     m_displayHeightSpinBox->setMinimumWidth(100);
@@ -167,19 +178,21 @@ void ImportPetDialog::setupUi()
     displayLayout->addWidget(displayHeightLabel);
     displayLayout->addWidget(m_displayHeightSpinBox);
     displayLayout->addStretch();
-    mainLayout->addLayout(displayLayout);
+    contentLayout->addLayout(displayLayout);
 
-    mainLayout->addSpacing(16);
+    contentLayout->addSpacing(16);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
-    m_cancelButton = new QPushButton(tr("取消"), this);
+    m_cancelButton = new QPushButton(tr("取消"), contentWidget);
     m_cancelButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
-    m_confirmButton = new QPushButton(tr("导入"), this);
+    m_confirmButton = new QPushButton(tr("导入"), contentWidget);
     m_confirmButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
     buttonLayout->addWidget(m_cancelButton);
     buttonLayout->addWidget(m_confirmButton);
-    mainLayout->addLayout(buttonLayout);
+    contentLayout->addLayout(buttonLayout);
+
+    mainLayout->addWidget(contentWidget);
 }
 
 void ImportPetDialog::connectSignals()

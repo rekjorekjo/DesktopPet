@@ -1,4 +1,5 @@
 #include "softcardwidget.h"
+#include "core/appsettings.h"
 #include "theme/thememanager.h"
 
 #include <QPainter>
@@ -239,6 +240,16 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
+    constexpr int BaseGradientAlpha = 20;
+    constexpr int BaseHighlightAlpha = 12;
+    constexpr int DefaultStrength = 35;
+
+    int strength = AppSettings::cardGradientStrength();
+    double factor = static_cast<double>(strength) / DefaultStrength;
+
+    int gradientAlpha = qBound(0, static_cast<int>(BaseGradientAlpha * factor), 50);
+    int highlightAlpha = qBound(0, static_cast<int>(BaseHighlightAlpha * factor), 30);
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -248,12 +259,39 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
 
     QPainterPath bgPath = createRoundedRectPath(rect(), m_borderRadius);
 
+    if (m_showShadow) {
+        QColor shadowColor(p.border);
+        shadowColor.setAlpha(15);
+        QPainterPath shadowPath = createRoundedRectPath(rect().adjusted(2, 2, 2, 2), m_borderRadius);
+        painter.fillPath(shadowPath, shadowColor);
+    }
+
     QColor bgColor(p.cardBackground);
-    bgColor.setAlpha(250);
+    bgColor.setAlpha(240);
     painter.fillPath(bgPath, bgColor);
 
+    if (gradientAlpha > 0) {
+        QLinearGradient cardGrad(0, 0, rect().width(), rect().height());
+        QColor gradStartColor(p.accentSoft);
+        gradStartColor.setAlpha(gradientAlpha);
+        QColor gradEndColor(p.cardBackground);
+        gradEndColor.setAlpha(0);
+        cardGrad.setColorAt(0.0, gradStartColor);
+        cardGrad.setColorAt(0.5, gradEndColor);
+        painter.fillPath(bgPath, cardGrad);
+    }
+
+    if (m_showHighlight && highlightAlpha > 0) {
+        QLinearGradient highlightGrad(0, 0, 0, rect().height() * 0.4);
+        QColor highlightColor(p.accent);
+        highlightColor.setAlpha(highlightAlpha);
+        highlightGrad.setColorAt(0.0, highlightColor);
+        highlightGrad.setColorAt(1.0, QColor(255, 255, 255, 0));
+        painter.fillPath(bgPath, highlightGrad);
+    }
+
     QColor borderColor(p.border);
-    borderColor.setAlpha(180);
+    borderColor.setAlpha(150);
     QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);

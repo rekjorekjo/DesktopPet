@@ -11,6 +11,7 @@ class ActionSettingsPage;
 class ApiConfigPage;
 class PersonalizationPage;
 class AboutPage;
+class SettingsTitleBar;
 
 class SoftGradientBackgroundWidget : public QWidget
 {
@@ -37,6 +38,9 @@ signals:
     void applyPetConfigRequested();
     void petOpacityChanged(double opacity);
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private:
     void setupUi();
     void setupSidebar();
@@ -45,6 +49,7 @@ private:
     void applyTheme();
 
     SoftGradientBackgroundWidget *m_centralWidget;
+    SettingsTitleBar *m_titleBar;
     QListWidget *m_sidebar;
     QStackedWidget *m_stackedWidget;
 

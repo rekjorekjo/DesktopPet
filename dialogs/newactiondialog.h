@@ -12,6 +12,8 @@
 #include "models/actioncategory.h"
 #include "models/timedtrigger.h"
 
+class SoftDialogTitleBar;
+
 class NewActionDialog : public QDialog
 {
     Q_OBJECT
@@ -46,6 +48,7 @@ private:
 
     QString m_petDirPath;
 
+    SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_gifPathEdit;
     QPushButton *m_browseButton;
     QLineEdit *m_idEdit;

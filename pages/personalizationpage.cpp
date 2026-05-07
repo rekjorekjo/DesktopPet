@@ -28,6 +28,9 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_opacityLabel(nullptr)
     , m_opacitySlider(nullptr)
     , m_opacityValueLabel(nullptr)
+    , m_gradientStrengthLabel(nullptr)
+    , m_gradientStrengthSlider(nullptr)
+    , m_gradientStrengthValueLabel(nullptr)
     , m_startupCard(nullptr)
     , m_startupCardTitle(nullptr)
     , m_autoStartOnBootCheckBox(nullptr)
@@ -169,6 +172,26 @@ void PersonalizationPage::setupUi()
     opacityLayout->addStretch();
     displayLayout->addLayout(opacityLayout);
 
+    QHBoxLayout *gradientStrengthLayout = new QHBoxLayout();
+    m_gradientStrengthLabel = new QLabel(tr("卡片渐变强度:"), m_displayCard);
+    m_gradientStrengthLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                             .arg(p.textSecondary));
+    m_gradientStrengthSlider = new QSlider(Qt::Horizontal, m_displayCard);
+    m_gradientStrengthSlider->setRange(0, 100);
+    m_gradientStrengthSlider->setValue(AppSettings::cardGradientStrength());
+    m_gradientStrengthSlider->setMinimumWidth(200);
+    m_gradientStrengthSlider->setStyleSheet(theme.sliderStyleSheet());
+    m_gradientStrengthValueLabel = new QLabel(m_displayCard);
+    m_gradientStrengthValueLabel->setMinimumWidth(50);
+    m_gradientStrengthValueLabel->setText(QString("%1%").arg(m_gradientStrengthSlider->value()));
+    m_gradientStrengthValueLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                                  .arg(p.textSecondary));
+    gradientStrengthLayout->addWidget(m_gradientStrengthLabel);
+    gradientStrengthLayout->addWidget(m_gradientStrengthSlider);
+    gradientStrengthLayout->addWidget(m_gradientStrengthValueLabel);
+    gradientStrengthLayout->addStretch();
+    displayLayout->addLayout(gradientStrengthLayout);
+
     contentLayout->addWidget(m_displayCard);
 
     m_startupCard = new SoftCardWidget(m_contentWidget);
@@ -219,6 +242,9 @@ void PersonalizationPage::connectSignals()
 
     connect(m_opacitySlider, &QSlider::valueChanged,
             this, &PersonalizationPage::onOpacityChanged);
+
+    connect(m_gradientStrengthSlider, &QSlider::valueChanged,
+            this, &PersonalizationPage::onCardGradientStrengthChanged);
 
     connect(m_autoStartOnBootCheckBox, &QCheckBox::toggled,
             this, &PersonalizationPage::onAutoStartOnBootChanged);
@@ -298,6 +324,13 @@ void PersonalizationPage::onOpacityChanged(int value)
     emit petOpacityChanged(opacity);
 }
 
+void PersonalizationPage::onCardGradientStrengthChanged(int value)
+{
+    m_gradientStrengthValueLabel->setText(QString("%1%").arg(value));
+    AppSettings::setCardGradientStrength(value);
+    emit cardGradientStrengthChanged(value);
+}
+
 void PersonalizationPage::onAutoStartOnBootChanged(bool enabled)
 {
     AppSettings::setAutoStartOnBoot(enabled);
@@ -347,9 +380,13 @@ void PersonalizationPage::applyTheme()
     m_opacityLabel->setStyleSheet(normalLabelStyle);
     m_opacityValueLabel->setStyleSheet(normalLabelStyle);
 
+    m_gradientStrengthLabel->setStyleSheet(normalLabelStyle);
+    m_gradientStrengthValueLabel->setStyleSheet(normalLabelStyle);
+
     m_lightThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_opacitySlider->setStyleSheet(theme.sliderStyleSheet());
+    m_gradientStrengthSlider->setStyleSheet(theme.sliderStyleSheet());
 
     m_autoStartOnBootCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_autoPlayOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
