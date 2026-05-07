@@ -21,6 +21,7 @@ class SoftCardWidget : public QFrame
     Q_PROPERTY(bool showHighlight READ showHighlight WRITE setShowHighlight)
     Q_PROPERTY(bool showShadow READ showShadow WRITE setShowShadow)
     Q_PROPERTY(qreal hoverProgress READ hoverProgress WRITE setHoverProgress)
+    Q_PROPERTY(bool hoverAnimationEnabled READ hoverAnimationEnabled WRITE setHoverAnimationEnabled)
 
 public:
     explicit SoftCardWidget(QWidget *parent = nullptr);
@@ -50,6 +51,9 @@ public:
     qreal hoverProgress() const;
     void setHoverProgress(qreal progress);
 
+    bool hoverAnimationEnabled() const;
+    void setHoverAnimationEnabled(bool enabled);
+
     void setTitle(const QString &title);
     QString title() const;
 
@@ -68,7 +72,7 @@ protected:
 private:
     void init();
     void ensureInternalLayout();
-    void animateHover(qreal endValue);
+    void animateHover(qreal endValue, bool entering);
     QPainterPath createRoundedRectPath(const QRectF &rect, int radius) const;
     QColor applyOpacity(const QColor &color, int opacity) const;
 
@@ -81,6 +85,7 @@ private:
     bool m_showHighlight;
     bool m_showShadow;
     qreal m_hoverProgress;
+    bool m_hoverAnimationEnabled;
     QPropertyAnimation *m_hoverAnimation;
     QString m_title;
     QWidget *m_contentWidget;

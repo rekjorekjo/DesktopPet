@@ -493,27 +493,31 @@ SoftCardGradientColors ThemeManager::softCardGradientColors(bool panel, qreal ho
     const double strength = clamp01(AppSettings::cardGradientStrength() / 100.0);
     const double hover = clamp01(hoverProgress);
     const double surfaceScale = panel ? 0.82 : 1.0;
-    const double gradientAmount = strength * surfaceScale * (1.0 + 0.18 * hover);
+    const double gradientAmount = strength * surfaceScale * (1.0 + 0.34 * hover);
     const bool dark = colorLuma(base) < 0.46;
 
     const QColor softAccent = mixColor(accent, accentSoft, dark ? 0.25 : 0.32);
 
     SoftCardGradientColors colors;
     colors.base = base;
-    colors.topLeft = mixColor(base, accent, 0.18 * gradientAmount);
-    colors.topRight = mixColor(base, softAccent, 0.14 * gradientAmount);
+    colors.topLeft = mixColor(base, accent, 0.20 * gradientAmount);
+    colors.topRight = mixColor(base, softAccent, 0.16 * gradientAmount);
     colors.bottomRight = dark
-        ? lightenColor(base, 0.04 * gradientAmount)
-        : darkenColor(base, 0.025 * gradientAmount);
-    colors.highlight = dark ? lightenColor(base, 0.28) : QColor(255, 255, 255);
-    colors.border = mixColor(borderBase, accent, 0.05 + 0.10 * strength + 0.08 * hover);
+        ? lightenColor(base, 0.05 * gradientAmount)
+        : darkenColor(base, 0.03 * gradientAmount);
+    colors.highlight = dark ? lightenColor(base, 0.34) : QColor(255, 255, 255);
+    colors.border = mixColor(borderBase, accent, 0.06 + 0.11 * strength + 0.13 * hover);
     colors.shadow = dark ? QColor(0, 0, 0) : darkenColor(borderBase, 0.28);
     colors.baseAlpha = 255;
-    colors.highlightAlpha = qBound(0, qRound((dark ? 11 : 16) * strength + 5 * hover), dark ? 18 : 26);
+    colors.highlightAlpha = qBound(0,
+                                   qRound((dark ? 12 : 17) * strength + (dark ? 7 : 8) * hover),
+                                   dark ? 24 : 34);
     colors.borderAlpha = qBound(dark ? 125 : 110,
-                                qRound((dark ? 140 : 122) + 24 * strength + 32 * hover),
-                                dark ? 205 : 190);
-    colors.shadowAlpha = qBound(0, qRound((dark ? 22 : 14) + 12 * hover), dark ? 48 : 34);
+                                qRound((dark ? 142 : 124) + 26 * strength + 42 * hover),
+                                dark ? 225 : 210);
+    colors.shadowAlpha = qBound(0,
+                                qRound((dark ? 24 : 15) + (dark ? 20 : 16) * hover),
+                                dark ? 64 : 46);
     return colors;
 }
 

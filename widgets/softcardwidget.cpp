@@ -18,6 +18,7 @@ SoftCardWidget::SoftCardWidget(QWidget *parent)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_hoverProgress(0.0)
+    , m_hoverAnimationEnabled(true)
     , m_hoverAnimation(nullptr)
     , m_contentWidget(nullptr)
 {
@@ -34,6 +35,7 @@ SoftCardWidget::SoftCardWidget(const QString &title, QWidget *parent)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_hoverProgress(0.0)
+    , m_hoverAnimationEnabled(true)
     , m_hoverAnimation(nullptr)
     , m_title(title)
     , m_contentWidget(nullptr)
@@ -49,8 +51,10 @@ void SoftCardWidget::init()
     setAutoFillBackground(false);
 
     m_hoverAnimation = new QPropertyAnimation(this, "hoverProgress", this);
-    m_hoverAnimation->setDuration(150);
-    m_hoverAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_hoverAnimation->setDuration(170);
+    QEasingCurve enterCurve(QEasingCurve::OutBack);
+    enterCurve.setOvershoot(0.45);
+    m_hoverAnimation->setEasingCurve(enterCurve);
 
     applyTheme();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &SoftCardWidget::applyTheme);
@@ -183,6 +187,26 @@ void SoftCardWidget::setHoverProgress(qreal progress)
     }
 }
 
+bool SoftCardWidget::hoverAnimationEnabled() const
+{
+    return m_hoverAnimationEnabled;
+}
+
+void SoftCardWidget::setHoverAnimationEnabled(bool enabled)
+{
+    if (m_hoverAnimationEnabled == enabled) {
+        return;
+    }
+
+    m_hoverAnimationEnabled = enabled;
+    if (!m_hoverAnimationEnabled) {
+        if (m_hoverAnimation) {
+            m_hoverAnimation->stop();
+        }
+        setHoverProgress(0.0);
+    }
+}
+
 void SoftCardWidget::setTitle(const QString &title)
 {
     if (m_title == title) {
@@ -271,14 +295,18 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
     ThemeManager &theme = ThemeManager::instance();
     SoftCardGradientColors colors = theme.softCardGradientColors(false, m_hoverProgress);
 
-    QRectF cardRect = QRectF(rect()).adjusted(1.0, 2.0, -1.0, -2.0);
-    cardRect.translate(0.0, -m_hoverProgress);
+    const qreal hoverLift = 2.0 * m_hoverProgress;
+    QRectF cardRect = QRectF(rect()).adjusted(1.0, 2.5, -1.0, -3.5);
+    cardRect.translate(0.0, -hoverLift);
     QPainterPath bgPath = createRoundedRectPath(cardRect, m_borderRadius);
 
     if (m_showShadow) {
         QColor shadowColor = colors.shadow;
-        shadowColor.setAlpha(qBound(0, colors.shadowAlpha + m_shadowOpacity / 4, 80));
-        QRectF shadowRect = cardRect.adjusted(1.5, 2.0 + m_hoverProgress, 1.5, 2.5 + m_hoverProgress);
+        shadowColor.setAlpha(qBound(0, colors.shadowAlpha + m_shadowOpacity / 3 + qRound(10 * m_hoverProgress), 96));
+        QRectF shadowRect = cardRect.adjusted(1.8,
+                                              3.0 + 1.2 * m_hoverProgress,
+                                              1.8,
+                                              4.0 + 2.0 * m_hoverProgress);
         QPainterPath shadowPath = createRoundedRectPath(shadowRect, m_borderRadius);
         painter.fillPath(shadowPath, shadowColor);
     }
@@ -298,7 +326,8 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
     if (m_showHighlight && colors.highlightAlpha > 0) {
         QLinearGradient highlightGrad(cardRect.topLeft(), QPointF(cardRect.left(), cardRect.top() + cardRect.height() * 0.42));
         QColor highlightColor = colors.highlight;
-        int highlightAlpha = qMin(colors.highlightAlpha, m_highlightOpacity + qRound(8 * m_hoverProgress));
+        int highlightAlpha = qMin(colors.highlightAlpha + qRound(4 * m_hoverProgress),
+                                  m_highlightOpacity + qRound(14 * m_hoverProgress));
         highlightColor.setAlpha(highlightAlpha);
         highlightGrad.setColorAt(0.0, highlightColor);
         highlightGrad.setColorAt(1.0, QColor(255, 255, 255, 0));
@@ -306,8 +335,8 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
     }
 
     QColor borderColor = colors.border;
-    borderColor.setAlpha(qBound(0, colors.borderAlpha + m_borderOpacity / 5, 220));
-    QPen borderPen(borderColor, 1);
+    borderColor.setAlpha(qBound(0, colors.borderAlpha + m_borderOpacity / 5 + qRound(12 * m_hoverProgress), 235));
+    QPen borderPen(borderColor, 1.0 + 0.15 * m_hoverProgress);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
     painter.drawPath(bgPath);
@@ -322,23 +351,40 @@ void SoftCardWidget::resizeEvent(QResizeEvent *event)
 void SoftCardWidget::enterEvent(QEnterEvent *event)
 {
     QFrame::enterEvent(event);
-    animateHover(1.0);
+    if (m_hoverAnimationEnabled) {
+        animateHover(1.0, true);
+    }
 }
 
 void SoftCardWidget::leaveEvent(QEvent *event)
 {
     QFrame::leaveEvent(event);
-    animateHover(0.0);
+    if (m_hoverAnimationEnabled) {
+        animateHover(0.0, false);
+    }
 }
 
-void SoftCardWidget::animateHover(qreal endValue)
+void SoftCardWidget::animateHover(qreal endValue, bool entering)
 {
+    if (!m_hoverAnimationEnabled) {
+        setHoverProgress(0.0);
+        return;
+    }
+
     if (!m_hoverAnimation) {
         setHoverProgress(endValue);
         return;
     }
 
     m_hoverAnimation->stop();
+    m_hoverAnimation->setDuration(entering ? 170 : 190);
+    if (entering) {
+        QEasingCurve curve(QEasingCurve::OutBack);
+        curve.setOvershoot(0.45);
+        m_hoverAnimation->setEasingCurve(curve);
+    } else {
+        m_hoverAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    }
     m_hoverAnimation->setStartValue(m_hoverProgress);
     m_hoverAnimation->setEndValue(qBound<qreal>(0.0, endValue, 1.0));
     m_hoverAnimation->start();
