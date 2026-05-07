@@ -12,12 +12,12 @@ class ApiConfigPage;
 class PersonalizationPage;
 class AboutPage;
 
-class GlassBackgroundWidget : public QWidget
+class SoftGradientBackgroundWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit GlassBackgroundWidget(QWidget *parent = nullptr);
+    explicit SoftGradientBackgroundWidget(QWidget *parent = nullptr);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -44,7 +44,7 @@ private:
     void connectSignals();
     void applyTheme();
 
-    GlassBackgroundWidget *m_centralWidget;
+    SoftGradientBackgroundWidget *m_centralWidget;
     QListWidget *m_sidebar;
     QStackedWidget *m_stackedWidget;
 

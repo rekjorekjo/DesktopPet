@@ -6,7 +6,7 @@
 #include <QScrollArea>
 #include <QWidget>
 
-#include "widgets/glasscardwidget.h"
+#include "widgets/softcardwidget.h"
 
 class QFrame;
 class UpdateManager;
@@ -37,17 +37,17 @@ private:
     QWidget *m_contentWidget;
 
     QLabel *m_titleLabel;
-    GlassCardWidget *m_infoCard;
+    SoftCardWidget *m_infoCard;
     QLabel *m_infoCardTitle;
     QLabel *m_iconLabel;
     QLabel *m_appNameLabel;
     QLabel *m_descriptionLabel;
 
-    GlassCardWidget *m_versionCard;
+    SoftCardWidget *m_versionCard;
     QLabel *m_versionCardTitle;
     QLabel *m_versionLabel;
 
-    GlassCardWidget *m_updateCard;
+    SoftCardWidget *m_updateCard;
     QLabel *m_updateCardTitle;
     QLabel *m_updateStatusLabel;
     QPushButton *m_checkUpdateButton;

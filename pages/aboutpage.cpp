@@ -2,6 +2,7 @@
 
 #include "core/appversion.h"
 #include "theme/thememanager.h"
+#include "utils/imageutils.h"
 #include "utils/updatemanager.h"
 
 #include <QDebug>
@@ -60,11 +61,11 @@ void AboutPage::setupUi()
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setObjectName("glassPageSurface");
-    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+    m_contentWidget->setObjectName("softPageSurface");
+    m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(24, 10, 24, 20);
@@ -78,13 +79,13 @@ void AboutPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addStretch();
     contentLayout->addLayout(headerLayout);
 
-    m_infoCard = new GlassCardWidget(m_contentWidget);
+    m_infoCard = new SoftCardWidget(m_contentWidget);
     m_infoCard->setObjectName("infoCard");
     QVBoxLayout *infoLayout = new QVBoxLayout(m_infoCard);
     infoLayout->setContentsMargins(24, 24, 24, 24);
@@ -109,7 +110,8 @@ void AboutPage::setupUi()
         iconPixmap = QPixmap(64, 64);
         iconPixmap.fill(Qt::transparent);
     }
-    m_iconLabel->setPixmap(iconPixmap.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    QPixmap roundedIcon = ImageUtils::roundedPixmap(iconPixmap, 64, 12);
+    m_iconLabel->setPixmap(roundedIcon.isNull() ? iconPixmap.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation) : roundedIcon);
     m_iconLabel->setFixedSize(64, 64);
     m_iconLabel->setScaledContents(true);
     iconTextLayout->addWidget(m_iconLabel, 0, Qt::AlignTop);
@@ -137,7 +139,7 @@ void AboutPage::setupUi()
 
     contentLayout->addWidget(m_infoCard);
 
-    m_versionCard = new GlassCardWidget(m_contentWidget);
+    m_versionCard = new SoftCardWidget(m_contentWidget);
     m_versionCard->setObjectName("versionCard");
     QVBoxLayout *versionLayout = new QVBoxLayout(m_versionCard);
     versionLayout->setContentsMargins(24, 24, 24, 24);
@@ -159,7 +161,7 @@ void AboutPage::setupUi()
 
     contentLayout->addWidget(m_versionCard);
 
-    m_updateCard = new GlassCardWidget(m_contentWidget);
+    m_updateCard = new SoftCardWidget(m_contentWidget);
     m_updateCard->setObjectName("updateCard");
     QVBoxLayout *updateLayout = new QVBoxLayout(m_updateCard);
     updateLayout->setContentsMargins(24, 24, 24, 24);
@@ -185,7 +187,7 @@ void AboutPage::setupUi()
 
     m_checkUpdateButton = new QPushButton(tr("检查更新"), m_updateCard);
     m_checkUpdateButton->setMinimumHeight(36);
-    m_checkUpdateButton->setStyleSheet(theme.glassButtonStyleSheet(6, 45));
+    m_checkUpdateButton->setStyleSheet(theme.softButtonStyleSheet(6, 45));
     connect(m_checkUpdateButton, &QPushButton::clicked, this, &AboutPage::onCheckUpdateClicked);
     updateLayout->addWidget(m_checkUpdateButton);
 
@@ -206,9 +208,9 @@ void AboutPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
-    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
+    m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
 
     m_infoCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                      .arg(p.subtitleText));
@@ -226,7 +228,7 @@ void AboutPage::applyTheme()
                                        .arg(p.subtitleText));
     m_updateStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.textSecondary));
-    m_checkUpdateButton->setStyleSheet(theme.glassButtonStyleSheet(6, 45));
+    m_checkUpdateButton->setStyleSheet(theme.softButtonStyleSheet(6, 45));
 }
 
 void AboutPage::onCheckUpdateClicked()

@@ -78,7 +78,7 @@ void PetManagePage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(ThemeManager::instance().glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(ThemeManager::instance().softTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     headerLayout->addWidget(m_titleLabel);
 
@@ -110,7 +110,7 @@ void PetManagePage::setupUi()
     QHBoxLayout *contentLayout = new QHBoxLayout();
     contentLayout->setSpacing(20);
 
-    m_petListCard = new GlassCardWidget(this);
+    m_petListCard = new SoftCardWidget(this);
     m_petListCard->setObjectName("petListCard");
     QVBoxLayout *petListCardLayout = new QVBoxLayout(m_petListCard);
     petListCardLayout->setContentsMargins(16, 16, 16, 16);
@@ -145,7 +145,7 @@ void PetManagePage::setupUi()
 
     contentLayout->addWidget(m_petListCard, 1);
 
-    m_infoCard = new GlassCardWidget(this);
+    m_infoCard = new SoftCardWidget(this);
     m_infoCard->setObjectName("infoCard");
     QVBoxLayout *cardLayout = new QVBoxLayout(m_infoCard);
     cardLayout->setContentsMargins(20, 20, 20, 20);
@@ -211,7 +211,7 @@ void PetManagePage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
 
     m_currentPetLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1; border: none; background: transparent; margin-left: 16px;")
                                          .arg(p.accent));
@@ -243,11 +243,11 @@ void PetManagePage::applyTheme()
     m_globalActionCountLabel->setStyleSheet(infoStyle);
     m_statusLabel->setStyleSheet(infoStyle);
 
-    m_createPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_importPetButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_startButton->setStyleSheet(theme.glassButtonStyleSheet(6, 55));
-    m_pauseButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_reloadButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_createPetButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    m_importPetButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    m_startButton->setStyleSheet(theme.softButtonStyleSheet(6, 55));
+    m_pauseButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    m_reloadButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_petListWidget->setStyleSheet(theme.listWidgetStyleSheet());
 }
 

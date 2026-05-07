@@ -50,11 +50,11 @@ void ApiConfigPage::setupUi()
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setObjectName("glassPageSurface");
-    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+    m_contentWidget->setObjectName("softPageSurface");
+    m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(24, 10, 24, 20);
@@ -68,14 +68,14 @@ void ApiConfigPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addStretch();
 
     contentLayout->addLayout(headerLayout);
 
-    m_statusCard = new GlassCardWidget(m_contentWidget);
+    m_statusCard = new SoftCardWidget(m_contentWidget);
     m_statusCard->setObjectName("statusCard");
     m_statusCard->setBackgroundOpacity(40);
     QVBoxLayout *statusLayout = new QVBoxLayout(m_statusCard);
@@ -94,7 +94,7 @@ void ApiConfigPage::setupUi()
 
     contentLayout->addWidget(m_statusCard);
 
-    m_editorCard = new GlassCardWidget(m_contentWidget);
+    m_editorCard = new SoftCardWidget(m_contentWidget);
     m_editorCard->setObjectName("editorCard");
     m_editorCard->setBackgroundOpacity(40);
     QVBoxLayout *editorLayout = new QVBoxLayout(m_editorCard);
@@ -146,12 +146,12 @@ void ApiConfigPage::setupUi()
 
     m_saveApiConfigButton = new QPushButton(tr("保存配置"), m_editorCard);
     m_saveApiConfigButton->setMinimumHeight(36);
-    m_saveApiConfigButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_saveApiConfigButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     editorLayout->addWidget(m_saveApiConfigButton);
 
     contentLayout->addWidget(m_editorCard);
 
-    m_profilesCard = new GlassCardWidget(m_contentWidget);
+    m_profilesCard = new SoftCardWidget(m_contentWidget);
     m_profilesCard->setObjectName("profilesCard");
     m_profilesCard->setBackgroundOpacity(40);
     QVBoxLayout *profilesLayout = new QVBoxLayout(m_profilesCard);
@@ -177,7 +177,7 @@ void ApiConfigPage::setupUi()
 
     m_addApiProfileButton = new QPushButton(tr("新增配置"), m_profilesCard);
     m_addApiProfileButton->setMinimumHeight(36);
-    m_addApiProfileButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_addApiProfileButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
 
     m_removeApiProfileButton = new QPushButton(tr("删除配置"), m_profilesCard);
     m_removeApiProfileButton->setMinimumHeight(36);
@@ -212,9 +212,9 @@ void ApiConfigPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
-    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
+    m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
 
     m_currentApiProfileLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                                 .arg(p.accent));
@@ -233,8 +233,8 @@ void ApiConfigPage::applyTheme()
     m_apiKeyEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_baseUrlEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_modelEdit->setStyleSheet(theme.lineEditStyleSheet());
-    m_saveApiConfigButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_addApiProfileButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_saveApiConfigButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    m_addApiProfileButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_removeApiProfileButton->setStyleSheet(theme.dangerButtonStyleSheet());
     m_apiProfileList->setStyleSheet(theme.listWidgetStyleSheet());
 }

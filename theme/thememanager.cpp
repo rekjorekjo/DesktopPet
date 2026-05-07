@@ -128,12 +128,6 @@ void ThemeManager::loadThemes()
         seenThemeIds.insert(id);
 
         ThemePalette palette;
-        palette.style = themeObj["style"].toString("classic");
-        if (palette.style != "classic" && palette.style != "liquidGlass") {
-            qWarning() << "ThemeManager: unknown theme style" << palette.style
-                       << "for theme" << id << ", falling back to classic";
-            palette.style = "classic";
-        }
         palette.pageBackground = themeObj["pageBackground"].toString("#f5f5f5");
         palette.cardBackground = themeObj["cardBackground"].toString("#ffffff");
         palette.border = themeObj["border"].toString("#e0e0e0");
@@ -228,36 +222,6 @@ void ThemeManager::loadThemes()
 
         palette.selectionBackground = themeObj["selectionBackground"].toString(palette.sidebarSelectedBg);
 
-        palette.glassBackground = themeObj["glassBackground"].toString();
-        palette.glassBackgroundStrong = themeObj["glassBackgroundStrong"].toString();
-        palette.glassBorder = themeObj["glassBorder"].toString();
-        palette.glassHighlight = themeObj["glassHighlight"].toString();
-        palette.glassShadow = themeObj["glassShadow"].toString();
-        palette.glassTextPrimary = themeObj["glassTextPrimary"].toString();
-        palette.glassTextSecondary = themeObj["glassTextSecondary"].toString();
-
-        if (palette.glassBackground.isEmpty()) {
-            palette.glassBackground = palette.cardBackground;
-        }
-        if (palette.glassBackgroundStrong.isEmpty()) {
-            palette.glassBackgroundStrong = palette.cardBackground;
-        }
-        if (palette.glassBorder.isEmpty()) {
-            palette.glassBorder = palette.border;
-        }
-        if (palette.glassHighlight.isEmpty()) {
-            palette.glassHighlight = palette.accent;
-        }
-        if (palette.glassShadow.isEmpty()) {
-            palette.glassShadow = palette.border;
-        }
-        if (palette.glassTextPrimary.isEmpty()) {
-            palette.glassTextPrimary = palette.textPrimary;
-        }
-        if (palette.glassTextSecondary.isEmpty()) {
-            palette.glassTextSecondary = palette.textSecondary;
-        }
-        
         m_themeIds.append(id);
         m_themeNames.append(name);
         m_palettes[id] = palette;
@@ -275,7 +239,6 @@ void ThemeManager::loadThemes()
 ThemePalette ThemeManager::getDefaultPalette() const
 {
     ThemePalette p;
-    p.style = "classic";
     p.pageBackground = "#F5F7FA";
     p.cardBackground = "#FFFFFF";
     p.border = "#E5EAF0";
@@ -370,14 +333,6 @@ ThemePalette ThemeManager::getDefaultPalette() const
 
     p.selectionBackground = "#EAF3FF";
 
-    p.glassBackground = "#FFFFFF";
-    p.glassBackgroundStrong = "#FFFFFF";
-    p.glassBorder = "#E5EAF0";
-    p.glassHighlight = "#2F80ED";
-    p.glassShadow = "#E5EAF0";
-    p.glassTextPrimary = "#1F2937";
-    p.glassTextSecondary = "#6B7280";
-
     return p;
 }
 
@@ -388,12 +343,6 @@ ThemePalette ThemeManager::currentPalette() const
         return m_palettes.value(key, getDefaultPalette());
     }
     return getDefaultPalette();
-}
-
-bool ThemeManager::isLiquidGlassTheme() const
-{
-    ThemePalette p = currentPalette();
-    return p.style == "liquidGlass";
 }
 
 int ThemeManager::currentThemeIndex() const
@@ -408,11 +357,6 @@ void ThemeManager::setThemeByIndex(int index)
         AppSettings::setThemeIndex(index);
         emit themeChanged();
     }
-}
-
-int ThemeManager::adjustedGlassOpacity(int opacity) const
-{
-    return qBound(0, opacity, 255);
 }
 
 int ThemeManager::themeCount() const
@@ -906,27 +850,6 @@ QString ThemeManager::sliderStyleSheet() const
 QString ThemeManager::listWidgetStyleSheet() const
 {
     ThemePalette p = currentPalette();
-    QString background = isLiquidGlassTheme()
-        ? colorToRgba(p.glassBackground, adjustedGlassOpacity(30))
-        : p.listBackground;
-    QString border = isLiquidGlassTheme()
-        ? colorToRgba(p.glassBorder, 72)
-        : p.inputBorder;
-    QString topBorder = isLiquidGlassTheme()
-        ? colorToRgba(p.glassHighlight, 34)
-        : p.inputBorder;
-    QString hoverBackground = isLiquidGlassTheme()
-        ? colorToRgba(p.glassHighlight, adjustedGlassOpacity(18))
-        : p.listHoverBg;
-    QString selectedBackground = isLiquidGlassTheme()
-        ? colorToRgba(p.listSelectedBg, adjustedGlassOpacity(52))
-        : p.listSelectedBg;
-    QString selectedHoverBackground = isLiquidGlassTheme()
-        ? colorToRgba(p.listSelectedBg, adjustedGlassOpacity(62))
-        : p.listSelectedBg;
-    QString selectedBorder = isLiquidGlassTheme()
-        ? colorToRgba(p.glassHighlight, 48)
-        : p.inputFocusBorder;
 
     return QString(
         "QListWidget {"
@@ -960,15 +883,15 @@ QString ThemeManager::listWidgetStyleSheet() const
         "  color: %10;"
         "}"
     ).arg(
-        background,
+        p.listBackground,
         p.listText,
-        border,
-        topBorder,
-        hoverBackground,
-        selectedBackground,
+        p.inputBorder,
+        p.inputBorder,
+        p.listHoverBg,
+        p.listSelectedBg,
         p.listSelectedText,
-        selectedBorder,
-        selectedHoverBackground,
+        p.inputFocusBorder,
+        p.listSelectedBg,
         p.listDisabledText
     );
 }
@@ -1050,15 +973,6 @@ QString ThemeManager::tabWidgetStyleSheet() const
 QString ThemeManager::dialogStyleSheet() const
 {
     ThemePalette p = currentPalette();
-    QString background = isLiquidGlassTheme()
-        ? colorToRgba(p.glassBackgroundStrong, adjustedGlassOpacity(42))
-        : p.pageBackground;
-    QString tooltipBackground = isLiquidGlassTheme()
-        ? colorToRgba(p.glassBackgroundStrong, adjustedGlassOpacity(82))
-        : p.cardBackground;
-    QString border = isLiquidGlassTheme()
-        ? colorToRgba(p.glassBorder, 82)
-        : p.border;
 
     return QString(
         "QDialog {"
@@ -1079,7 +993,7 @@ QString ThemeManager::dialogStyleSheet() const
         "  border-radius: 4px;"
         "  padding: 4px 8px;"
         "}"
-    ).arg(background, p.textPrimary, tooltipBackground, border);
+    ).arg(p.pageBackground, p.textPrimary, p.cardBackground, p.border);
 }
 
 QString ThemeManager::timeEditStyleSheet() const
@@ -1111,323 +1025,85 @@ QString ThemeManager::timeEditStyleSheet() const
     .arg(p.inputBackground, p.inputText, p.inputBorder, p.inputHoverBorder, p.inputFocusBorder, p.accent, p.accentHover);
 }
 
-QString ThemeManager::glassCardStyleSheet(int borderRadius, int opacity) const
+QString ThemeManager::softCardStyleSheet(int borderRadius, int opacity) const
 {
+    Q_UNUSED(opacity);
     ThemePalette p = currentPalette();
 
-    if (!isLiquidGlassTheme()) {
-        int cardBgR = extractColorComponent(p.cardBackground, 0);
-        int cardBgG = extractColorComponent(p.cardBackground, 1);
-        int cardBgB = extractColorComponent(p.cardBackground, 2);
-        int borderR = extractColorComponent(p.border, 0);
-        int borderG = extractColorComponent(p.border, 1);
-        int borderB = extractColorComponent(p.border, 2);
-
-        return QString(
-            "QFrame#glassCard {"
-            "  background-color: rgba(%1, %2, %3, 250);"
-            "  border: 1px solid rgba(%4, %5, %6, 180);"
-            "  border-radius: %7px;"
-            "}"
-            "QFrame#glassCard:hover {"
-            "  background-color: rgba(%1, %2, %3, 255);"
-            "  border-color: rgba(%4, %5, %6, 220);"
-            "}"
-        )
-        .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-        .arg(borderR).arg(borderG).arg(borderB)
-        .arg(borderRadius);
-    }
-
-    opacity = adjustedGlassOpacity(opacity);
-    int bgR = extractColorComponent(p.glassBackground, 0);
-    int bgG = extractColorComponent(p.glassBackground, 1);
-    int bgB = extractColorComponent(p.glassBackground, 2);
-    int borderR = extractColorComponent(p.glassBorder, 0);
-    int borderG = extractColorComponent(p.glassBorder, 1);
-    int borderB = extractColorComponent(p.glassBorder, 2);
-    int hlR = extractColorComponent(p.glassHighlight, 0);
-    int hlG = extractColorComponent(p.glassHighlight, 1);
-    int hlB = extractColorComponent(p.glassHighlight, 2);
-
-    int bgAlpha = qMin(opacity, 80);
-    int borderAlpha = qMin(opacity / 2 + 30, 60);
-    int hlBorderAlpha = qMin(opacity / 3 + 20, 45);
+    int cardBgR = extractColorComponent(p.cardBackground, 0);
+    int cardBgG = extractColorComponent(p.cardBackground, 1);
+    int cardBgB = extractColorComponent(p.cardBackground, 2);
+    int borderR = extractColorComponent(p.border, 0);
+    int borderG = extractColorComponent(p.border, 1);
+    int borderB = extractColorComponent(p.border, 2);
 
     return QString(
-        "QFrame#glassCard {"
-        "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, %8);"
-        "  border-top-color: rgba(%9, %10, %11, %12);"
-        "  border-radius: %13px;"
+        "QFrame#softCard {"
+        "  background-color: rgba(%1, %2, %3, 250);"
+        "  border: 1px solid rgba(%4, %5, %6, 180);"
+        "  border-radius: %7px;"
         "}"
-        "QFrame#glassCard:hover {"
-        "  background-color: rgba(%1, %2, %3, %14);"
-        "  border-color: rgba(%9, %10, %11, 35);"
-        "}"
-    )
-    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
-    .arg(borderR).arg(borderG).arg(borderB).arg(borderAlpha)
-    .arg(hlR).arg(hlG).arg(hlB).arg(hlBorderAlpha)
-    .arg(borderRadius)
-    .arg(qMin(bgAlpha + 15, 100));
-}
-
-QString ThemeManager::glassPanelStyleSheet(int borderRadius, int opacity) const
-{
-    ThemePalette p = currentPalette();
-
-    if (!isLiquidGlassTheme()) {
-        int cardBgR = extractColorComponent(p.cardBackground, 0);
-        int cardBgG = extractColorComponent(p.cardBackground, 1);
-        int cardBgB = extractColorComponent(p.cardBackground, 2);
-        int borderR = extractColorComponent(p.border, 0);
-        int borderG = extractColorComponent(p.border, 1);
-        int borderB = extractColorComponent(p.border, 2);
-
-        return QString(
-            "QFrame#glassPanel {"
-            "  background-color: rgba(%1, %2, %3, 245);"
-            "  border: 1px solid rgba(%4, %5, %6, 160);"
-            "  border-radius: %7px;"
-            "}"
-        )
-        .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-        .arg(borderR).arg(borderG).arg(borderB)
-        .arg(borderRadius);
-    }
-
-    opacity = adjustedGlassOpacity(opacity);
-    int bgR = extractColorComponent(p.glassBackgroundStrong, 0);
-    int bgG = extractColorComponent(p.glassBackgroundStrong, 1);
-    int bgB = extractColorComponent(p.glassBackgroundStrong, 2);
-    int borderR = extractColorComponent(p.glassBorder, 0);
-    int borderG = extractColorComponent(p.glassBorder, 1);
-    int borderB = extractColorComponent(p.glassBorder, 2);
-    int hlR = extractColorComponent(p.glassHighlight, 0);
-    int hlG = extractColorComponent(p.glassHighlight, 1);
-    int hlB = extractColorComponent(p.glassHighlight, 2);
-
-    int bgAlpha = qMin(opacity, 70);
-    int borderAlpha = qMin(opacity / 2 + 25, 50);
-    int hlBorderAlpha = qMin(opacity / 3 + 15, 35);
-
-    return QString(
-        "QFrame#glassPanel {"
-        "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, %8);"
-        "  border-top-color: rgba(%9, %10, %11, %12);"
-        "  border-radius: %13px;"
+        "QFrame#softCard:hover {"
+        "  background-color: rgba(%1, %2, %3, 255);"
+        "  border-color: rgba(%4, %5, %6, 220);"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
-    .arg(borderR).arg(borderG).arg(borderB).arg(borderAlpha)
-    .arg(hlR).arg(hlG).arg(hlB).arg(hlBorderAlpha)
+    .arg(cardBgR).arg(cardBgG).arg(cardBgB)
+    .arg(borderR).arg(borderG).arg(borderB)
     .arg(borderRadius);
 }
 
-QString ThemeManager::glassButtonStyleSheet(int borderRadius, int opacity) const
+QString ThemeManager::softPanelStyleSheet(int borderRadius, int opacity) const
 {
+    Q_UNUSED(opacity);
     ThemePalette p = currentPalette();
 
-    if (!isLiquidGlassTheme()) {
-        return secondaryButtonStyleSheet();
-    }
-
-    opacity = adjustedGlassOpacity(opacity);
-    int bgR = extractColorComponent(p.glassBackground, 0);
-    int bgG = extractColorComponent(p.glassBackground, 1);
-    int bgB = extractColorComponent(p.glassBackground, 2);
-    int borderR = extractColorComponent(p.glassBorder, 0);
-    int borderG = extractColorComponent(p.glassBorder, 1);
-    int borderB = extractColorComponent(p.glassBorder, 2);
-    int hlR = extractColorComponent(p.glassHighlight, 0);
-    int hlG = extractColorComponent(p.glassHighlight, 1);
-    int hlB = extractColorComponent(p.glassHighlight, 2);
-
-    int bgAlpha = qMin(opacity, 65);
-    int hoverAlpha = qMin(opacity + 20, 85);
-    int pressedAlpha = qMax(opacity - 15, 40);
+    int cardBgR = extractColorComponent(p.cardBackground, 0);
+    int cardBgG = extractColorComponent(p.cardBackground, 1);
+    int cardBgB = extractColorComponent(p.cardBackground, 2);
+    int borderR = extractColorComponent(p.border, 0);
+    int borderG = extractColorComponent(p.border, 1);
+    int borderB = extractColorComponent(p.border, 2);
 
     return QString(
-        "QPushButton {"
-        "  background-color: rgba(%1, %2, %3, %4);"
-        "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 60);"
-        "  border-top-color: rgba(%9, %10, %11, 35);"
-        "  border-radius: %12px;"
-        "  padding: 8px 16px;"
-        "}"
-        "QPushButton:hover {"
-        "  background-color: rgba(%9, %10, %11, %13);"
-        "  border-color: rgba(%9, %10, %11, 50);"
-        "}"
-        "QPushButton:pressed {"
-        "  background-color: rgba(%1, %2, %3, %14);"
-        "  border-color: rgba(%6, %7, %8, 80);"
-        "  padding-top: 9px;"
-        "  padding-bottom: 7px;"
-        "}"
-        "QPushButton:disabled {"
-        "  background-color: rgba(%1, %2, %3, 30);"
-        "  color: %15;"
-        "  border-color: rgba(%6, %7, %8, 35);"
+        "QFrame#softPanel {"
+        "  background-color: rgba(%1, %2, %3, 245);"
+        "  border: 1px solid rgba(%4, %5, %6, 160);"
+        "  border-radius: %7px;"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
-    .arg(p.glassTextPrimary)
+    .arg(cardBgR).arg(cardBgG).arg(cardBgB)
     .arg(borderR).arg(borderG).arg(borderB)
-    .arg(hlR).arg(hlG).arg(hlB)
-    .arg(borderRadius)
-    .arg(hoverAlpha)
-    .arg(pressedAlpha)
-    .arg(p.disabledText);
+    .arg(borderRadius);
 }
 
-QString ThemeManager::glassSecondaryButtonStyleSheet(int borderRadius, int opacity) const
+QString ThemeManager::softButtonStyleSheet(int borderRadius, int opacity) const
 {
-    ThemePalette p = currentPalette();
-
-    if (!isLiquidGlassTheme()) {
-        return secondaryButtonStyleSheet();
-    }
-
-    opacity = adjustedGlassOpacity(opacity);
-    int bgR = extractColorComponent(p.glassBackground, 0);
-    int bgG = extractColorComponent(p.glassBackground, 1);
-    int bgB = extractColorComponent(p.glassBackground, 2);
-    int borderR = extractColorComponent(p.glassBorder, 0);
-    int borderG = extractColorComponent(p.glassBorder, 1);
-    int borderB = extractColorComponent(p.glassBorder, 2);
-    int hlR = extractColorComponent(p.glassHighlight, 0);
-    int hlG = extractColorComponent(p.glassHighlight, 1);
-    int hlB = extractColorComponent(p.glassHighlight, 2);
-
-    int bgAlpha = qMin(opacity, 50);
-    int hoverAlpha = qMin(opacity + 15, 70);
-    int pressedAlpha = qMax(opacity - 10, 30);
-
-    return QString(
-        "QPushButton {"
-        "  background-color: rgba(%1, %2, %3, %4);"
-        "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 45);"
-        "  border-top-color: rgba(%9, %10, %11, 25);"
-        "  border-radius: %12px;"
-        "  padding: 8px 16px;"
-        "}"
-        "QPushButton:hover {"
-        "  background-color: rgba(%9, %10, %11, %13);"
-        "  color: %14;"
-        "  border-color: rgba(%9, %10, %11, 40);"
-        "}"
-        "QPushButton:pressed {"
-        "  background-color: rgba(%1, %2, %3, %15);"
-        "  border-color: rgba(%6, %7, %8, 60);"
-        "  padding-top: 9px;"
-        "  padding-bottom: 7px;"
-        "}"
-        "QPushButton:disabled {"
-        "  background-color: rgba(%1, %2, %3, 25);"
-        "  color: %16;"
-        "  border-color: rgba(%6, %7, %8, 30);"
-        "}"
-    )
-    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
-    .arg(p.glassTextSecondary)
-    .arg(borderR).arg(borderG).arg(borderB)
-    .arg(hlR).arg(hlG).arg(hlB)
-    .arg(borderRadius)
-    .arg(hoverAlpha)
-    .arg(p.glassTextPrimary)
-    .arg(pressedAlpha)
-    .arg(p.disabledText);
+    Q_UNUSED(borderRadius);
+    Q_UNUSED(opacity);
+    return secondaryButtonStyleSheet();
 }
 
-QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) const
+QString ThemeManager::softSecondaryButtonStyleSheet(int borderRadius, int opacity) const
 {
-    ThemePalette p = currentPalette();
-
-    if (!isLiquidGlassTheme()) {
-        return sidebarStyleSheet();
-    }
-
-    opacity = adjustedGlassOpacity(opacity);
-    int bgR = extractColorComponent(p.glassBackground, 0);
-    int bgG = extractColorComponent(p.glassBackground, 1);
-    int bgB = extractColorComponent(p.glassBackground, 2);
-    int borderR = extractColorComponent(p.glassBorder, 0);
-    int borderG = extractColorComponent(p.glassBorder, 1);
-    int borderB = extractColorComponent(p.glassBorder, 2);
-    int hlR = extractColorComponent(p.glassHighlight, 0);
-    int hlG = extractColorComponent(p.glassHighlight, 1);
-    int hlB = extractColorComponent(p.glassHighlight, 2);
-    int selBgR = extractColorComponent(p.sidebarSelectedBg, 0);
-    int selBgG = extractColorComponent(p.sidebarSelectedBg, 1);
-    int selBgB = extractColorComponent(p.sidebarSelectedBg, 2);
-
-    int bgAlpha = qMin(opacity, 55);
-    int hoverAlpha = 30;
-    int selectedAlpha = qMin(opacity + 20, 75);
-
-    return QString(
-        "QListWidget {"
-        "  background-color: rgba(%1, %2, %3, %4);"
-        "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 50);"
-        "  border-top-color: rgba(%9, %10, %11, 25);"
-        "  border-radius: %12px;"
-        "  outline: none;"
-        "  padding: 8px 4px;"
-        "}"
-        "QListWidget::item {"
-        "  padding: 12px 16px;"
-        "  border-radius: 8px;"
-        "  margin: 2px 4px;"
-        "}"
-        "QListWidget::item:hover {"
-        "  background-color: rgba(%9, %10, %11, %13);"
-        "  color: %14;"
-        "}"
-        "QListWidget::item:selected {"
-        "  background-color: rgba(%15, %16, %17, %18);"
-        "  color: %19;"
-        "  border: 1px solid rgba(%9, %10, %11, 30);"
-        "}"
-    )
-    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
-    .arg(p.sidebarText)
-    .arg(borderR).arg(borderG).arg(borderB)
-    .arg(hlR).arg(hlG).arg(hlB)
-    .arg(borderRadius)
-    .arg(hoverAlpha)
-    .arg(p.sidebarHoverText)
-    .arg(selBgR).arg(selBgG).arg(selBgB)
-    .arg(selectedAlpha)
-    .arg(p.sidebarSelectedText);
+    Q_UNUSED(borderRadius);
+    Q_UNUSED(opacity);
+    return secondaryButtonStyleSheet();
 }
 
-QString ThemeManager::glassPageStyleSheet() const
+QString ThemeManager::softSidebarStyleSheet(int borderRadius, int opacity) const
 {
-    ThemePalette p = currentPalette();
-
-    if (!isLiquidGlassTheme()) {
-        return pageStyleSheet();
-    }
-
-    QString pageTint = colorToRgba(p.glassBackground, adjustedGlassOpacity(12));
-
-    return QString(
-        "QWidget {"
-        "  background-color: transparent;"
-        "}"
-        "QWidget#glassPageSurface {"
-        "  background-color: %1;"
-        "}"
-    ).arg(pageTint);
+    Q_UNUSED(borderRadius);
+    Q_UNUSED(opacity);
+    return sidebarStyleSheet();
 }
 
-QString ThemeManager::glassScrollAreaStyleSheet() const
+QString ThemeManager::softPageStyleSheet() const
+{
+    return pageStyleSheet();
+}
+
+QString ThemeManager::softScrollAreaStyleSheet() const
 {
     ThemePalette p = currentPalette();
     return QString(
@@ -1443,7 +1119,7 @@ QString ThemeManager::glassScrollAreaStyleSheet() const
     ).arg(p.scrollHandle, p.scrollHandleHover);
 }
 
-QString ThemeManager::glassTitleLabelStyleSheet() const
+QString ThemeManager::softTitleLabelStyleSheet() const
 {
     ThemePalette p = currentPalette();
     return QString("color: %1; background-color: transparent;")

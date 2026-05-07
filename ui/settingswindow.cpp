@@ -7,16 +7,12 @@
 #include "pages/petmanagepage.h"
 #include "theme/thememanager.h"
 
-#ifdef Q_OS_WIN
-#include "platform/windows/windowbackdrophelper.h"
-#endif
-
 #include <QHBoxLayout>
 #include <QLinearGradient>
 #include <QPainter>
 #include <QVBoxLayout>
 
-GlassBackgroundWidget::GlassBackgroundWidget(QWidget *parent)
+SoftGradientBackgroundWidget::SoftGradientBackgroundWidget(QWidget *parent)
     : QWidget(parent)
 {
     setObjectName("centralWidget");
@@ -24,7 +20,7 @@ GlassBackgroundWidget::GlassBackgroundWidget(QWidget *parent)
     setAutoFillBackground(false);
 }
 
-void GlassBackgroundWidget::paintEvent(QPaintEvent *event)
+void SoftGradientBackgroundWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
@@ -34,35 +30,22 @@ void GlassBackgroundWidget::paintEvent(QPaintEvent *event)
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    if (theme.isLiquidGlassTheme()) {
-        QColor baseColor(p.pageBackground);
-        baseColor.setAlpha(30);
-        painter.fillRect(rect(), baseColor);
+    QColor baseColor(p.pageBackground);
+    painter.fillRect(rect(), baseColor);
 
-        QColor accentColor(p.accent);
-        accentColor.setAlpha(6);
-        QLinearGradient topGrad(0, 0, width(), height() * 0.3);
-        topGrad.setColorAt(0.0, accentColor);
-        topGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
-        painter.fillRect(rect(), topGrad);
-    } else {
-        QColor baseColor(p.pageBackground);
-        painter.fillRect(rect(), baseColor);
+    QColor accentColor(p.accent);
+    accentColor.setAlpha(12);
+    QLinearGradient topGrad(0, 0, width(), height() * 0.4);
+    topGrad.setColorAt(0.0, accentColor);
+    topGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
+    painter.fillRect(rect(), topGrad);
 
-        QColor accentColor(p.accent);
-        accentColor.setAlpha(12);
-        QLinearGradient topGrad(0, 0, width(), height() * 0.4);
-        topGrad.setColorAt(0.0, accentColor);
-        topGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
-        painter.fillRect(rect(), topGrad);
-
-        QColor shadowColor(p.glassShadow);
-        shadowColor.setAlpha(8);
-        QLinearGradient bottomGrad(0, height() * 0.7, 0, height());
-        bottomGrad.setColorAt(0.0, QColor(0, 0, 0, 0));
-        bottomGrad.setColorAt(1.0, shadowColor);
-        painter.fillRect(rect(), bottomGrad);
-    }
+    QColor shadowColor(p.border);
+    shadowColor.setAlpha(8);
+    QLinearGradient bottomGrad(0, height() * 0.7, 0, height());
+    bottomGrad.setColorAt(0.0, QColor(0, 0, 0, 0));
+    bottomGrad.setColorAt(1.0, shadowColor);
+    painter.fillRect(rect(), bottomGrad);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent)
@@ -88,7 +71,7 @@ void SettingsWindow::setupUi()
     resize(1000, 650);
     setMinimumSize(800, 520);
 
-    m_centralWidget = new GlassBackgroundWidget(this);
+    m_centralWidget = new SoftGradientBackgroundWidget(this);
 
     QHBoxLayout *mainLayout = new QHBoxLayout(m_centralWidget);
     mainLayout->setContentsMargins(12, 12, 12, 12);
@@ -169,19 +152,9 @@ void SettingsWindow::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
 
-#ifdef Q_OS_WIN
-    if (theme.isLiquidGlassTheme()) {
-        QString themeId = theme.themeIdAt(theme.currentThemeIndex());
-        bool isDark = themeId.contains("dark", Qt::CaseInsensitive);
-        WindowBackdropHelper::instance().applyLiquidGlassBackdrop(this, isDark);
-    } else {
-        WindowBackdropHelper::instance().clearBackdrop(this);
-    }
-#endif
-
     m_centralWidget->update();
 
-    m_sidebar->setStyleSheet(theme.glassSidebarStyleSheet(8, 35));
+    m_sidebar->setStyleSheet(theme.softSidebarStyleSheet(8, 35));
 
     m_stackedWidget->setStyleSheet("QStackedWidget { background-color: transparent; }");
 

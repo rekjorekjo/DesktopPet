@@ -120,8 +120,8 @@ void NewPetDialog::setupUi()
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     connect(m_confirmButton, &QPushButton::clicked, this, &NewPetDialog::accept);
 
-    cancelButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
-    m_confirmButton->setStyleSheet(theme.glassButtonStyleSheet(6, 48));
+    cancelButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    m_confirmButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
 }
 
 QString NewPetDialog::petId() const

@@ -80,16 +80,11 @@ qt_add_executable(DesktopPet
     widgets/actionlibrarylistwidget.h
     widgets/wheelguardlistwidget.cpp
     widgets/wheelguardlistwidget.h
-    widgets/glasscardwidget.cpp
-    widgets/glasscardwidget.h
+    widgets/softcardwidget.cpp
+    widgets/softcardwidget.h
+    utils/imageutils.cpp
+    utils/imageutils.h
 )
-
-if(WIN32)
-    target_sources(DesktopPet PRIVATE
-        platform/windows/windowbackdrophelper.cpp
-        platform/windows/windowbackdrophelper.h
-    )
-endif()
 
 qt_add_resources(DesktopPet "app_resources"
     PREFIX "/"
@@ -125,10 +120,6 @@ target_link_libraries(DesktopPet
         Qt6::Svg
         Qt6::Network
 )
-
-if(WIN32)
-    target_link_libraries(DesktopPet PRIVATE dwmapi)
-endif()
 
 include(GNUInstallDirs)
 

@@ -55,11 +55,11 @@ void PersonalizationPage::setupUi()
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
-    m_contentWidget->setObjectName("glassPageSurface");
-    m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+    m_contentWidget->setObjectName("softPageSurface");
+    m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(24, 10, 24, 20);
@@ -73,13 +73,13 @@ void PersonalizationPage::setupUi()
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
     m_titleLabel->setMargin(0);
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addStretch();
     contentLayout->addLayout(headerLayout);
 
-    m_appearanceCard = new GlassCardWidget(m_contentWidget);
+    m_appearanceCard = new SoftCardWidget(m_contentWidget);
     m_appearanceCard->setObjectName("appearanceCard");
     QVBoxLayout *appearanceLayout = new QVBoxLayout(m_appearanceCard);
     appearanceLayout->setContentsMargins(24, 24, 24, 24);
@@ -134,7 +134,7 @@ void PersonalizationPage::setupUi()
 
     contentLayout->addWidget(m_appearanceCard);
 
-    m_displayCard = new GlassCardWidget(m_contentWidget);
+    m_displayCard = new SoftCardWidget(m_contentWidget);
     m_displayCard->setObjectName("displayCard");
     QVBoxLayout *displayLayout = new QVBoxLayout(m_displayCard);
     displayLayout->setContentsMargins(24, 24, 24, 24);
@@ -171,7 +171,7 @@ void PersonalizationPage::setupUi()
 
     contentLayout->addWidget(m_displayCard);
 
-    m_startupCard = new GlassCardWidget(m_contentWidget);
+    m_startupCard = new SoftCardWidget(m_contentWidget);
     m_startupCard->setObjectName("startupCard");
     QVBoxLayout *startupLayout = new QVBoxLayout(m_startupCard);
     startupLayout->setContentsMargins(24, 24, 24, 24);
@@ -232,16 +232,13 @@ void PersonalizationPage::connectSignals()
 
 bool PersonalizationPage::isLightTheme(const QString &themeId) const
 {
-    if (themeId == "light" || themeId == "freshBlue") {
+    if (themeId == "light" || themeId == "simpleGray") {
         return true;
     }
-    if (themeId == "dark" || themeId == "simpleGray") {
+    if (themeId == "dark") {
         return false;
     }
     if (themeId.startsWith("bloom-")) {
-        return !themeId.endsWith("-dark");
-    }
-    if (themeId.startsWith("liquid-glass-")) {
         return !themeId.endsWith("-dark");
     }
     return true;
@@ -326,7 +323,7 @@ void PersonalizationPage::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setStyleSheet(theme.softTitleLabelStyleSheet());
 
     QString sectionTitleStyle = QString(
         "color: %1; border: none; background: transparent;"
@@ -358,10 +355,10 @@ void PersonalizationPage::applyTheme()
     m_autoPlayOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_openSettingsOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
 
-    m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
+    m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
 
     if (m_contentWidget) {
-        m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
+        m_contentWidget->setStyleSheet(theme.softPageStyleSheet());
     }
 
     populateThemeLists();

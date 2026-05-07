@@ -6,7 +6,7 @@
 #include "core/petconfigmanager.h"
 #include "models/petaction.h"
 #include "models/petplaylist.h"
-#include "widgets/glasscardwidget.h"
+#include "widgets/softcardwidget.h"
 
 class QLabel;
 class QPushButton;
@@ -62,10 +62,10 @@ private:
     QLabel *m_currentPetLabel;
     QLabel *m_petListTitleLabel;
 
-    GlassCardWidget *m_petListCard;
+    SoftCardWidget *m_petListCard;
     QListWidget *m_petListWidget;
 
-    GlassCardWidget *m_infoCard;
+    SoftCardWidget *m_infoCard;
     QLabel *m_petNameLabel;
     QLabel *m_petIdLabel;
     QLabel *m_petDirLabel;

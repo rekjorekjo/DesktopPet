@@ -10,8 +10,6 @@
 
 struct ThemePalette
 {
-    QString style;
-
     QString pageBackground;
     QString cardBackground;
     QString border;
@@ -110,14 +108,6 @@ struct ThemePalette
     QString info;
 
     QString selectionBackground;
-
-    QString glassBackground;
-    QString glassBackgroundStrong;
-    QString glassBorder;
-    QString glassHighlight;
-    QString glassShadow;
-    QString glassTextPrimary;
-    QString glassTextSecondary;
 };
 
 class ThemeManager : public QObject
@@ -136,9 +126,6 @@ public:
 
     ThemePalette currentPalette() const;
 
-    bool isLiquidGlassTheme() const;
-
-    // 旧接口先保留，避免各页面继续报错
     QString pageBackgroundColor() const;
     QString cardBackgroundColor() const;
     QString borderColor() const;
@@ -177,16 +164,14 @@ public:
     QString dialogStyleSheet() const;
     QString timeEditStyleSheet() const;
 
-    int adjustedGlassOpacity(int opacity) const;
-
-    QString glassCardStyleSheet(int borderRadius = 12, int opacity = 40) const;
-    QString glassPanelStyleSheet(int borderRadius = 8, int opacity = 30) const;
-    QString glassButtonStyleSheet(int borderRadius = 6, int opacity = 35) const;
-    QString glassSecondaryButtonStyleSheet(int borderRadius = 6, int opacity = 24) const;
-    QString glassSidebarStyleSheet(int borderRadius = 8, int opacity = 30) const;
-    QString glassPageStyleSheet() const;
-    QString glassScrollAreaStyleSheet() const;
-    QString glassTitleLabelStyleSheet() const;
+    QString softCardStyleSheet(int borderRadius = 12, int opacity = 40) const;
+    QString softPanelStyleSheet(int borderRadius = 8, int opacity = 30) const;
+    QString softButtonStyleSheet(int borderRadius = 6, int opacity = 35) const;
+    QString softSecondaryButtonStyleSheet(int borderRadius = 6, int opacity = 24) const;
+    QString softSidebarStyleSheet(int borderRadius = 8, int opacity = 30) const;
+    QString softPageStyleSheet() const;
+    QString softScrollAreaStyleSheet() const;
+    QString softTitleLabelStyleSheet() const;
 
 signals:
     void themeChanged();

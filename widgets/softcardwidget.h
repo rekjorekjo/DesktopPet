@@ -1,11 +1,11 @@
-#ifndef GLASSCARDWIDGET_H
-#define GLASSCARDWIDGET_H
+#ifndef SOFTCARDWIDGET_H
+#define SOFTCARDWIDGET_H
 
 #include <QFrame>
 #include <QColor>
 #include <QPainterPath>
 
-class GlassCardWidget : public QFrame
+class SoftCardWidget : public QFrame
 {
     Q_OBJECT
     Q_PROPERTY(int borderRadius READ borderRadius WRITE setBorderRadius)
@@ -17,8 +17,8 @@ class GlassCardWidget : public QFrame
     Q_PROPERTY(bool showShadow READ showShadow WRITE setShowShadow)
 
 public:
-    explicit GlassCardWidget(QWidget *parent = nullptr);
-    explicit GlassCardWidget(const QString &title, QWidget *parent = nullptr);
+    explicit SoftCardWidget(QWidget *parent = nullptr);
+    explicit SoftCardWidget(const QString &title, QWidget *parent = nullptr);
 
     int borderRadius() const;
     void setBorderRadius(int radius);
@@ -72,4 +72,4 @@ private:
     QWidget *m_contentWidget;
 };
 
-#endif // GLASSCARDWIDGET_H
+#endif // SOFTCARDWIDGET_H

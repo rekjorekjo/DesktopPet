@@ -83,7 +83,7 @@ void ImportPetDialog::setupUi()
     m_directoryEdit->setReadOnly(true);
     m_directoryEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_browseButton = new QPushButton(tr("选择"), this);
-    m_browseButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
+    m_browseButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     dirLayout->addWidget(dirLabel);
     dirLayout->addWidget(m_directoryEdit);
     dirLayout->addWidget(m_browseButton);
@@ -174,9 +174,9 @@ void ImportPetDialog::setupUi()
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     m_cancelButton = new QPushButton(tr("取消"), this);
-    m_cancelButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
+    m_cancelButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     m_confirmButton = new QPushButton(tr("导入"), this);
-    m_confirmButton->setStyleSheet(theme.glassButtonStyleSheet(6, 48));
+    m_confirmButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
     buttonLayout->addWidget(m_cancelButton);
     buttonLayout->addWidget(m_confirmButton);
     mainLayout->addLayout(buttonLayout);

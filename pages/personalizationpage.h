@@ -7,7 +7,7 @@
 #include <QSlider>
 #include <QWidget>
 
-#include "widgets/glasscardwidget.h"
+#include "widgets/softcardwidget.h"
 
 class WheelGuardListWidget;
 class QListWidgetItem;
@@ -44,7 +44,7 @@ private:
     QWidget *m_contentWidget;
     QLabel *m_titleLabel;
 
-    GlassCardWidget *m_appearanceCard;
+    SoftCardWidget *m_appearanceCard;
     QLabel *m_appearanceCardTitle;
     QLabel *m_themeHintLabel;
     QLabel *m_lightThemeLabel;
@@ -52,13 +52,13 @@ private:
     QLabel *m_darkThemeLabel;
     WheelGuardListWidget *m_darkThemeList;
 
-    GlassCardWidget *m_displayCard;
+    SoftCardWidget *m_displayCard;
     QLabel *m_displayCardTitle;
     QLabel *m_opacityLabel;
     QSlider *m_opacitySlider;
     QLabel *m_opacityValueLabel;
 
-    GlassCardWidget *m_startupCard;
+    SoftCardWidget *m_startupCard;
     QLabel *m_startupCardTitle;
     QCheckBox *m_autoStartOnBootCheckBox;
     QCheckBox *m_autoPlayOnLaunchCheckBox;
