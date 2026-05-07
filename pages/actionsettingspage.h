@@ -75,6 +75,7 @@ private slots:
     void onActionLibraryContextMenu(const QPoint &pos);
     void onAddToCategory();
     void onDeleteLibraryAction();
+    void onRenameActionId();
     void onMoveUp();
     void onMoveDown();
     void onRemove();

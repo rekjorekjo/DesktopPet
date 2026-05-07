@@ -24,6 +24,17 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 };
 
+class SidebarContainerWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit SidebarContainerWidget(QWidget *parent = nullptr);
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+};
+
 class SettingsWindow : public QMainWindow
 {
     Q_OBJECT
@@ -50,6 +61,7 @@ private:
 
     SoftGradientBackgroundWidget *m_centralWidget;
     SettingsTitleBar *m_titleBar;
+    SidebarContainerWidget *m_sidebarContainer;
     QListWidget *m_sidebar;
     QStackedWidget *m_stackedWidget;
 

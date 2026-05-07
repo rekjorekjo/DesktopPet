@@ -5,6 +5,7 @@
 #include "utils/gifframeextractor.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDir>
 #include <QFile>
@@ -12,7 +13,6 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
@@ -349,7 +349,7 @@ void NewActionDialog::onBrowseGif()
 
     GifProbeResult probeResult = GifFrameExtractor::probeGif(selectedFile);
     if (!probeResult.success) {
-        QMessageBox::warning(this, tr("提示"), probeResult.errorMessage);
+        SoftMessageBox::warning(this, tr("提示"), probeResult.errorMessage);
         m_detectedFrameCount = 0;
         m_frameCountLabel->setText("0");
         autoFillFromGifFileName(selectedFile);
@@ -389,30 +389,30 @@ bool NewActionDialog::validateInput()
 {
     QString gif = gifPath();
     if (gif.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择 GIF 文件。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("请选择 GIF 文件。"));
         return false;
     }
 
     if (!QFile::exists(gif)) {
-        QMessageBox::warning(this, tr("提示"), tr("GIF 文件不存在。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("GIF 文件不存在。"));
         return false;
     }
 
     QString id = actionId();
     if (id.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
         return false;
     }
 
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     if (!re.match(id).hasMatch()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
         return false;
     }
 
     QString actionDir = PetPaths::actionsDirectory() + "/" + id;
     if (QDir(actionDir).exists()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在或目录已存在，请使用其他 ID。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 已存在或目录已存在，请使用其他 ID。"));
         return false;
     }
 

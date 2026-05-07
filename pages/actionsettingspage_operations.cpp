@@ -5,12 +5,12 @@
 #include "widgets/actionlibrarylistwidget.h"
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actioncategorytabwidget.h"
+#include "widgets/softmessagebox.h"
 
 #include <QAction>
 #include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMenu>
-#include <QMessageBox>
 
 void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
 {
@@ -29,6 +29,9 @@ void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
     connect(addAction, &QAction::triggered, this, &ActionSettingsPage::onAddToCategory);
 
     menu.addSeparator();
+
+    QAction *renameAction = menu.addAction(tr("重命名动作 ID"));
+    connect(renameAction, &QAction::triggered, this, &ActionSettingsPage::onRenameActionId);
 
     QAction *deleteAction = menu.addAction(tr("删除动作"));
     connect(deleteAction, &QAction::triggered, this, &ActionSettingsPage::onDeleteLibraryAction);
@@ -98,21 +101,21 @@ void ActionSettingsPage::onDeleteLibraryAction()
         return;
     }
 
-    QMessageBox::StandardButton reply = QMessageBox::question(
+    SoftMessageBox::StandardButton reply = SoftMessageBox::question(
         this,
         tr("删除动作"),
         tr("确定要删除动作 %1 吗？\n\n动作将从全局动作库中删除，并从所有宠物的播放列表中移除！此操作不可撤销！").arg(actionId),
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No
+        SoftMessageBox::Yes | SoftMessageBox::No,
+        SoftMessageBox::No
     );
 
-    if (reply != QMessageBox::Yes) {
+    if (reply != SoftMessageBox::Yes) {
         return;
     }
 
     ActionLibraryOperationResult result = ActionLibraryService::deleteAction(actionId);
     if (!result.success) {
-        QMessageBox::warning(this, tr("删除动作失败"), result.message);
+        SoftMessageBox::warning(this, tr("删除动作失败"), result.message);
         return;
     }
 
@@ -121,11 +124,72 @@ void ActionSettingsPage::onDeleteLibraryAction()
     refreshCurrentCategoryList();
 
     if (result.warning) {
-        QMessageBox::warning(this, tr("删除动作"), result.message);
+        SoftMessageBox::warning(this, tr("删除动作"), result.message);
         return;
     }
 
-    QMessageBox::information(this, tr("删除动作"), result.message);
+    SoftMessageBox::information(this, tr("删除动作"), result.message);
+}
+
+void ActionSettingsPage::onRenameActionId()
+{
+    QString oldActionId = currentLibraryActionId();
+    if (oldActionId.isEmpty()) {
+        return;
+    }
+
+    bool ok = false;
+    QString newActionId = QInputDialog::getText(
+        this,
+        tr("重命名动作 ID"),
+        tr("请输入新的动作 ID:"),
+        QLineEdit::Normal,
+        oldActionId,
+        &ok
+    );
+
+    if (!ok) {
+        return;
+    }
+
+    newActionId = newActionId.trimmed();
+    if (newActionId.isEmpty()) {
+        SoftMessageBox::warning(this, tr("重命名动作 ID"), tr("动作 ID 不能为空。"));
+        return;
+    }
+
+    if (newActionId == oldActionId) {
+        SoftMessageBox::information(this, tr("重命名动作 ID"), tr("新动作 ID 与原动作 ID 相同，无需修改。"));
+        return;
+    }
+
+    ActionLibraryOperationResult result = ActionLibraryService::renameActionId(oldActionId, newActionId);
+    if (!result.success) {
+        SoftMessageBox::warning(this, tr("重命名动作 ID 失败"), result.message);
+        return;
+    }
+
+    loadGlobalActionLibrary();
+    refreshActionLibraryList();
+
+    for (int i = 0; i < m_actionLibraryList->count(); ++i) {
+        QListWidgetItem *item = m_actionLibraryList->item(i);
+        if (item && item->data(Qt::UserRole).toString() == newActionId) {
+            m_actionLibraryList->setCurrentItem(item);
+            break;
+        }
+    }
+
+    m_playlist.replaceActionReferences(oldActionId, newActionId);
+    refreshCurrentCategoryList();
+    updateActionConfigPanel();
+
+    if (result.warning) {
+        SoftMessageBox::warning(this, tr("重命名动作 ID"), result.message);
+        return;
+    }
+
+    SoftMessageBox::information(this, tr("重命名动作 ID"), result.message);
 }
 
 void ActionSettingsPage::onMoveUp()

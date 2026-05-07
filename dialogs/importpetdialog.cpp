@@ -4,13 +4,13 @@
 #include "theme/thememanager.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDir>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSpinBox>
@@ -227,12 +227,12 @@ void ImportPetDialog::onBrowseDirectory()
     QString playlistPath = selectedDir + "/playlist.json";
 
     if (!QFile::exists(petJsonPath)) {
-        QMessageBox::warning(this, tr("提示"), tr("所选目录缺少 pet.json 文件。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("所选目录缺少 pet.json 文件。"));
         return;
     }
 
     if (!QFile::exists(playlistPath)) {
-        QMessageBox::warning(this, tr("提示"), tr("所选目录缺少 playlist.json 文件。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("所选目录缺少 playlist.json 文件。"));
         return;
     }
 
@@ -251,7 +251,7 @@ void ImportPetDialog::tryLoadPetConfig()
 
     PetBasicInfo info;
     if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-        QMessageBox::warning(this, tr("提示"), tr("无法读取宠物配置。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("无法读取宠物配置。"));
         return;
     }
 
@@ -286,24 +286,24 @@ bool ImportPetDialog::validateInput()
 {
     QString dir = sourceDirectory();
     if (dir.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择宠物目录。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("请选择宠物目录。"));
         return false;
     }
 
     if (!QDir(dir).exists()) {
-        QMessageBox::warning(this, tr("提示"), tr("所选目录不存在。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("所选目录不存在。"));
         return false;
     }
 
     QString id = petId();
     if (id.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("宠物 ID 不能为空。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("宠物 ID 不能为空。"));
         return false;
     }
 
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     if (!re.match(id).hasMatch()) {
-        QMessageBox::warning(this, tr("提示"), tr("宠物 ID 只能包含字母、数字、下划线和短横线。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("宠物 ID 只能包含字母、数字、下划线和短横线。"));
         return false;
     }
 

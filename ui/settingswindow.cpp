@@ -38,10 +38,46 @@ void SoftGradientBackgroundWidget::paintEvent(QPaintEvent *event)
     painter.fillRect(rect(), baseColor);
 }
 
+SidebarContainerWidget::SidebarContainerWidget(QWidget *parent)
+    : QWidget(parent)
+{
+    setObjectName("sidebarContainer");
+    setAttribute(Qt::WA_StyledBackground, false);
+    setAutoFillBackground(false);
+}
+
+void SidebarContainerWidget::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+
+    constexpr int borderRadius = 12;
+
+    QPainterPath path;
+    path.addRoundedRect(rect(), borderRadius, borderRadius);
+    painter.setClipPath(path);
+
+    QColor bgColor(p.sidebarBackground);
+    painter.fillPath(path, bgColor);
+
+    QColor borderColor(p.border);
+    borderColor.setAlpha(120);
+    QPen borderPen(borderColor, 1);
+    painter.setPen(borderPen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(path);
+}
+
 SettingsWindow::SettingsWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_titleBar(nullptr)
+    , m_sidebarContainer(nullptr)
     , m_sidebar(nullptr)
     , m_stackedWidget(nullptr)
     , m_petManagePage(nullptr)
@@ -83,7 +119,7 @@ void SettingsWindow::setupUi()
     setupSidebar();
     setupPages();
 
-    contentLayout->addWidget(m_sidebar);
+    contentLayout->addWidget(m_sidebarContainer);
     contentLayout->addWidget(m_stackedWidget, 1);
 
     rootLayout->addWidget(contentWidget, 1);
@@ -94,8 +130,14 @@ void SettingsWindow::setupUi()
 
 void SettingsWindow::setupSidebar()
 {
-    m_sidebar = new QListWidget(this);
-    m_sidebar->setFixedWidth(200);
+    m_sidebarContainer = new SidebarContainerWidget(this);
+    m_sidebarContainer->setFixedWidth(200);
+
+    QVBoxLayout *containerLayout = new QVBoxLayout(m_sidebarContainer);
+    containerLayout->setContentsMargins(4, 4, 4, 4);
+    containerLayout->setSpacing(0);
+
+    m_sidebar = new QListWidget(m_sidebarContainer);
     m_sidebar->setFocusPolicy(Qt::NoFocus);
     m_sidebar->addItem(tr("宠物管理"));
     m_sidebar->addItem(tr("动作设置"));
@@ -103,7 +145,9 @@ void SettingsWindow::setupSidebar()
     m_sidebar->addItem(tr("个性化"));
     m_sidebar->addItem(tr("关于"));
     m_sidebar->setCurrentRow(0);
-    m_sidebar->setContentsMargins(8, 8, 8, 8);
+    m_sidebar->setStyleSheet("QListWidget { background-color: transparent; border: none; outline: none; }");
+
+    containerLayout->addWidget(m_sidebar);
 }
 
 void SettingsWindow::setupPages()
@@ -171,7 +215,16 @@ void SettingsWindow::applyTheme()
         m_titleBar->applyTheme();
     }
 
-    m_sidebar->setStyleSheet(theme.softSidebarStyleSheet(8, 35));
+    m_sidebarContainer->update();
+
+    ThemePalette p = theme.currentPalette();
+    QString sidebarItemStyle = QString(
+        "QListWidget { background-color: transparent; border: none; outline: none; }"
+        "QListWidget::item { padding: 12px 16px; border: none; color: %1; border-radius: 8px; margin: 2px 4px; }"
+        "QListWidget::item:selected { background-color: %2; color: %3; }"
+        "QListWidget::item:hover { background-color: %4; color: %5; }"
+    ).arg(p.sidebarText, p.sidebarSelectedBg, p.sidebarSelectedText, p.sidebarHoverBg, p.sidebarHoverText);
+    m_sidebar->setStyleSheet(sidebarItemStyle);
 
     m_stackedWidget->setStyleSheet("QStackedWidget { background-color: transparent; }");
 

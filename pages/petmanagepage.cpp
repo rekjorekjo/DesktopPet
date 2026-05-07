@@ -9,13 +9,13 @@
 #include "services/petimportservice.h"
 #include "services/petlibraryservice.h"
 #include "theme/thememanager.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDir>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
 #include <QVBoxLayout>
@@ -557,7 +557,7 @@ void PetManagePage::onCreatePet()
     );
 
     if (!result.success) {
-        QMessageBox::warning(this, tr("新建宠物失败"), result.message);
+        SoftMessageBox::warning(this, tr("新建宠物失败"), result.message);
         return;
     }
 
@@ -567,9 +567,9 @@ void PetManagePage::onCreatePet()
     emit applyConfigRequested();
 
     if (result.warning) {
-        QMessageBox::warning(this, tr("新建宠物"), result.message);
+        SoftMessageBox::warning(this, tr("新建宠物"), result.message);
     } else {
-        QMessageBox::information(this, tr("新建宠物"), result.message);
+        SoftMessageBox::information(this, tr("新建宠物"), result.message);
     }
 }
 
@@ -634,7 +634,7 @@ void PetManagePage::onSwitchToPet()
     }
 
     if (petId == AppSettings::currentPetId()) {
-        QMessageBox::information(this, tr("切换宠物"), tr("已经是当前宠物。"));
+        SoftMessageBox::information(this, tr("切换宠物"), tr("已经是当前宠物。"));
         return;
     }
 
@@ -661,7 +661,7 @@ void PetManagePage::onEditPet()
 
     PetBasicInfo info;
     if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-        QMessageBox::warning(this, tr("编辑宠物"), tr("无法加载宠物配置。"));
+        SoftMessageBox::warning(this, tr("编辑宠物"), tr("无法加载宠物配置。"));
         return;
     }
 
@@ -682,12 +682,12 @@ void PetManagePage::onEditPet()
 
     if (newPetId != oldPetId) {
         if (QDir(newPetDir).exists()) {
-            QMessageBox::warning(this, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
+            SoftMessageBox::warning(this, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
             return;
         }
 
         if (!QDir().rename(oldPetDir, newPetDir)) {
-            QMessageBox::warning(this, tr("编辑宠物"), tr("重命名宠物目录失败。"));
+            SoftMessageBox::warning(this, tr("编辑宠物"), tr("重命名宠物目录失败。"));
             return;
         }
     }
@@ -699,7 +699,7 @@ void PetManagePage::onEditPet()
 
     QString targetPetJsonPath = newPetDir + "/pet.json";
     if (!PetConfigManager::savePetInfoJson(targetPetJsonPath, info)) {
-        QMessageBox::warning(this, tr("编辑宠物"), tr("保存宠物配置失败。"));
+        SoftMessageBox::warning(this, tr("编辑宠物"), tr("保存宠物配置失败。"));
         return;
     }
 
@@ -710,7 +710,7 @@ void PetManagePage::onEditPet()
     }
 
     refreshPetList();
-    QMessageBox::information(this, tr("编辑宠物"), tr("宠物信息已更新。"));
+    SoftMessageBox::information(this, tr("编辑宠物"), tr("宠物信息已更新。"));
 }
 
 void PetManagePage::onDisablePet()
@@ -725,20 +725,21 @@ void PetManagePage::onDisablePet()
         return;
     }
 
-    QMessageBox::StandardButton reply = QMessageBox::question(
+    SoftMessageBox::StandardButton reply = SoftMessageBox::question(
         this,
         tr("移除宠物"),
         tr("确定要移除宠物 \"%1\" 吗？\n宠物文件夹不会被删除，但它会从宠物列表隐藏。").arg(petId),
-        QMessageBox::Yes | QMessageBox::No);
+        SoftMessageBox::Yes | SoftMessageBox::No,
+        SoftMessageBox::No);
 
-    if (reply != QMessageBox::Yes) {
+    if (reply != SoftMessageBox::Yes) {
         return;
     }
 
     PetLibraryOperationResult result = PetLibraryService::disablePet(petId);
 
     if (!result.success) {
-        QMessageBox::warning(this, tr("移除宠物"), result.message);
+        SoftMessageBox::warning(this, tr("移除宠物"), result.message);
         return;
     }
 
@@ -750,7 +751,7 @@ void PetManagePage::onDisablePet()
     loadPetInfo();
     emit applyConfigRequested();
 
-    QMessageBox::information(this, tr("移除宠物"), result.message);
+    SoftMessageBox::information(this, tr("移除宠物"), result.message);
 }
 
 void PetManagePage::onDeletePet()
@@ -765,20 +766,21 @@ void PetManagePage::onDeletePet()
         return;
     }
 
-    QMessageBox::StandardButton reply = QMessageBox::question(
+    SoftMessageBox::StandardButton reply = SoftMessageBox::question(
         this,
         tr("删除宠物"),
         tr("确定要删除宠物 \"%1\" 吗？\n该宠物的配置目录会被删除！此操作不可撤销！").arg(petId),
-        QMessageBox::Yes | QMessageBox::No);
+        SoftMessageBox::Yes | SoftMessageBox::No,
+        SoftMessageBox::No);
 
-    if (reply != QMessageBox::Yes) {
+    if (reply != SoftMessageBox::Yes) {
         return;
     }
 
     PetLibraryOperationResult result = PetLibraryService::deletePet(petId);
 
     if (!result.success) {
-        QMessageBox::warning(this, tr("删除宠物"), result.message);
+        SoftMessageBox::warning(this, tr("删除宠物"), result.message);
         return;
     }
 
@@ -790,7 +792,7 @@ void PetManagePage::onDeletePet()
     loadPetInfo();
     emit applyConfigRequested();
 
-    QMessageBox::information(this, tr("删除宠物"), result.message);
+    SoftMessageBox::information(this, tr("删除宠物"), result.message);
 }
 
 QString PetManagePage::firstEnabledPetId() const
@@ -830,7 +832,7 @@ void PetManagePage::onImportPet()
     );
 
     if (!result.success) {
-        QMessageBox::warning(this, tr("导入宠物"), result.message);
+        SoftMessageBox::warning(this, tr("导入宠物"), result.message);
         return;
     }
 
@@ -840,8 +842,8 @@ void PetManagePage::onImportPet()
     emit applyConfigRequested();
 
     if (result.warning) {
-        QMessageBox::warning(this, tr("导入宠物"), result.message);
+        SoftMessageBox::warning(this, tr("导入宠物"), result.message);
     } else {
-        QMessageBox::information(this, tr("导入宠物"), result.message);
+        SoftMessageBox::information(this, tr("导入宠物"), result.message);
     }
 }

@@ -4,12 +4,12 @@
 #include "theme/thememanager.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDir>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
@@ -339,13 +339,13 @@ void ImportActionDialog::onBrowseFolder()
 
     QDir selectedDir(selectedFolder);
     if (!selectedDir.exists()) {
-        QMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
         return;
     }
 
     int frameCount = scanFrameCount(selectedFolder);
     if (frameCount == 0) {
-        QMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
         return;
     }
 
@@ -365,29 +365,29 @@ bool ImportActionDialog::validateInput()
 {
     QString id = actionId();
     if (id.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
         return false;
     }
 
     if (!validateActionId(id)) {
-        QMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
         return false;
     }
 
     QString folder = actionFolderPath();
     if (folder.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择动作文件夹。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("请选择动作文件夹。"));
         return false;
     }
 
     if (!QDir(folder).exists()) {
-        QMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
         return false;
     }
 
     int frameCount = scanFrameCount(folder);
     if (frameCount == 0) {
-        QMessageBox::warning(this, tr("提示"), tr("文件夹中没有找到有效的图片帧 (png/jpg/jpeg/webp)。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有找到有效的图片帧 (png/jpg/jpeg/webp)。"));
         return false;
     }
 

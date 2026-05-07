@@ -3,11 +3,11 @@
 #include "theme/thememanager.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
+#include "widgets/softmessagebox.h"
 
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSpinBox>
@@ -210,14 +210,14 @@ bool NewPetDialog::validateInput()
 {
     QString id = petId();
     if (id.isEmpty()) {
-        QMessageBox::warning(this, tr("输入错误"), tr("宠物 ID 不能为空。"));
+        SoftMessageBox::warning(this, tr("输入错误"), tr("宠物 ID 不能为空。"));
         m_petIdEdit->setFocus();
         return false;
     }
 
     QRegularExpression idPattern("^[a-zA-Z0-9_-]+$");
     if (!idPattern.match(id).hasMatch()) {
-        QMessageBox::warning(this, tr("输入错误"), tr("宠物 ID 只能包含字母、数字、下划线和短横线。"));
+        SoftMessageBox::warning(this, tr("输入错误"), tr("宠物 ID 只能包含字母、数字、下划线和短横线。"));
         m_petIdEdit->setFocus();
         m_petIdEdit->selectAll();
         return false;

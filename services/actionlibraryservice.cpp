@@ -6,7 +6,10 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QObject>
+#include <QRegularExpression>
 
 ActionLibraryOperationResult ActionLibraryService::disableAction(
     const QString &petDir,
@@ -167,4 +170,177 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
     Q_UNUSED(playlist);
 
     return deleteAction(actionId);
+}
+
+ActionLibraryOperationResult ActionLibraryService::renameActionId(
+    const QString &oldActionId,
+    const QString &newActionId)
+{
+    ActionLibraryOperationResult result;
+    result.success = false;
+    result.warning = false;
+
+    QString trimmedOld = oldActionId.trimmed();
+    QString trimmedNew = newActionId.trimmed();
+
+    if (trimmedOld.isEmpty()) {
+        result.message = QObject::tr("原动作 ID 不能为空。");
+        return result;
+    }
+
+    if (trimmedNew.isEmpty()) {
+        result.message = QObject::tr("新动作 ID 不能为空。");
+        return result;
+    }
+
+    if (trimmedOld == "." || trimmedOld == ".." || trimmedOld.contains('/') || trimmedOld.contains('\\')) {
+        result.message = QObject::tr("原动作 ID 无效。");
+        return result;
+    }
+
+    if (trimmedNew == "." || trimmedNew == ".." || trimmedNew.contains('/') || trimmedNew.contains('\\')) {
+        result.message = QObject::tr("新动作 ID 不能包含 / 或 \\。");
+        return result;
+    }
+
+    static const QRegularExpression validIdPattern("^[a-zA-Z0-9_-]+$");
+    if (!validIdPattern.match(trimmedNew).hasMatch()) {
+        result.message = QObject::tr("新动作 ID 只能包含字母、数字、下划线和短横线。");
+        return result;
+    }
+
+    if (trimmedOld == trimmedNew) {
+        result.message = QObject::tr("新动作 ID 与原动作 ID 相同，无需修改。");
+        return result;
+    }
+
+    const QString actionsBaseDir = PetPaths::actionsDirectory();
+    const QString oldDirPath = QDir(actionsBaseDir).filePath(trimmedOld);
+    const QString newDirPath = QDir(actionsBaseDir).filePath(trimmedNew);
+
+    QDir oldDir(oldDirPath);
+    if (!oldDir.exists()) {
+        result.message = QObject::tr("原动作目录不存在。");
+        return result;
+    }
+
+    QDir newDir(newDirPath);
+    if (newDir.exists()) {
+        result.message = QObject::tr("目标动作 ID 已存在，请选择其他名称。");
+        return result;
+    }
+
+    const QString canonicalOldDir = oldDir.canonicalPath();
+    const QString canonicalActionsDir = QDir(actionsBaseDir).canonicalPath();
+
+    if (canonicalOldDir.isEmpty() || canonicalActionsDir.isEmpty()) {
+        result.message = QObject::tr("无法验证动作目录路径。");
+        return result;
+    }
+
+#ifdef Q_OS_WIN
+    const QString oldDirCmp = canonicalOldDir.toLower();
+    const QString actionsDirCmp = canonicalActionsDir.toLower();
+#else
+    const QString oldDirCmp = canonicalOldDir;
+    const QString actionsDirCmp = canonicalActionsDir;
+#endif
+
+    if (oldDirCmp == actionsDirCmp) {
+        result.message = QObject::tr("不允许重命名动作库根目录。");
+        return result;
+    }
+
+    if (!oldDirCmp.startsWith(actionsDirCmp + "/")) {
+        result.message = QObject::tr("动作目录不在动作库内。");
+        return result;
+    }
+
+    if (!oldDir.rename(oldDirPath, newDirPath)) {
+        result.message = QObject::tr("重命名动作目录失败。");
+        return result;
+    }
+
+    QString actionJsonPath = QDir(newDirPath).filePath("action.json");
+    if (QFile::exists(actionJsonPath)) {
+        QFile jsonFile(actionJsonPath);
+        if (jsonFile.open(QIODevice::ReadWrite)) {
+            QByteArray jsonData = jsonFile.readAll();
+            QJsonParseError parseError;
+            QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+
+            if (parseError.error == QJsonParseError::NoError && doc.isObject()) {
+                QJsonObject obj = doc.object();
+                obj["id"] = trimmedNew;
+
+                QString currentName = obj.value("name").toString().trimmed();
+                if (currentName.isEmpty() || currentName == trimmedOld) {
+                    obj["name"] = trimmedNew;
+                }
+
+                jsonFile.seek(0);
+                jsonFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
+                jsonFile.resize(jsonFile.pos());
+            } else {
+                qWarning() << "Failed to parse action.json during rename:" << actionJsonPath;
+                result.warning = true;
+            }
+            jsonFile.close();
+        } else {
+            qWarning() << "Failed to open action.json for writing during rename:" << actionJsonPath;
+            result.warning = true;
+        }
+    }
+
+    QDir petsRoot(PetPaths::petsDirectory());
+    if (petsRoot.exists()) {
+        const QStringList petFolders = petsRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &petId : petFolders) {
+            const QString playlistPath = petsRoot.filePath(petId + "/playlist.json");
+            if (!QFile::exists(playlistPath)) {
+                continue;
+            }
+
+            PetPlaylist playlist;
+            if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
+                qWarning() << "Failed to load playlist while renaming global action:"
+                           << playlistPath << "oldActionId:" << trimmedOld;
+                ++result.failedPlaylistCount;
+                continue;
+            }
+
+            const int replacedCount = playlist.replaceActionReferences(trimmedOld, trimmedNew);
+            if (replacedCount <= 0) {
+                continue;
+            }
+
+            if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+                qWarning() << "Failed to save playlist while renaming global action:"
+                           << playlistPath << "oldActionId:" << trimmedOld;
+                ++result.failedPlaylistCount;
+                continue;
+            }
+
+            result.replacedReferenceCount += replacedCount;
+            ++result.cleanedPetCount;
+        }
+    }
+
+    result.success = true;
+    result.warning = result.failedPlaylistCount > 0;
+
+    if (result.warning) {
+        result.message = QObject::tr("动作 ID 已重命名为 %1，已更新 %2 个引用，%3 个配置更新失败。")
+            .arg(trimmedNew)
+            .arg(result.replacedReferenceCount)
+            .arg(result.failedPlaylistCount);
+    } else if (result.replacedReferenceCount > 0) {
+        result.message = QObject::tr("动作 ID 已重命名为 %1，已更新 %2 个引用。")
+            .arg(trimmedNew)
+            .arg(result.replacedReferenceCount);
+    } else {
+        result.message = QObject::tr("动作 ID 已重命名为 %1。").arg(trimmedNew);
+    }
+
+    return result;
 }

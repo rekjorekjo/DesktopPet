@@ -14,8 +14,7 @@ void ActionSettingsPage::refreshActionLibraryList()
     m_actionLibraryList->clear();
 
     for (const PetAction &action : m_actionLibrary) {
-        QString displayText = QString("%1 (%2)").arg(action.name, action.id);
-        QListWidgetItem *item = new QListWidgetItem(displayText, m_actionLibraryList);
+        QListWidgetItem *item = new QListWidgetItem(action.id, m_actionLibraryList);
         item->setData(Qt::UserRole, action.id);
     }
 }
@@ -90,6 +89,12 @@ QString ActionSettingsPage::displayNameForRef(const PetActionRef &ref) const
 QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
 {
     QString name = displayNameForRef(ref);
+    QString trimmedName = name.trimmed();
+    QString actionId = ref.actionId;
+
+    bool showId = !trimmedName.isEmpty() && trimmedName != actionId;
+    QString namePart = trimmedName.isEmpty() ? actionId : trimmedName;
+
     int tabIndex = m_categoryTabs->currentIndex();
 
     QString repeatText;
@@ -106,11 +111,23 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
         } else {
             triggerText = tr("每 %1 秒").arg(ref.intervalSeconds);
         }
-        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, triggerText, repeatText);
+        if (showId) {
+            return QString("%1 (%2) - %3 / %4").arg(namePart, actionId, triggerText, repeatText);
+        } else {
+            return QString("%1 - %2 / %3").arg(namePart, triggerText, repeatText);
+        }
     } else if (tabIndex == 3) {
-        return QString("%1 (%2) - %3 / %4").arg(name, ref.actionId, ref.emotion, repeatText);
+        if (showId) {
+            return QString("%1 (%2) - %3 / %4").arg(namePart, actionId, ref.emotion, repeatText);
+        } else {
+            return QString("%1 - %2 / %3").arg(namePart, ref.emotion, repeatText);
+        }
     } else {
-        return QString("%1 (%2) - %3").arg(name, ref.actionId, repeatText);
+        if (showId) {
+            return QString("%1 (%2) - %3").arg(namePart, actionId, repeatText);
+        } else {
+            return QString("%1 - %2").arg(namePart, repeatText);
+        }
     }
 }
 

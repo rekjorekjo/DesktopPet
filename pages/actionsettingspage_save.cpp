@@ -2,9 +2,9 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDir>
-#include <QMessageBox>
 
 bool ActionSettingsPage::saveCurrentPlaylist()
 {
@@ -21,28 +21,28 @@ bool ActionSettingsPage::saveCurrentPlaylist()
 void ActionSettingsPage::onSaveConfig()
 {
     if (!m_loadedSuccessfully) {
-        QMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
+        SoftMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
         return;
     }
 
     if (saveCurrentPlaylist()) {
-        QMessageBox::information(this, tr("保存成功"), tr("配置已保存"));
+        SoftMessageBox::information(this, tr("保存成功"), tr("配置已保存"));
     } else {
-        QMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
+        SoftMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
     }
 }
 
 void ActionSettingsPage::onSaveAndApplyConfig()
 {
     if (!m_loadedSuccessfully) {
-        QMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
+        SoftMessageBox::warning(this, tr("保存失败"), tr("宠物配置未正确加载，无法保存。"));
         return;
     }
 
     if (saveCurrentPlaylist()) {
-        QMessageBox::information(this, tr("保存成功"), tr("配置已保存并应用"));
+        SoftMessageBox::information(this, tr("保存成功"), tr("配置已保存并应用"));
         emit applyConfigRequested();
     } else {
-        QMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
+        SoftMessageBox::warning(this, tr("保存失败"), tr("配置保存失败，请检查文件权限。"));
     }
 }

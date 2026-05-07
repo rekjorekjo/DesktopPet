@@ -76,6 +76,7 @@ public:
     QMap<QString, QList<PetActionRef>> allEmotionActions() const;
 
     int removeActionReferences(const QString &actionId);
+    int replaceActionReferences(const QString &oldActionId, const QString &newActionId);
 
 private:
     bool moveActionUp(QList<PetActionRef> &list, int index);

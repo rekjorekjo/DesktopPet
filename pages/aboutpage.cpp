@@ -4,13 +4,13 @@
 #include "theme/thememanager.h"
 #include "utils/imageutils.h"
 #include "utils/updatemanager.h"
+#include "widgets/softmessagebox.h"
 
 #include <QDebug>
 #include <QDesktopServices>
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QSizePolicy>
 #include <QUrl>
@@ -244,13 +244,14 @@ void AboutPage::onUpdateAvailable(const QString &latestVersion, const QString &r
     m_checkUpdateButton->setEnabled(true);
     m_updateStatusLabel->setText(tr("发现新版本：%1").arg(latestVersion));
 
-    QMessageBox::StandardButton reply = QMessageBox::question(
+    SoftMessageBox::StandardButton reply = SoftMessageBox::question(
         this,
         tr("发现新版本"),
         tr("发现新版本 %1，是否打开下载页面？").arg(latestVersion),
-        QMessageBox::Yes | QMessageBox::No);
+        SoftMessageBox::Yes | SoftMessageBox::No,
+        SoftMessageBox::No);
 
-    if (reply == QMessageBox::Yes) {
+    if (reply == SoftMessageBox::Yes) {
         QDesktopServices::openUrl(QUrl(releaseUrl));
     }
 }

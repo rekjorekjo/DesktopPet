@@ -1,11 +1,11 @@
 #include "apiconfigpage.h"
 
 #include "theme/thememanager.h"
+#include "widgets/softmessagebox.h"
 
 #include <QFont>
 #include <QHBoxLayout>
 #include <QInputDialog>
-#include <QMessageBox>
 #include <QVBoxLayout>
 
 ApiConfigPage::ApiConfigPage(QWidget *parent)
@@ -267,7 +267,7 @@ void ApiConfigPage::loadApiConfigToEditor(const QString &profileName)
 void ApiConfigPage::saveCurrentApiConfig()
 {
     if (m_currentApiProfile.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("请先新增或选择一个配置。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("请先新增或选择一个配置。"));
         return;
     }
 
@@ -296,7 +296,7 @@ void ApiConfigPage::onAddApiProfile()
     profileName = profileName.trimmed();
 
     if (m_apiConfigs.contains(profileName)) {
-        QMessageBox::warning(this, tr("提示"), tr("配置名称已存在。"));
+        SoftMessageBox::warning(this, tr("提示"), tr("配置名称已存在。"));
         return;
     }
 
@@ -309,7 +309,7 @@ void ApiConfigPage::onRemoveApiProfile()
 {
     QListWidgetItem *currentItem = m_apiProfileList->currentItem();
     if (!currentItem) {
-        QMessageBox::information(this, tr("提示"), tr("请先选择一个配置。"));
+        SoftMessageBox::information(this, tr("提示"), tr("请先选择一个配置。"));
         return;
     }
 
@@ -343,6 +343,6 @@ void ApiConfigPage::onSaveApiConfigClicked()
 {
     saveCurrentApiConfig();
     if (!m_currentApiProfile.isEmpty()) {
-        QMessageBox::information(this, tr("提示"), tr("配置已保存：%1").arg(m_currentApiProfile));
+        SoftMessageBox::information(this, tr("提示"), tr("配置已保存：%1").arg(m_currentApiProfile));
     }
 }

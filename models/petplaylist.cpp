@@ -341,3 +341,53 @@ int PetPlaylist::removeActionReferences(const QString &actionId)
 
     return count;
 }
+
+int PetPlaylist::replaceActionReferences(const QString &oldActionId, const QString &newActionId)
+{
+    int count = 0;
+
+    for (int i = 0; i < m_idleActions.size(); ++i) {
+        if (m_idleActions[i].actionId == oldActionId) {
+            m_idleActions[i].actionId = newActionId;
+            if (m_idleActions[i].displayName.trimmed() == oldActionId) {
+                m_idleActions[i].displayName = newActionId;
+            }
+            ++count;
+        }
+    }
+
+    for (int i = 0; i < m_randomActions.size(); ++i) {
+        if (m_randomActions[i].actionId == oldActionId) {
+            m_randomActions[i].actionId = newActionId;
+            if (m_randomActions[i].displayName.trimmed() == oldActionId) {
+                m_randomActions[i].displayName = newActionId;
+            }
+            ++count;
+        }
+    }
+
+    for (int i = 0; i < m_timedActions.size(); ++i) {
+        if (m_timedActions[i].actionId == oldActionId) {
+            m_timedActions[i].actionId = newActionId;
+            if (m_timedActions[i].displayName.trimmed() == oldActionId) {
+                m_timedActions[i].displayName = newActionId;
+            }
+            ++count;
+        }
+    }
+
+    for (const QString &emotion : m_emotionActions.keys()) {
+        QList<PetActionRef> &list = m_emotionActions[emotion];
+        for (int i = 0; i < list.size(); ++i) {
+            if (list[i].actionId == oldActionId) {
+                list[i].actionId = newActionId;
+                if (list[i].displayName.trimmed() == oldActionId) {
+                    list[i].displayName = newActionId;
+                }
+                ++count;
+            }
+        }
+    }
+
+    return count;
+}

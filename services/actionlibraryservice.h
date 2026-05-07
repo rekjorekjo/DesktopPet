@@ -16,6 +16,7 @@ struct ActionLibraryOperationResult
     int cleanedPetCount = 0;
     int failedPlaylistCount = 0;
     bool actionDirectoryDeleted = false;
+    int replacedReferenceCount = 0;
 };
 
 class ActionLibraryService
@@ -37,6 +38,11 @@ public:
         QList<PetAction> actions,
         PetPlaylist playlist,
         const QString &actionId
+    );
+
+    static ActionLibraryOperationResult renameActionId(
+        const QString &oldActionId,
+        const QString &newActionId
     );
 };
 

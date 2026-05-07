@@ -6,9 +6,9 @@
 #include "services/actionimportservice.h"
 #include "services/actionimportworker.h"
 #include "widgets/actionlibrarylistwidget.h"
+#include "widgets/softmessagebox.h"
 
 #include <QApplication>
-#include <QMessageBox>
 #include <QThread>
 
 void ActionSettingsPage::onNewAction()
@@ -88,11 +88,11 @@ void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportF
         m_actionLibraryList->setEnabled(true);
 
         if (!result.success) {
-            QMessageBox::warning(this, tr("导入动作失败"), result.message);
+            SoftMessageBox::warning(this, tr("导入动作失败"), result.message);
         } else if (result.warning) {
-            QMessageBox::warning(this, tr("提示"), result.message);
+            SoftMessageBox::warning(this, tr("提示"), result.message);
         } else {
-            QMessageBox::information(this, tr("提示"), result.message);
+            SoftMessageBox::information(this, tr("提示"), result.message);
         }
 
         if (result.success) {
@@ -142,11 +142,11 @@ void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifT
         m_actionLibraryList->setEnabled(true);
 
         if (!result.success) {
-            QMessageBox::warning(this, tr("新建动作失败"), result.message);
+            SoftMessageBox::warning(this, tr("新建动作失败"), result.message);
         } else if (result.warning) {
-            QMessageBox::warning(this, tr("新建动作"), result.message);
+            SoftMessageBox::warning(this, tr("新建动作"), result.message);
         } else {
-            QMessageBox::information(this, tr("新建动作"), result.message);
+            SoftMessageBox::information(this, tr("新建动作"), result.message);
         }
 
         if (result.success) {
