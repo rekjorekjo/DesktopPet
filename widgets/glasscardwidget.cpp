@@ -9,10 +9,10 @@
 GlassCardWidget::GlassCardWidget(QWidget *parent)
     : QFrame(parent)
     , m_borderRadius(12)
-    , m_backgroundOpacity(50)
-    , m_highlightOpacity(45)
-    , m_shadowOpacity(35)
-    , m_borderOpacity(90)
+    , m_backgroundOpacity(35)
+    , m_highlightOpacity(25)
+    , m_shadowOpacity(20)
+    , m_borderOpacity(50)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_contentWidget(nullptr)
@@ -23,10 +23,10 @@ GlassCardWidget::GlassCardWidget(QWidget *parent)
 GlassCardWidget::GlassCardWidget(const QString &title, QWidget *parent)
     : QFrame(parent)
     , m_borderRadius(12)
-    , m_backgroundOpacity(50)
-    , m_highlightOpacity(45)
-    , m_shadowOpacity(35)
-    , m_borderOpacity(90)
+    , m_backgroundOpacity(35)
+    , m_highlightOpacity(25)
+    , m_shadowOpacity(20)
+    , m_borderOpacity(50)
     , m_showHighlight(true)
     , m_showShadow(true)
     , m_title(title)
@@ -262,21 +262,23 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
         return;
     }
 
-    int shadowOffset = 3;
+    int shadowOffset = 2;
     QRect contentRect = rect().adjusted(shadowOffset, shadowOffset, -shadowOffset, -shadowOffset);
 
     if (m_showShadow) {
-        QRect shadowRect = rect().adjusted(2, 2, -2, -2);
+        QRect shadowRect = rect().adjusted(1, 1, -1, -1);
         QPainterPath shadowPath = createRoundedRectPath(shadowRect, m_borderRadius);
         QColor shadowColor(p.glassShadow);
-        shadowColor.setAlpha(theme.adjustedGlassOpacity(m_shadowOpacity));
+        int shadowAlpha = qMin(theme.adjustedGlassOpacity(m_shadowOpacity), 25);
+        shadowColor.setAlpha(shadowAlpha);
         painter.fillPath(shadowPath, shadowColor);
     }
 
     QPainterPath bgPath = createRoundedRectPath(contentRect, m_borderRadius);
 
     QColor bgColor(p.glassBackground);
-    bgColor.setAlpha(theme.adjustedGlassOpacity(m_backgroundOpacity));
+    int bgAlpha = qMin(theme.adjustedGlassOpacity(m_backgroundOpacity), 45);
+    bgColor.setAlpha(bgAlpha);
     painter.fillPath(bgPath, bgColor);
 
     if (m_showHighlight) {
@@ -285,11 +287,12 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
 
         QLinearGradient highlightGradient(
             contentRect.topLeft(),
-            contentRect.topLeft() + QPointF(0, contentRect.height() * 0.5)
+            contentRect.topLeft() + QPointF(0, contentRect.height() * 0.4)
         );
 
         QColor hlTopColor(p.glassHighlight);
-        hlTopColor.setAlpha(theme.adjustedGlassOpacity(m_highlightOpacity));
+        int hlAlpha = qMin(theme.adjustedGlassOpacity(m_highlightOpacity), 30);
+        hlTopColor.setAlpha(hlAlpha);
         QColor hlBottomColor(p.glassHighlight);
         hlBottomColor.setAlpha(0);
 
@@ -298,11 +301,11 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
 
         painter.fillPath(bgPath, highlightGradient);
 
-        QRect topHighlightRect = contentRect.adjusted(2, 1, -2, -contentRect.height() + 3);
-        QPainterPath topHighlightPath = createRoundedRectPath(topHighlightRect, m_borderRadius - 1);
+        QRect topHighlightRect = contentRect.adjusted(4, 1, -4, -contentRect.height() + 2);
+        QPainterPath topHighlightPath = createRoundedRectPath(topHighlightRect, m_borderRadius - 2);
         QColor topLineColor(p.glassHighlight);
-        topLineColor.setAlpha(theme.adjustedGlassOpacity(m_highlightOpacity) * 2 / 3);
-        QPen topLinePen(topLineColor, 1.5);
+        topLineColor.setAlpha(qMin(hlAlpha * 2 / 3, 20));
+        QPen topLinePen(topLineColor, 1);
         painter.setPen(topLinePen);
         painter.drawPath(topHighlightPath);
 
@@ -310,7 +313,8 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
     }
 
     QColor borderColor(p.glassBorder);
-    borderColor.setAlpha(theme.adjustedGlassOpacity(m_borderOpacity));
+    int borderAlpha = qMin(theme.adjustedGlassOpacity(m_borderOpacity), 40);
+    borderColor.setAlpha(borderAlpha);
     QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
@@ -318,7 +322,7 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
 
     if (m_showHighlight) {
         QColor topBorderColor(p.glassHighlight);
-        topBorderColor.setAlpha(theme.adjustedGlassOpacity(m_borderOpacity) * 2 / 3);
+        topBorderColor.setAlpha(qMin(borderAlpha * 3 / 4, 30));
         QPen topBorderPen(topBorderColor, 1);
 
         QRectF cr = contentRect;

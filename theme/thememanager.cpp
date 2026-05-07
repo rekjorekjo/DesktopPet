@@ -1150,23 +1150,27 @@ QString ThemeManager::glassCardStyleSheet(int borderRadius, int opacity) const
     int hlG = extractColorComponent(p.glassHighlight, 1);
     int hlB = extractColorComponent(p.glassHighlight, 2);
 
+    int bgAlpha = qMin(opacity, 80);
+    int borderAlpha = qMin(opacity / 2 + 30, 60);
+    int hlBorderAlpha = qMin(opacity / 3 + 20, 45);
+
     return QString(
         "QFrame#glassCard {"
         "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, 90);"
-        "  border-top-color: rgba(%8, %9, %10, 60);"
-        "  border-radius: %11px;"
+        "  border: 1px solid rgba(%5, %6, %7, %8);"
+        "  border-top-color: rgba(%9, %10, %11, %12);"
+        "  border-radius: %13px;"
         "}"
         "QFrame#glassCard:hover {"
-        "  background-color: rgba(%1, %2, %3, %12);"
-        "  border-color: rgba(%8, %9, %10, 50);"
+        "  background-color: rgba(%1, %2, %3, %14);"
+        "  border-color: rgba(%9, %10, %11, 35);"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
-    .arg(borderR).arg(borderG).arg(borderB)
-    .arg(hlR).arg(hlG).arg(hlB)
+    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
+    .arg(borderR).arg(borderG).arg(borderB).arg(borderAlpha)
+    .arg(hlR).arg(hlG).arg(hlB).arg(hlBorderAlpha)
     .arg(borderRadius)
-    .arg(qMin(opacity + 12, 255));
+    .arg(qMin(bgAlpha + 15, 100));
 }
 
 QString ThemeManager::glassPanelStyleSheet(int borderRadius, int opacity) const
@@ -1204,17 +1208,21 @@ QString ThemeManager::glassPanelStyleSheet(int borderRadius, int opacity) const
     int hlG = extractColorComponent(p.glassHighlight, 1);
     int hlB = extractColorComponent(p.glassHighlight, 2);
 
+    int bgAlpha = qMin(opacity, 70);
+    int borderAlpha = qMin(opacity / 2 + 25, 50);
+    int hlBorderAlpha = qMin(opacity / 3 + 15, 35);
+
     return QString(
         "QFrame#glassPanel {"
         "  background-color: rgba(%1, %2, %3, %4);"
-        "  border: 1px solid rgba(%5, %6, %7, 70);"
-        "  border-top-color: rgba(%8, %9, %10, 40);"
-        "  border-radius: %11px;"
+        "  border: 1px solid rgba(%5, %6, %7, %8);"
+        "  border-top-color: rgba(%9, %10, %11, %12);"
+        "  border-radius: %13px;"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
-    .arg(borderR).arg(borderG).arg(borderB)
-    .arg(hlR).arg(hlG).arg(hlB)
+    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
+    .arg(borderR).arg(borderG).arg(borderB).arg(borderAlpha)
+    .arg(hlR).arg(hlG).arg(hlB).arg(hlBorderAlpha)
     .arg(borderRadius);
 }
 
@@ -1237,39 +1245,42 @@ QString ThemeManager::glassButtonStyleSheet(int borderRadius, int opacity) const
     int hlG = extractColorComponent(p.glassHighlight, 1);
     int hlB = extractColorComponent(p.glassHighlight, 2);
 
+    int bgAlpha = qMin(opacity, 65);
+    int hoverAlpha = qMin(opacity + 20, 85);
+    int pressedAlpha = qMax(opacity - 15, 40);
+
     return QString(
         "QPushButton {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 110);"
-        "  border-top-color: rgba(%9, %10, %11, 50);"
+        "  border: 1px solid rgba(%6, %7, %8, 60);"
+        "  border-top-color: rgba(%9, %10, %11, 35);"
         "  border-radius: %12px;"
         "  padding: 8px 16px;"
         "}"
         "QPushButton:hover {"
         "  background-color: rgba(%9, %10, %11, %13);"
-        "  border-color: rgba(%9, %10, %11, 70);"
+        "  border-color: rgba(%9, %10, %11, 50);"
         "}"
         "QPushButton:pressed {"
         "  background-color: rgba(%1, %2, %3, %14);"
-        "  border-color: rgba(%6, %7, %8, 140);"
+        "  border-color: rgba(%6, %7, %8, 80);"
         "  padding-top: 9px;"
         "  padding-bottom: 7px;"
         "}"
         "QPushButton:disabled {"
-        "  background-color: rgba(%1, %2, %3, %15);"
-        "  color: %16;"
-        "  border-color: rgba(%6, %7, %8, 50);"
+        "  background-color: rgba(%1, %2, %3, 30);"
+        "  color: %15;"
+        "  border-color: rgba(%6, %7, %8, 35);"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
     .arg(p.glassTextPrimary)
     .arg(borderR).arg(borderG).arg(borderB)
     .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius)
-    .arg(qMin(opacity + 15, 255))
-    .arg(qMin(opacity + 25, 255))
-    .arg(qMax(opacity - 10, 20))
+    .arg(hoverAlpha)
+    .arg(pressedAlpha)
     .arg(p.disabledText);
 }
 
@@ -1292,41 +1303,44 @@ QString ThemeManager::glassSecondaryButtonStyleSheet(int borderRadius, int opaci
     int hlG = extractColorComponent(p.glassHighlight, 1);
     int hlB = extractColorComponent(p.glassHighlight, 2);
 
+    int bgAlpha = qMin(opacity, 50);
+    int hoverAlpha = qMin(opacity + 15, 70);
+    int pressedAlpha = qMax(opacity - 10, 30);
+
     return QString(
         "QPushButton {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 72);"
-        "  border-top-color: rgba(%9, %10, %11, 34);"
+        "  border: 1px solid rgba(%6, %7, %8, 45);"
+        "  border-top-color: rgba(%9, %10, %11, 25);"
         "  border-radius: %12px;"
         "  padding: 8px 16px;"
         "}"
         "QPushButton:hover {"
         "  background-color: rgba(%9, %10, %11, %13);"
         "  color: %14;"
-        "  border-color: rgba(%9, %10, %11, 56);"
+        "  border-color: rgba(%9, %10, %11, 40);"
         "}"
         "QPushButton:pressed {"
         "  background-color: rgba(%1, %2, %3, %15);"
-        "  border-color: rgba(%6, %7, %8, 108);"
+        "  border-color: rgba(%6, %7, %8, 60);"
         "  padding-top: 9px;"
         "  padding-bottom: 7px;"
         "}"
         "QPushButton:disabled {"
-        "  background-color: rgba(%1, %2, %3, %16);"
-        "  color: %17;"
-        "  border-color: rgba(%6, %7, %8, 42);"
+        "  background-color: rgba(%1, %2, %3, 25);"
+        "  color: %16;"
+        "  border-color: rgba(%6, %7, %8, 30);"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
     .arg(p.glassTextSecondary)
     .arg(borderR).arg(borderG).arg(borderB)
     .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius)
-    .arg(qMin(opacity + 12, 255))
+    .arg(hoverAlpha)
     .arg(p.glassTextPrimary)
-    .arg(qMin(opacity + 18, 255))
-    .arg(qMax(opacity - 10, 12))
+    .arg(pressedAlpha)
     .arg(p.disabledText);
 }
 
@@ -1352,12 +1366,16 @@ QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) cons
     int selBgG = extractColorComponent(p.sidebarSelectedBg, 1);
     int selBgB = extractColorComponent(p.sidebarSelectedBg, 2);
 
+    int bgAlpha = qMin(opacity, 55);
+    int hoverAlpha = 30;
+    int selectedAlpha = qMin(opacity + 20, 75);
+
     return QString(
         "QListWidget {"
         "  background-color: rgba(%1, %2, %3, %4);"
         "  color: %5;"
-        "  border: 1px solid rgba(%6, %7, %8, 70);"
-        "  border-top-color: rgba(%9, %10, %11, 35);"
+        "  border: 1px solid rgba(%6, %7, %8, 50);"
+        "  border-top-color: rgba(%9, %10, %11, 25);"
         "  border-radius: %12px;"
         "  outline: none;"
         "  padding: 8px 4px;"
@@ -1368,23 +1386,24 @@ QString ThemeManager::glassSidebarStyleSheet(int borderRadius, int opacity) cons
         "  margin: 2px 4px;"
         "}"
         "QListWidget::item:hover {"
-        "  background-color: rgba(%9, %10, %11, 25);"
-        "  color: %13;"
+        "  background-color: rgba(%9, %10, %11, %13);"
+        "  color: %14;"
         "}"
         "QListWidget::item:selected {"
-        "  background-color: rgba(%14, %15, %16, %17);"
-        "  color: %18;"
-        "  border: 1px solid rgba(%9, %10, %11, 40);"
+        "  background-color: rgba(%15, %16, %17, %18);"
+        "  color: %19;"
+        "  border: 1px solid rgba(%9, %10, %11, 30);"
         "}"
     )
-    .arg(bgR).arg(bgG).arg(bgB).arg(opacity)
+    .arg(bgR).arg(bgG).arg(bgB).arg(bgAlpha)
     .arg(p.sidebarText)
     .arg(borderR).arg(borderG).arg(borderB)
     .arg(hlR).arg(hlG).arg(hlB)
     .arg(borderRadius)
+    .arg(hoverAlpha)
     .arg(p.sidebarHoverText)
     .arg(selBgR).arg(selBgG).arg(selBgB)
-    .arg(qMin(opacity + 30, 255))
+    .arg(selectedAlpha)
     .arg(p.sidebarSelectedText);
 }
 

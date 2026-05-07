@@ -84,6 +84,13 @@ qt_add_executable(DesktopPet
     widgets/glasscardwidget.h
 )
 
+if(WIN32)
+    target_sources(DesktopPet PRIVATE
+        platform/windows/windowbackdrophelper.cpp
+        platform/windows/windowbackdrophelper.h
+    )
+endif()
+
 qt_add_resources(DesktopPet "app_resources"
     PREFIX "/"
     BASE resources
@@ -118,6 +125,10 @@ target_link_libraries(DesktopPet
         Qt6::Svg
         Qt6::Network
 )
+
+if(WIN32)
+    target_link_libraries(DesktopPet PRIVATE dwmapi)
+endif()
 
 include(GNUInstallDirs)
 
