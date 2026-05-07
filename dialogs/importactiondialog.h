@@ -45,11 +45,13 @@ private:
     void setupUi();
     void connectSignals();
     bool validateInput();
-    bool validateActionId(const QString &id);
+    bool validateActionId(const QString &id) const;
     int scanFrameCount(const QString &folderPath);
     void updateExtraConfigVisibility();
+    QString suggestActionIdFromFolder(const QString &folderPath) const;
 
     QString m_petDirPath;
+    QString m_lastAutoSuggestedId;
 
     SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_idEdit;

@@ -7,6 +7,7 @@
 #include "widgets/softmessagebox.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -99,6 +100,7 @@ void ImportActionDialog::clearForm()
     m_timedIntervalSpinBox->setValue(300);
     m_triggerTimeEdit->setTime(QTime(0, 0));
     m_emotionComboBox->setCurrentIndex(0);
+    m_lastAutoSuggestedId.clear();
     updateExtraConfigVisibility();
 }
 
@@ -133,17 +135,6 @@ void ImportActionDialog::setupUi()
     contentLayout->setSpacing(16);
     contentLayout->setContentsMargins(18, 18, 18, 18);
 
-    QHBoxLayout *idLayout = new QHBoxLayout();
-    QLabel *idLabel = new QLabel(tr("动作 ID:"), formCard);
-    idLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
-    idLabel->setFixedWidth(80);
-    m_idEdit = new QLineEdit(formCard);
-    m_idEdit->setPlaceholderText(tr("例如: wave, idle_02, happy"));
-    m_idEdit->setStyleSheet(theme.lineEditStyleSheet());
-    idLayout->addWidget(idLabel);
-    idLayout->addWidget(m_idEdit);
-    contentLayout->addLayout(idLayout);
-
     QHBoxLayout *folderLayout = new QHBoxLayout();
     QLabel *folderLabel = new QLabel(tr("动作文件夹:"), formCard);
     folderLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
@@ -157,6 +148,17 @@ void ImportActionDialog::setupUi()
     folderLayout->addWidget(m_folderEdit);
     folderLayout->addWidget(m_browseButton);
     contentLayout->addLayout(folderLayout);
+
+    QHBoxLayout *idLayout = new QHBoxLayout();
+    QLabel *idLabel = new QLabel(tr("动作 ID:"), formCard);
+    idLabel->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
+    idLabel->setFixedWidth(80);
+    m_idEdit = new QLineEdit(formCard);
+    m_idEdit->setPlaceholderText(tr("例如: wave, idle_02, happy"));
+    m_idEdit->setStyleSheet(theme.lineEditStyleSheet());
+    idLayout->addWidget(idLabel);
+    idLayout->addWidget(m_idEdit);
+    contentLayout->addLayout(idLayout);
 
     QHBoxLayout *fpsLayout = new QHBoxLayout();
     QLabel *fpsLabel = new QLabel(tr("FPS:"), formCard);
@@ -351,6 +353,15 @@ void ImportActionDialog::onBrowseFolder()
 
     m_folderEdit->setText(selectedFolder);
     m_frameCountLabel->setText(QString::number(frameCount));
+
+    QString suggestedId = suggestActionIdFromFolder(selectedFolder);
+    if (!suggestedId.isEmpty()) {
+        QString currentId = m_idEdit->text().trimmed();
+        if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
+            m_idEdit->setText(suggestedId);
+            m_lastAutoSuggestedId = suggestedId;
+        }
+    }
 }
 
 void ImportActionDialog::onConfirm()
@@ -394,7 +405,7 @@ bool ImportActionDialog::validateInput()
     return true;
 }
 
-bool ImportActionDialog::validateActionId(const QString &id)
+bool ImportActionDialog::validateActionId(const QString &id) const
 {
     static QRegularExpression re("^[a-zA-Z0-9_-]+$");
     return re.match(id).hasMatch();
@@ -403,4 +414,36 @@ bool ImportActionDialog::validateActionId(const QString &id)
 int ImportActionDialog::scanFrameCount(const QString &folderPath)
 {
     return PetConfigManager::scanFrameFiles(folderPath).size();
+}
+
+QString ImportActionDialog::suggestActionIdFromFolder(const QString &folderPath) const
+{
+    QString folderName = QFileInfo(folderPath).fileName();
+    if (folderName.isEmpty() || folderName == "." || folderName == "..") {
+        return QString();
+    }
+
+    QString suggestedId = folderName.trimmed();
+    suggestedId.replace(" ", "_");
+    suggestedId.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+
+    while (suggestedId.contains("__")) {
+        suggestedId.replace("__", "_");
+    }
+    while (suggestedId.startsWith("_")) {
+        suggestedId.remove(0, 1);
+    }
+    while (suggestedId.endsWith("_")) {
+        suggestedId.chop(1);
+    }
+
+    if (suggestedId.isEmpty()) {
+        return QString();
+    }
+
+    if (!validateActionId(suggestedId)) {
+        return QString();
+    }
+
+    return suggestedId;
 }
