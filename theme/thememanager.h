@@ -110,6 +110,21 @@ struct ThemePalette
     QString selectionBackground;
 };
 
+struct SoftCardGradientColors
+{
+    QColor base;
+    QColor topLeft;
+    QColor topRight;
+    QColor bottomRight;
+    QColor highlight;
+    QColor border;
+    QColor shadow;
+    int baseAlpha = 255;
+    int highlightAlpha = 0;
+    int borderAlpha = 140;
+    int shadowAlpha = 18;
+};
+
 class ThemeManager : public QObject
 {
     Q_OBJECT
@@ -135,6 +150,8 @@ public:
     QString buttonPrimaryTextColor() const;
     QString textPrimaryColor() const;
     QString textSecondaryColor() const;
+
+    SoftCardGradientColors softCardGradientColors(bool panel = false, qreal hoverProgress = 0.0) const;
 
     // 动态箭头/保留的图标接口
     QPixmap spinUpIcon() const;

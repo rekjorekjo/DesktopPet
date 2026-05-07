@@ -4,6 +4,11 @@
 #include <QFrame>
 #include <QColor>
 #include <QPainterPath>
+#include <QRectF>
+
+class QEnterEvent;
+class QEvent;
+class QPropertyAnimation;
 
 class SoftCardWidget : public QFrame
 {
@@ -15,6 +20,7 @@ class SoftCardWidget : public QFrame
     Q_PROPERTY(int borderOpacity READ borderOpacity WRITE setBorderOpacity)
     Q_PROPERTY(bool showHighlight READ showHighlight WRITE setShowHighlight)
     Q_PROPERTY(bool showShadow READ showShadow WRITE setShowShadow)
+    Q_PROPERTY(qreal hoverProgress READ hoverProgress WRITE setHoverProgress)
 
 public:
     explicit SoftCardWidget(QWidget *parent = nullptr);
@@ -41,6 +47,9 @@ public:
     bool showShadow() const;
     void setShowShadow(bool show);
 
+    qreal hoverProgress() const;
+    void setHoverProgress(qreal progress);
+
     void setTitle(const QString &title);
     QString title() const;
 
@@ -53,11 +62,14 @@ public slots:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void enterEvent(QEnterEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 
 private:
     void init();
     void ensureInternalLayout();
-    QPainterPath createRoundedRectPath(const QRect &rect, int radius) const;
+    void animateHover(qreal endValue);
+    QPainterPath createRoundedRectPath(const QRectF &rect, int radius) const;
     QColor applyOpacity(const QColor &color, int opacity) const;
 
 private:
@@ -68,6 +80,8 @@ private:
     int m_borderOpacity;
     bool m_showHighlight;
     bool m_showShadow;
+    qreal m_hoverProgress;
+    QPropertyAnimation *m_hoverAnimation;
     QString m_title;
     QWidget *m_contentWidget;
 };

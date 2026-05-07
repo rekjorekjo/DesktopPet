@@ -11,6 +11,57 @@
 #include <QPainterPath>
 #include <QSet>
 
+namespace {
+
+double clamp01(double value)
+{
+    return qBound(0.0, value, 1.0);
+}
+
+QColor validColor(const QString &value, const QColor &fallback)
+{
+    QColor color(value);
+    return color.isValid() ? color : fallback;
+}
+
+QColor mixColor(const QColor &a, const QColor &b, double t)
+{
+    t = clamp01(t);
+    const double inv = 1.0 - t;
+    return QColor(
+        qBound(0, qRound(a.red() * inv + b.red() * t), 255),
+        qBound(0, qRound(a.green() * inv + b.green() * t), 255),
+        qBound(0, qRound(a.blue() * inv + b.blue() * t), 255),
+        qBound(0, qRound(a.alpha() * inv + b.alpha() * t), 255)
+    );
+}
+
+QColor lightenColor(const QColor &color, double amount)
+{
+    return mixColor(color, QColor(255, 255, 255), amount);
+}
+
+QColor darkenColor(const QColor &color, double amount)
+{
+    return mixColor(color, QColor(0, 0, 0), amount);
+}
+
+double colorLuma(const QColor &color)
+{
+    return (0.2126 * color.red() + 0.7152 * color.green() + 0.0722 * color.blue()) / 255.0;
+}
+
+QString colorToRgbaString(const QColor &color, int alpha)
+{
+    return QString("rgba(%1, %2, %3, %4)")
+        .arg(color.red())
+        .arg(color.green())
+        .arg(color.blue())
+        .arg(qBound(0, alpha, 255));
+}
+
+} // namespace
+
 ThemeManager& ThemeManager::instance()
 {
     static ThemeManager manager;
@@ -428,6 +479,42 @@ QString ThemeManager::textPrimaryColor() const
 QString ThemeManager::textSecondaryColor() const
 {
     return currentPalette().textSecondary;
+}
+
+SoftCardGradientColors ThemeManager::softCardGradientColors(bool panel, qreal hoverProgress) const
+{
+    ThemePalette p = currentPalette();
+
+    const QColor base = validColor(p.cardBackground, QColor("#ffffff"));
+    const QColor accent = validColor(p.accent, validColor(p.buttonPrimary, base));
+    const QColor accentSoft = validColor(p.accentSoft, accent);
+    const QColor borderBase = validColor(p.cardBorder, validColor(p.border, accent));
+
+    const double strength = clamp01(AppSettings::cardGradientStrength() / 100.0);
+    const double hover = clamp01(hoverProgress);
+    const double surfaceScale = panel ? 0.82 : 1.0;
+    const double gradientAmount = strength * surfaceScale * (1.0 + 0.18 * hover);
+    const bool dark = colorLuma(base) < 0.46;
+
+    const QColor softAccent = mixColor(accent, accentSoft, dark ? 0.25 : 0.32);
+
+    SoftCardGradientColors colors;
+    colors.base = base;
+    colors.topLeft = mixColor(base, accent, 0.18 * gradientAmount);
+    colors.topRight = mixColor(base, softAccent, 0.14 * gradientAmount);
+    colors.bottomRight = dark
+        ? lightenColor(base, 0.04 * gradientAmount)
+        : darkenColor(base, 0.025 * gradientAmount);
+    colors.highlight = dark ? lightenColor(base, 0.28) : QColor(255, 255, 255);
+    colors.border = mixColor(borderBase, accent, 0.05 + 0.10 * strength + 0.08 * hover);
+    colors.shadow = dark ? QColor(0, 0, 0) : darkenColor(borderBase, 0.28);
+    colors.baseAlpha = 255;
+    colors.highlightAlpha = qBound(0, qRound((dark ? 11 : 16) * strength + 5 * hover), dark ? 18 : 26);
+    colors.borderAlpha = qBound(dark ? 125 : 110,
+                                qRound((dark ? 140 : 122) + 24 * strength + 32 * hover),
+                                dark ? 205 : 190);
+    colors.shadowAlpha = qBound(0, qRound((dark ? 22 : 14) + 12 * hover), dark ? 48 : 34);
+    return colors;
 }
 
 QPixmap ThemeManager::drawArrowIcon(bool up, const QColor &color, int width, int height) const
@@ -1028,117 +1115,69 @@ QString ThemeManager::timeEditStyleSheet() const
 QString ThemeManager::softCardStyleSheet(int borderRadius, int opacity) const
 {
     Q_UNUSED(opacity);
-    ThemePalette p = currentPalette();
-
-    int cardBgR = extractColorComponent(p.cardBackground, 0);
-    int cardBgG = extractColorComponent(p.cardBackground, 1);
-    int cardBgB = extractColorComponent(p.cardBackground, 2);
-    int borderR = extractColorComponent(p.border, 0);
-    int borderG = extractColorComponent(p.border, 1);
-    int borderB = extractColorComponent(p.border, 2);
-    int accentR = extractColorComponent(p.accent, 0);
-    int accentG = extractColorComponent(p.accent, 1);
-    int accentB = extractColorComponent(p.accent, 2);
-    int accentSoftR = extractColorComponent(p.accentSoft, 0);
-    int accentSoftG = extractColorComponent(p.accentSoft, 1);
-    int accentSoftB = extractColorComponent(p.accentSoft, 2);
-
-    int strength = AppSettings::cardGradientStrength();
-    constexpr int DefaultStrength = 35;
-    constexpr int BaseGradientAlpha = 20;
-    double factor = static_cast<double>(strength) / DefaultStrength;
-    int gradientAlpha = qBound(0, static_cast<int>(BaseGradientAlpha * factor), 50);
-
-    if (gradientAlpha > 5) {
-        return QString(
-            "QFrame#softCard {"
-            "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
-            "    stop:0 rgba(%1, %2, %3, %4),"
-            "    stop:0.5 rgba(%5, %6, %7, 240),"
-            "    stop:1 rgba(%5, %6, %7, 240));"
-            "  border: 1px solid rgba(%8, %9, %10, 150);"
-            "  border-radius: %11px;"
-            "}"
-            "QFrame#softCard:hover {"
-            "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
-            "    stop:0 rgba(%1, %2, %3, %4),"
-            "    stop:0.5 rgba(%5, %6, %7, 250),"
-            "    stop:1 rgba(%5, %6, %7, 250));"
-            "  border-color: rgba(%12, %13, %14, 100);"
-            "}"
-        )
-        .arg(accentSoftR).arg(accentSoftG).arg(accentSoftB).arg(gradientAlpha)
-        .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-        .arg(borderR).arg(borderG).arg(borderB)
-        .arg(borderRadius)
-        .arg(accentR).arg(accentG).arg(accentB);
-    }
+    const SoftCardGradientColors normal = softCardGradientColors(false, 0.0);
+    const SoftCardGradientColors hover = softCardGradientColors(false, 1.0);
 
     return QString(
         "QFrame#softCard {"
-        "  background-color: rgba(%1, %2, %3, 240);"
-        "  border: 1px solid rgba(%4, %5, %6, 150);"
-        "  border-radius: %7px;"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
+        "    stop:0 %1,"
+        "    stop:0.48 %2,"
+        "    stop:1 %3);"
+        "  border: 1px solid %4;"
+        "  border-radius: %5px;"
         "}"
         "QFrame#softCard:hover {"
-        "  background-color: rgba(%1, %2, %3, 250);"
-        "  border-color: rgba(%8, %9, %10, 100);"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
+        "    stop:0 %6,"
+        "    stop:0.48 %7,"
+        "    stop:1 %8);"
+        "  border-color: %9;"
         "}"
     )
-    .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-    .arg(borderR).arg(borderG).arg(borderB)
+    .arg(colorToRgbaString(normal.topLeft, normal.baseAlpha),
+         colorToRgbaString(normal.topRight, normal.baseAlpha),
+         colorToRgbaString(normal.bottomRight, normal.baseAlpha),
+         colorToRgbaString(normal.border, normal.borderAlpha))
     .arg(borderRadius)
-    .arg(accentR).arg(accentG).arg(accentB);
+    .arg(colorToRgbaString(hover.topLeft, hover.baseAlpha),
+         colorToRgbaString(hover.topRight, hover.baseAlpha),
+         colorToRgbaString(hover.bottomRight, hover.baseAlpha),
+         colorToRgbaString(hover.border, hover.borderAlpha));
 }
 
 QString ThemeManager::softPanelStyleSheet(int borderRadius, int opacity) const
 {
     Q_UNUSED(opacity);
-    ThemePalette p = currentPalette();
-
-    int cardBgR = extractColorComponent(p.cardBackground, 0);
-    int cardBgG = extractColorComponent(p.cardBackground, 1);
-    int cardBgB = extractColorComponent(p.cardBackground, 2);
-    int borderR = extractColorComponent(p.border, 0);
-    int borderG = extractColorComponent(p.border, 1);
-    int borderB = extractColorComponent(p.border, 2);
-    int accentSoftR = extractColorComponent(p.accentSoft, 0);
-    int accentSoftG = extractColorComponent(p.accentSoft, 1);
-    int accentSoftB = extractColorComponent(p.accentSoft, 2);
-
-    int strength = AppSettings::cardGradientStrength();
-    constexpr int DefaultStrength = 35;
-    constexpr int BaseGradientAlpha = 15;
-    double factor = static_cast<double>(strength) / DefaultStrength;
-    int gradientAlpha = qBound(0, static_cast<int>(BaseGradientAlpha * factor), 40);
-
-    if (gradientAlpha > 5) {
-        return QString(
-            "QFrame#softPanel {"
-            "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
-            "    stop:0 rgba(%1, %2, %3, %4),"
-            "    stop:0.5 rgba(%5, %6, %7, 230),"
-            "    stop:1 rgba(%5, %6, %7, 230));"
-            "  border: 1px solid rgba(%8, %9, %10, 140);"
-            "  border-radius: %11px;"
-            "}"
-        )
-        .arg(accentSoftR).arg(accentSoftG).arg(accentSoftB).arg(gradientAlpha)
-        .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-        .arg(borderR).arg(borderG).arg(borderB)
-        .arg(borderRadius);
-    }
+    const SoftCardGradientColors normal = softCardGradientColors(true, 0.0);
+    const SoftCardGradientColors hover = softCardGradientColors(true, 1.0);
 
     return QString(
         "QFrame#softPanel {"
-        "  background-color: rgba(%1, %2, %3, 230);"
-        "  border: 1px solid rgba(%4, %5, %6, 140);"
-        "  border-radius: %7px;"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
+        "    stop:0 %1,"
+        "    stop:0.5 %2,"
+        "    stop:1 %3);"
+        "  border: 1px solid %4;"
+        "  border-radius: %5px;"
+        "}"
+        "QFrame#softPanel:hover {"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
+        "    stop:0 %6,"
+        "    stop:0.5 %7,"
+        "    stop:1 %8);"
+        "  border-color: %9;"
         "}"
     )
-    .arg(cardBgR).arg(cardBgG).arg(cardBgB)
-    .arg(borderR).arg(borderG).arg(borderB)
-    .arg(borderRadius);
+    .arg(colorToRgbaString(normal.topLeft, normal.baseAlpha),
+         colorToRgbaString(normal.topRight, normal.baseAlpha),
+         colorToRgbaString(normal.bottomRight, normal.baseAlpha),
+         colorToRgbaString(normal.border, normal.borderAlpha))
+    .arg(borderRadius)
+    .arg(colorToRgbaString(hover.topLeft, hover.baseAlpha),
+         colorToRgbaString(hover.topRight, hover.baseAlpha),
+         colorToRgbaString(hover.bottomRight, hover.baseAlpha),
+         colorToRgbaString(hover.border, hover.borderAlpha));
 }
 
 QString ThemeManager::softButtonStyleSheet(int borderRadius, int opacity) const

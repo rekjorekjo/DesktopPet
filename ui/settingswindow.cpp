@@ -8,6 +8,7 @@
 #include "pages/petmanagepage.h"
 #include "theme/thememanager.h"
 #include "widgets/settingstitlebar.h"
+#include "widgets/softcardwidget.h"
 
 #include <QHBoxLayout>
 #include <QLinearGradient>
@@ -153,20 +154,9 @@ void SettingsWindow::connectSignals()
 
     connect(m_personalizationPage, &PersonalizationPage::cardGradientStrengthChanged,
             this, [this](int) {
-                if (m_petManagePage) {
-                    m_petManagePage->refreshTheme();
-                }
-                if (m_actionSettingsPage) {
-                    m_actionSettingsPage->refreshTheme();
-                }
-                if (m_apiConfigPage) {
-                    m_apiConfigPage->refreshTheme();
-                }
-                if (m_personalizationPage) {
-                    m_personalizationPage->refreshTheme();
-                }
-                if (m_aboutPage) {
-                    m_aboutPage->refreshTheme();
+                const QList<SoftCardWidget *> cards = findChildren<SoftCardWidget *>();
+                for (SoftCardWidget *card : cards) {
+                    card->update();
                 }
             });
 }

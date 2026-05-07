@@ -3,6 +3,7 @@
 #include "utils/imageutils.h"
 
 #include <QHBoxLayout>
+#include <QDialog>
 #include <QMouseEvent>
 #include <QPainter>
 
@@ -84,8 +85,15 @@ void SoftDialogTitleBar::connectSignals()
 
 void SoftDialogTitleBar::onCloseClicked()
 {
-    if (window()) {
-        window()->close();
+    QWidget *hostWindow = window();
+    if (!hostWindow) {
+        return;
+    }
+
+    if (QDialog *dialog = qobject_cast<QDialog *>(hostWindow)) {
+        dialog->reject();
+    } else {
+        hostWindow->close();
     }
 }
 

@@ -1,6 +1,7 @@
 #include "newpetdialog.h"
 
 #include "theme/thememanager.h"
+#include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
 
 #include <QHBoxLayout>
@@ -46,41 +47,48 @@ void NewPetDialog::setupUi()
     mainLayout->addWidget(m_titleBar);
 
     QWidget *contentWidget = new QWidget(this);
-    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
-    contentLayout->setSpacing(12);
-    contentLayout->setContentsMargins(24, 20, 24, 20);
+    QVBoxLayout *outerLayout = new QVBoxLayout(contentWidget);
+    outerLayout->setSpacing(0);
+    outerLayout->setContentsMargins(20, 16, 20, 20);
 
-    QLabel *petIdLabel = new QLabel(tr("宠物 ID："), contentWidget);
+    SoftCardWidget *formCard = new SoftCardWidget(contentWidget);
+    formCard->setBorderRadius(14);
+
+    QVBoxLayout *contentLayout = new QVBoxLayout(formCard);
+    contentLayout->setSpacing(12);
+    contentLayout->setContentsMargins(18, 18, 18, 18);
+
+    QLabel *petIdLabel = new QLabel(tr("宠物 ID："), formCard);
     petIdLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                 .arg(p.textPrimary));
-    m_petIdEdit = new QLineEdit(contentWidget);
+    m_petIdEdit = new QLineEdit(formCard);
     m_petIdEdit->setPlaceholderText(tr("字母、数字、下划线或短横线，例如 cat_caca-01"));
     m_petIdEdit->setStyleSheet(theme.lineEditStyleSheet());
     contentLayout->addWidget(petIdLabel);
     contentLayout->addWidget(m_petIdEdit);
 
-    QLabel *petNameLabel = new QLabel(tr("宠物名称："), contentWidget);
+    QLabel *petNameLabel = new QLabel(tr("宠物名称："), formCard);
     petNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                   .arg(p.textPrimary));
-    m_petNameEdit = new QLineEdit(contentWidget);
+    m_petNameEdit = new QLineEdit(formCard);
     m_petNameEdit->setPlaceholderText(tr("显示名称，可使用中文，例如 咔咔"));
     m_petNameEdit->setStyleSheet(theme.lineEditStyleSheet());
     contentLayout->addWidget(petNameLabel);
     contentLayout->addWidget(m_petNameEdit);
 
-    QLabel *canvasSizeLabel = new QLabel(tr("画布尺寸（动画基础画布大小）："), contentWidget);
+    QLabel *canvasSizeLabel = new QLabel(tr("画布尺寸（动画基础画布大小）："), formCard);
     canvasSizeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                       .arg(p.textPrimary));
     QHBoxLayout *canvasLayout = new QHBoxLayout();
-    m_canvasWidthSpinBox = new QSpinBox(contentWidget);
+    m_canvasWidthSpinBox = new QSpinBox(formCard);
     m_canvasWidthSpinBox->setRange(64, 4096);
     m_canvasWidthSpinBox->setValue(400);
     m_canvasWidthSpinBox->setSuffix(" px");
     m_canvasWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    QLabel *canvasXLabel = new QLabel(" x ", contentWidget);
+    QLabel *canvasXLabel = new QLabel(" x ", formCard);
     canvasXLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                   .arg(p.textSecondary));
-    m_canvasHeightSpinBox = new QSpinBox(contentWidget);
+    m_canvasHeightSpinBox = new QSpinBox(formCard);
     m_canvasHeightSpinBox->setRange(64, 4096);
     m_canvasHeightSpinBox->setValue(400);
     m_canvasHeightSpinBox->setSuffix(" px");
@@ -92,19 +100,19 @@ void NewPetDialog::setupUi()
     contentLayout->addWidget(canvasSizeLabel);
     contentLayout->addLayout(canvasLayout);
 
-    QLabel *displaySizeLabel = new QLabel(tr("显示尺寸（桌面显示窗口大小）："), contentWidget);
+    QLabel *displaySizeLabel = new QLabel(tr("显示尺寸（桌面显示窗口大小）："), formCard);
     displaySizeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                       .arg(p.textPrimary));
     QHBoxLayout *displayLayout = new QHBoxLayout();
-    m_displayWidthSpinBox = new QSpinBox(contentWidget);
+    m_displayWidthSpinBox = new QSpinBox(formCard);
     m_displayWidthSpinBox->setRange(32, 2048);
     m_displayWidthSpinBox->setValue(200);
     m_displayWidthSpinBox->setSuffix(" px");
     m_displayWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    QLabel *displayXLabel = new QLabel(" x ", contentWidget);
+    QLabel *displayXLabel = new QLabel(" x ", formCard);
     displayXLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                    .arg(p.textSecondary));
-    m_displayHeightSpinBox = new QSpinBox(contentWidget);
+    m_displayHeightSpinBox = new QSpinBox(formCard);
     m_displayHeightSpinBox->setRange(32, 2048);
     m_displayHeightSpinBox->setValue(200);
     m_displayHeightSpinBox->setSuffix(" px");
@@ -120,9 +128,9 @@ void NewPetDialog::setupUi()
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
-    QPushButton *cancelButton = new QPushButton(tr("取消"), contentWidget);
+    QPushButton *cancelButton = new QPushButton(tr("取消"), formCard);
     cancelButton->setObjectName("secondaryButton");
-    m_confirmButton = new QPushButton(tr("创建"), contentWidget);
+    m_confirmButton = new QPushButton(tr("创建"), formCard);
     m_confirmButton->setObjectName("primaryButton");
     buttonLayout->addWidget(cancelButton);
     buttonLayout->addWidget(m_confirmButton);
@@ -134,6 +142,7 @@ void NewPetDialog::setupUi()
     cancelButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     m_confirmButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
 
+    outerLayout->addWidget(formCard);
     mainLayout->addWidget(contentWidget);
 }
 
