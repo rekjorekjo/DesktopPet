@@ -1,5 +1,7 @@
 #include "petanimationplayer.h"
 
+#include <QDebug>
+
 int PetAnimationPlayer::clampFps(int fps)
 {
     if (fps < MinFps) {
@@ -55,6 +57,7 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
     for (const QString &filePath : action.frameFiles) {
         QPixmap original(filePath);
         if (original.isNull()) {
+            qWarning() << "PetAnimationPlayer: Failed to load frame:" << filePath;
             continue;
         }
 

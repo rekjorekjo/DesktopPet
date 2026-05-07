@@ -215,7 +215,8 @@ QWidget *GlassCardWidget::contentWidget() const
 
 void GlassCardWidget::applyTheme()
 {
-    ThemePalette p = ThemeManager::instance().currentPalette();
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     QString styleSheet = QString(
         "GlassCardWidget {"
@@ -242,7 +243,24 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-    ThemePalette p = ThemeManager::instance().currentPalette();
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+
+    if (!theme.isLiquidGlassTheme()) {
+        QPainterPath bgPath = createRoundedRectPath(rect(), m_borderRadius);
+
+        QColor bgColor(p.cardBackground);
+        bgColor.setAlpha(250);
+        painter.fillPath(bgPath, bgColor);
+
+        QColor borderColor(p.border);
+        borderColor.setAlpha(180);
+        QPen borderPen(borderColor, 1);
+        painter.setPen(borderPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPath(bgPath);
+        return;
+    }
 
     int shadowOffset = 3;
     QRect contentRect = rect().adjusted(shadowOffset, shadowOffset, -shadowOffset, -shadowOffset);
@@ -251,14 +269,14 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
         QRect shadowRect = rect().adjusted(2, 2, -2, -2);
         QPainterPath shadowPath = createRoundedRectPath(shadowRect, m_borderRadius);
         QColor shadowColor(p.glassShadow);
-        shadowColor.setAlpha(m_shadowOpacity);
+        shadowColor.setAlpha(theme.adjustedGlassOpacity(m_shadowOpacity));
         painter.fillPath(shadowPath, shadowColor);
     }
 
     QPainterPath bgPath = createRoundedRectPath(contentRect, m_borderRadius);
 
     QColor bgColor(p.glassBackground);
-    bgColor.setAlpha(m_backgroundOpacity);
+    bgColor.setAlpha(theme.adjustedGlassOpacity(m_backgroundOpacity));
     painter.fillPath(bgPath, bgColor);
 
     if (m_showHighlight) {
@@ -271,7 +289,7 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
         );
 
         QColor hlTopColor(p.glassHighlight);
-        hlTopColor.setAlpha(m_highlightOpacity);
+        hlTopColor.setAlpha(theme.adjustedGlassOpacity(m_highlightOpacity));
         QColor hlBottomColor(p.glassHighlight);
         hlBottomColor.setAlpha(0);
 
@@ -283,7 +301,7 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
         QRect topHighlightRect = contentRect.adjusted(2, 1, -2, -contentRect.height() + 3);
         QPainterPath topHighlightPath = createRoundedRectPath(topHighlightRect, m_borderRadius - 1);
         QColor topLineColor(p.glassHighlight);
-        topLineColor.setAlpha(m_highlightOpacity * 2 / 3);
+        topLineColor.setAlpha(theme.adjustedGlassOpacity(m_highlightOpacity) * 2 / 3);
         QPen topLinePen(topLineColor, 1.5);
         painter.setPen(topLinePen);
         painter.drawPath(topHighlightPath);
@@ -292,7 +310,7 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
     }
 
     QColor borderColor(p.glassBorder);
-    borderColor.setAlpha(m_borderOpacity);
+    borderColor.setAlpha(theme.adjustedGlassOpacity(m_borderOpacity));
     QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
@@ -300,7 +318,7 @@ void GlassCardWidget::paintEvent(QPaintEvent *event)
 
     if (m_showHighlight) {
         QColor topBorderColor(p.glassHighlight);
-        topBorderColor.setAlpha(m_borderOpacity * 2 / 3);
+        topBorderColor.setAlpha(theme.adjustedGlassOpacity(m_borderOpacity) * 2 / 3);
         QPen topBorderPen(topBorderColor, 1);
 
         QRectF cr = contentRect;

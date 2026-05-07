@@ -100,6 +100,7 @@ void ActionSettingsPage::setupUi()
     m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
+    m_contentWidget->setObjectName("glassPageSurface");
     m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
@@ -163,13 +164,13 @@ void ActionSettingsPage::setupUi()
     m_newActionButton = new QPushButton(tr("新建动作"), m_libraryCard);
     m_newActionButton->setMinimumHeight(40);
     m_newActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_newActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_newActionButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
     libraryButtonLayout->addWidget(m_newActionButton);
 
     m_importActionButton = new QPushButton(tr("导入动作"), m_libraryCard);
     m_importActionButton->setMinimumHeight(40);
     m_importActionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_importActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_importActionButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
     libraryButtonLayout->addWidget(m_importActionButton);
 
     leftLayout->addLayout(libraryButtonLayout);
@@ -573,8 +574,8 @@ void ActionSettingsPage::applyTheme()
     m_libraryTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.subtitleText));
     m_actionLibraryList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_newActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
-    m_importActionButton->setStyleSheet(theme.glassButtonStyleSheet(6, 40));
+    m_newActionButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
+    m_importActionButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));

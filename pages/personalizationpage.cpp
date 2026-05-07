@@ -52,26 +52,32 @@ void PersonalizationPage::setupUi()
     outerLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->setSpacing(0);
 
-    m_titleLabel = new QLabel(tr("个性化"), this);
-    QFont titleFont = m_titleLabel->font();
-    titleFont.setPointSize(18);
-    titleFont.setBold(true);
-    m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
-    m_titleLabel->setMargin(0);
-    outerLayout->addWidget(m_titleLabel);
-
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
+    m_contentWidget->setObjectName("glassPageSurface");
     m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
-    contentLayout->setContentsMargins(28, 20, 28, 28);
-    contentLayout->setSpacing(20);
+    contentLayout->setContentsMargins(24, 10, 24, 20);
+    contentLayout->setSpacing(12);
+
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setSpacing(24);
+
+    m_titleLabel = new QLabel(tr("个性化"), m_contentWidget);
+    QFont titleFont = m_titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    m_titleLabel->setFont(titleFont);
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setMargin(0);
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addStretch();
+    contentLayout->addLayout(headerLayout);
 
     m_appearanceCard = new GlassCardWidget(m_contentWidget);
     m_appearanceCard->setObjectName("appearanceCard");
@@ -233,6 +239,9 @@ bool PersonalizationPage::isLightTheme(const QString &themeId) const
         return false;
     }
     if (themeId.startsWith("bloom-")) {
+        return !themeId.endsWith("-dark");
+    }
+    if (themeId.startsWith("liquid-glass-")) {
         return !themeId.endsWith("-dark");
     }
     return true;

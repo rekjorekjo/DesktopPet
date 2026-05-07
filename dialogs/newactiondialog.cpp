@@ -113,6 +113,8 @@ void NewActionDialog::setupUi()
 
     setWindowTitle(tr("新建动作"));
     setMinimumWidth(450);
+    setAttribute(Qt::WA_StyledBackground, true);
+    setAutoFillBackground(false);
     setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -127,7 +129,7 @@ void NewActionDialog::setupUi()
     m_gifPathEdit->setReadOnly(true);
     m_gifPathEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_browseButton = new QPushButton(tr("选择"), this);
-    m_browseButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_browseButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
     gifLayout->addWidget(gifLabel);
     gifLayout->addWidget(m_gifPathEdit);
     gifLayout->addWidget(m_browseButton);
@@ -254,9 +256,9 @@ void NewActionDialog::setupUi()
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     m_cancelButton = new QPushButton(tr("取消"), this);
-    m_cancelButton->setStyleSheet(theme.secondaryButtonStyleSheet());
+    m_cancelButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
     m_confirmButton = new QPushButton(tr("确定"), this);
-    m_confirmButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    m_confirmButton->setStyleSheet(theme.glassButtonStyleSheet(6, 48));
     buttonLayout->addWidget(m_cancelButton);
     buttonLayout->addWidget(m_confirmButton);
     mainLayout->addLayout(buttonLayout);

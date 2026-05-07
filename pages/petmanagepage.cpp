@@ -66,8 +66,8 @@ void PetManagePage::connectSignals()
 void PetManagePage::setupUi()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(28, 20, 28, 28);
-    mainLayout->setSpacing(20);
+    mainLayout->setContentsMargins(24, 10, 24, 20);
+    mainLayout->setSpacing(12);
 
     QHBoxLayout *headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(16);

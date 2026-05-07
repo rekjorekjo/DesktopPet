@@ -4,6 +4,7 @@
 #include "theme/thememanager.h"
 #include "utils/updatemanager.h"
 
+#include <QDebug>
 #include <QDesktopServices>
 #include <QFont>
 #include <QFrame>
@@ -56,26 +57,32 @@ void AboutPage::setupUi()
     outerLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->setSpacing(0);
 
-    m_titleLabel = new QLabel(tr("关于"), this);
-    QFont titleFont = m_titleLabel->font();
-    titleFont.setPointSize(18);
-    titleFont.setBold(true);
-    m_titleLabel->setFont(titleFont);
-    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
-    m_titleLabel->setMargin(0);
-    outerLayout->addWidget(m_titleLabel);
-
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setStyleSheet(theme.glassScrollAreaStyleSheet());
 
     m_contentWidget = new QWidget();
+    m_contentWidget->setObjectName("glassPageSurface");
     m_contentWidget->setStyleSheet(theme.glassPageStyleSheet());
 
     QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
-    contentLayout->setContentsMargins(28, 20, 28, 28);
-    contentLayout->setSpacing(20);
+    contentLayout->setContentsMargins(24, 10, 24, 20);
+    contentLayout->setSpacing(12);
+
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setSpacing(24);
+
+    m_titleLabel = new QLabel(tr("关于"), m_contentWidget);
+    QFont titleFont = m_titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    m_titleLabel->setFont(titleFont);
+    m_titleLabel->setStyleSheet(theme.glassTitleLabelStyleSheet());
+    m_titleLabel->setMargin(0);
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addStretch();
+    contentLayout->addLayout(headerLayout);
 
     m_infoCard = new GlassCardWidget(m_contentWidget);
     m_infoCard->setObjectName("infoCard");
@@ -97,6 +104,11 @@ void AboutPage::setupUi()
 
     m_iconLabel = new QLabel(m_infoCard);
     QPixmap iconPixmap(":/icons/app_icon.png");
+    if (iconPixmap.isNull()) {
+        qWarning() << "AboutPage: Failed to load app icon from :/icons/app_icon.png";
+        iconPixmap = QPixmap(64, 64);
+        iconPixmap.fill(Qt::transparent);
+    }
     m_iconLabel->setPixmap(iconPixmap.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     m_iconLabel->setFixedSize(64, 64);
     m_iconLabel->setScaledContents(true);

@@ -151,7 +151,6 @@ void SettingsWindow::connectSignals()
 void SettingsWindow::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
-    ThemePalette p = theme.currentPalette();
 
     m_centralWidget->update();
 

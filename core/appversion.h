@@ -1,7 +1,7 @@
 #pragma once
 
-#define APP_VERSION "v0.26.6(beta)"
-#define APP_VERSION_TAG "v0.26.6"
+#define APP_VERSION "v0.26.8(beta)"
+#define APP_VERSION_TAG "v0.26.8"
 
 constexpr const char *GitHubOwner = "rekjorekjo";
 constexpr const char *GitHubRepo = "DesktopPet";

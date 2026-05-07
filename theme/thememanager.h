@@ -10,6 +10,8 @@
 
 struct ThemePalette
 {
+    QString style;
+
     QString pageBackground;
     QString cardBackground;
     QString border;
@@ -134,6 +136,8 @@ public:
 
     ThemePalette currentPalette() const;
 
+    bool isLiquidGlassTheme() const;
+
     // 旧接口先保留，避免各页面继续报错
     QString pageBackgroundColor() const;
     QString cardBackgroundColor() const;
@@ -173,9 +177,12 @@ public:
     QString dialogStyleSheet() const;
     QString timeEditStyleSheet() const;
 
+    int adjustedGlassOpacity(int opacity) const;
+
     QString glassCardStyleSheet(int borderRadius = 12, int opacity = 40) const;
     QString glassPanelStyleSheet(int borderRadius = 8, int opacity = 30) const;
     QString glassButtonStyleSheet(int borderRadius = 6, int opacity = 35) const;
+    QString glassSecondaryButtonStyleSheet(int borderRadius = 6, int opacity = 24) const;
     QString glassSidebarStyleSheet(int borderRadius = 8, int opacity = 30) const;
     QString glassPageStyleSheet() const;
     QString glassScrollAreaStyleSheet() const;

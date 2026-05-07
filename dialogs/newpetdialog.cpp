@@ -26,35 +26,54 @@ NewPetDialog::NewPetDialog(QWidget *parent)
 
 void NewPetDialog::setupUi()
 {
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+
     setWindowTitle(tr("新建宠物"));
     setMinimumWidth(400);
+    setAttribute(Qt::WA_StyledBackground, true);
+    setAutoFillBackground(false);
+    setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(12);
+    mainLayout->setContentsMargins(24, 20, 24, 20);
 
     QLabel *petIdLabel = new QLabel(tr("宠物 ID："), this);
+    petIdLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                .arg(p.textPrimary));
     m_petIdEdit = new QLineEdit(this);
     m_petIdEdit->setPlaceholderText(tr("字母、数字、下划线或短横线，例如 cat_caca-01"));
+    m_petIdEdit->setStyleSheet(theme.lineEditStyleSheet());
     mainLayout->addWidget(petIdLabel);
     mainLayout->addWidget(m_petIdEdit);
 
     QLabel *petNameLabel = new QLabel(tr("宠物名称："), this);
+    petNameLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                  .arg(p.textPrimary));
     m_petNameEdit = new QLineEdit(this);
     m_petNameEdit->setPlaceholderText(tr("显示名称，可使用中文，例如 咔咔"));
+    m_petNameEdit->setStyleSheet(theme.lineEditStyleSheet());
     mainLayout->addWidget(petNameLabel);
     mainLayout->addWidget(m_petNameEdit);
 
     QLabel *canvasSizeLabel = new QLabel(tr("画布尺寸（动画基础画布大小）："), this);
+    canvasSizeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                      .arg(p.textPrimary));
     QHBoxLayout *canvasLayout = new QHBoxLayout();
     m_canvasWidthSpinBox = new QSpinBox(this);
     m_canvasWidthSpinBox->setRange(64, 4096);
     m_canvasWidthSpinBox->setValue(400);
     m_canvasWidthSpinBox->setSuffix(" px");
+    m_canvasWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     QLabel *canvasXLabel = new QLabel(" x ", this);
+    canvasXLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                  .arg(p.textSecondary));
     m_canvasHeightSpinBox = new QSpinBox(this);
     m_canvasHeightSpinBox->setRange(64, 4096);
     m_canvasHeightSpinBox->setValue(400);
     m_canvasHeightSpinBox->setSuffix(" px");
+    m_canvasHeightSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     canvasLayout->addWidget(m_canvasWidthSpinBox);
     canvasLayout->addWidget(canvasXLabel);
     canvasLayout->addWidget(m_canvasHeightSpinBox);
@@ -63,16 +82,22 @@ void NewPetDialog::setupUi()
     mainLayout->addLayout(canvasLayout);
 
     QLabel *displaySizeLabel = new QLabel(tr("显示尺寸（桌面显示窗口大小）："), this);
+    displaySizeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                      .arg(p.textPrimary));
     QHBoxLayout *displayLayout = new QHBoxLayout();
     m_displayWidthSpinBox = new QSpinBox(this);
     m_displayWidthSpinBox->setRange(32, 2048);
     m_displayWidthSpinBox->setValue(200);
     m_displayWidthSpinBox->setSuffix(" px");
+    m_displayWidthSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     QLabel *displayXLabel = new QLabel(" x ", this);
+    displayXLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                   .arg(p.textSecondary));
     m_displayHeightSpinBox = new QSpinBox(this);
     m_displayHeightSpinBox->setRange(32, 2048);
     m_displayHeightSpinBox->setValue(200);
     m_displayHeightSpinBox->setSuffix(" px");
+    m_displayHeightSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
     displayLayout->addWidget(m_displayWidthSpinBox);
     displayLayout->addWidget(displayXLabel);
     displayLayout->addWidget(m_displayHeightSpinBox);
@@ -95,10 +120,8 @@ void NewPetDialog::setupUi()
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     connect(m_confirmButton, &QPushButton::clicked, this, &NewPetDialog::accept);
 
-    ThemeManager &theme = ThemeManager::instance();
-    setStyleSheet(theme.dialogStyleSheet());
-    cancelButton->setStyleSheet(theme.secondaryButtonStyleSheet());
-    m_confirmButton->setStyleSheet(theme.primaryButtonStyleSheet());
+    cancelButton->setStyleSheet(theme.glassSecondaryButtonStyleSheet(6, 24));
+    m_confirmButton->setStyleSheet(theme.glassButtonStyleSheet(6, 48));
 }
 
 QString NewPetDialog::petId() const
