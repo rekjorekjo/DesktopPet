@@ -11,9 +11,13 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMimeData>
 #include <QRegularExpression>
+#include <QUrl>
 #include <QVBoxLayout>
 
 NewActionDialog::NewActionDialog(const QString &petDirPath, QWidget *parent)
@@ -106,6 +110,7 @@ void NewActionDialog::clearForm()
     m_emotionComboBox->setCurrentIndex(0);
     m_detectedFrameCount = 0;
     m_detectedFps = 12;
+    m_lastAutoSuggestedId.clear();
     updateExtraConfigVisibility();
 }
 
@@ -119,6 +124,7 @@ void NewActionDialog::setupUi()
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
+    setAcceptDrops(true);
     setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -366,14 +372,13 @@ void NewActionDialog::onBrowseGif()
 
 void NewActionDialog::autoFillFromGifFileName(const QString &gifPath)
 {
-    QFileInfo fileInfo(gifPath);
-    QString baseName = fileInfo.completeBaseName();
-
-    QString sanitizedId = baseName;
-    sanitizedId.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
-
-    if (m_idEdit->text().isEmpty()) {
-        m_idEdit->setText(sanitizedId);
+    QString suggestedId = suggestActionIdFromGif(gifPath);
+    if (!suggestedId.isEmpty()) {
+        QString currentId = m_idEdit->text().trimmed();
+        if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
+            m_idEdit->setText(suggestedId);
+            m_lastAutoSuggestedId = suggestedId;
+        }
     }
 }
 
@@ -404,8 +409,7 @@ bool NewActionDialog::validateInput()
         return false;
     }
 
-    static QRegularExpression re("^[a-zA-Z0-9_-]+$");
-    if (!re.match(id).hasMatch()) {
+    if (!validateActionId(id)) {
         SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
         return false;
     }
@@ -417,4 +421,108 @@ bool NewActionDialog::validateInput()
     }
 
     return true;
+}
+
+void NewActionDialog::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> urls = event->mimeData()->urls();
+        for (const QUrl &url : urls) {
+            if (url.isLocalFile()) {
+                QString filePath = url.toLocalFile();
+                if (filePath.toLower().endsWith(".gif")) {
+                    event->acceptProposedAction();
+                    return;
+                }
+            }
+        }
+    }
+    event->ignore();
+}
+
+void NewActionDialog::dropEvent(QDropEvent *event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    QList<QUrl> urls = event->mimeData()->urls();
+    for (const QUrl &url : urls) {
+        if (!url.isLocalFile()) {
+            continue;
+        }
+
+        QString filePath = url.toLocalFile();
+        if (!filePath.toLower().endsWith(".gif")) {
+            continue;
+        }
+
+        if (!QFile::exists(filePath)) {
+            SoftMessageBox::warning(this, tr("提示"), tr("文件不存在。"));
+            continue;
+        }
+
+        m_gifPathEdit->setText(filePath);
+
+        GifProbeResult probeResult = GifFrameExtractor::probeGif(filePath);
+        if (!probeResult.success) {
+            SoftMessageBox::warning(this, tr("提示"), probeResult.errorMessage);
+            m_detectedFrameCount = 0;
+            m_frameCountLabel->setText("0");
+            autoFillFromGifFileName(filePath);
+            event->acceptProposedAction();
+            return;
+        }
+
+        m_detectedFrameCount = probeResult.frameCount;
+        m_frameCountLabel->setText(QString::number(probeResult.frameCount));
+        m_detectedFps = probeResult.fps;
+        m_fpsSpinBox->setValue(probeResult.fps);
+
+        autoFillFromGifFileName(filePath);
+        event->acceptProposedAction();
+        return;
+    }
+
+    event->ignore();
+}
+
+QString NewActionDialog::suggestActionIdFromGif(const QString &gifPath) const
+{
+    QFileInfo fileInfo(gifPath);
+    QString baseName = fileInfo.completeBaseName();
+    if (baseName.isEmpty()) {
+        return QString();
+    }
+
+    QString suggestedId = baseName.trimmed();
+    suggestedId.replace(" ", "_");
+    suggestedId.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+
+    while (suggestedId.contains("__")) {
+        suggestedId.replace("__", "_");
+    }
+    while (suggestedId.startsWith("_")) {
+        suggestedId.remove(0, 1);
+    }
+    while (suggestedId.endsWith("_")) {
+        suggestedId.chop(1);
+    }
+
+    if (suggestedId.isEmpty()) {
+        return QString();
+    }
+
+    if (!validateActionId(suggestedId)) {
+        return QString();
+    }
+
+    return suggestedId;
+}
+
+bool NewActionDialog::validateActionId(const QString &id) const
+{
+    static QRegularExpression re("^[a-zA-Z0-9_-]+$");
+    return re.match(id).hasMatch();
 }

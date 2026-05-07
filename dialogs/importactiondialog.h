@@ -35,6 +35,10 @@ public:
 
     void clearForm();
 
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
 private slots:
     void onBrowseFolder();
     void onConfirm();

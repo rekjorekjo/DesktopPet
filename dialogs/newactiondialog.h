@@ -33,6 +33,10 @@ public:
 
     void clearForm();
 
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
 private slots:
     void onBrowseGif();
     void onConfirm();
@@ -45,8 +49,11 @@ private:
     bool validateInput();
     void autoFillFromGifFileName(const QString &gifPath);
     void updateExtraConfigVisibility();
+    QString suggestActionIdFromGif(const QString &gifPath) const;
+    bool validateActionId(const QString &id) const;
 
     QString m_petDirPath;
+    QString m_lastAutoSuggestedId;
 
     SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_gifPathEdit;

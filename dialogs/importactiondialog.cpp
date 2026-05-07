@@ -9,9 +9,13 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFileDialog>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMimeData>
 #include <QRegularExpression>
+#include <QUrl>
 #include <QVBoxLayout>
 
 ImportActionDialog::ImportActionDialog(const QString &petDirPath, QWidget *parent)
@@ -114,6 +118,7 @@ void ImportActionDialog::setupUi()
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
+    setAcceptDrops(true);
     setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -446,4 +451,77 @@ QString ImportActionDialog::suggestActionIdFromFolder(const QString &folderPath)
     }
 
     return suggestedId;
+}
+
+void ImportActionDialog::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> urls = event->mimeData()->urls();
+        for (const QUrl &url : urls) {
+            if (url.isLocalFile()) {
+                QString path = url.toLocalFile();
+                QDir dir(path);
+                if (dir.exists()) {
+                    event->acceptProposedAction();
+                    return;
+                }
+            }
+        }
+    }
+    event->ignore();
+}
+
+void ImportActionDialog::dropEvent(QDropEvent *event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    QList<QUrl> urls = event->mimeData()->urls();
+    for (const QUrl &url : urls) {
+        if (!url.isLocalFile()) {
+            continue;
+        }
+
+        QString folderPath = url.toLocalFile();
+        QDir dir(folderPath);
+        if (!dir.exists()) {
+            continue;
+        }
+
+        int frameCount = scanFrameCount(folderPath);
+        if (frameCount == 0) {
+            m_folderEdit->setText(folderPath);
+            m_frameCountLabel->setText("0");
+            QString suggestedId = suggestActionIdFromFolder(folderPath);
+            if (!suggestedId.isEmpty()) {
+                QString currentId = m_idEdit->text().trimmed();
+                if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
+                    m_idEdit->setText(suggestedId);
+                    m_lastAutoSuggestedId = suggestedId;
+                }
+            }
+            SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
+            event->acceptProposedAction();
+            return;
+        }
+
+        m_folderEdit->setText(folderPath);
+        m_frameCountLabel->setText(QString::number(frameCount));
+
+        QString suggestedId = suggestActionIdFromFolder(folderPath);
+        if (!suggestedId.isEmpty()) {
+            QString currentId = m_idEdit->text().trimmed();
+            if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
+                m_idEdit->setText(suggestedId);
+                m_lastAutoSuggestedId = suggestedId;
+            }
+        }
+
+        event->acceptProposedAction();
+        return;
+    }
+
+    event->ignore();
 }
