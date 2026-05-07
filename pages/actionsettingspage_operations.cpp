@@ -6,9 +6,9 @@
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actioncategorytabwidget.h"
 #include "widgets/softmessagebox.h"
+#include "widgets/softinputdialog.h"
 
 #include <QAction>
-#include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMenu>
 
@@ -139,11 +139,10 @@ void ActionSettingsPage::onRenameActionId()
     }
 
     bool ok = false;
-    QString newActionId = QInputDialog::getText(
+    QString newActionId = SoftInputDialog::getText(
         this,
         tr("重命名动作 ID"),
         tr("请输入新的动作 ID:"),
-        QLineEdit::Normal,
         oldActionId,
         &ok
     );
@@ -302,11 +301,10 @@ void ActionSettingsPage::onRenameCategoryAction()
     QString defaultName = displayNameForRef(ref);
 
     bool ok = false;
-    QString newName = QInputDialog::getText(
+    QString newName = SoftInputDialog::getText(
         this,
         tr("重命名"),
         tr("请输入新的显示名称（留空则使用动作名称）："),
-        QLineEdit::Normal,
         defaultName,
         &ok
     );
@@ -382,6 +380,9 @@ void ActionSettingsPage::onCategoryListContextMenu(const QPoint &pos)
     list->setCurrentItem(item);
 
     QMenu contextMenu(tr("操作"), this);
+    ThemeManager &theme = ThemeManager::instance();
+    contextMenu.setStyleSheet(theme.menuStyleSheet());
+
     QAction *renameAction = contextMenu.addAction(tr("重命名"));
     QAction *moveUpAction = contextMenu.addAction(tr("上移"));
     QAction *moveDownAction = contextMenu.addAction(tr("下移"));

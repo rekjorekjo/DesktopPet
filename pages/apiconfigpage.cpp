@@ -2,10 +2,10 @@
 
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
+#include "widgets/softinputdialog.h"
 
 #include <QFont>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QVBoxLayout>
 
 ApiConfigPage::ApiConfigPage(QWidget *parent)
@@ -282,11 +282,10 @@ void ApiConfigPage::saveCurrentApiConfig()
 void ApiConfigPage::onAddApiProfile()
 {
     bool ok = false;
-    QString profileName = QInputDialog::getText(this,
+    QString profileName = SoftInputDialog::getText(this,
                                                 tr("新增配置"),
                                                 tr("请输入配置名称："),
-                                                QLineEdit::Normal,
-                                                "",
+                                                QString(),
                                                 &ok);
 
     if (!ok || profileName.trimmed().isEmpty()) {

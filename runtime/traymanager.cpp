@@ -1,5 +1,7 @@
 #include "traymanager.h"
 
+#include "theme/thememanager.h"
+
 #include <QAction>
 #include <QApplication>
 #include <QColor>
@@ -71,20 +73,8 @@ void TrayManager::createMenu()
 {
     m_menu = new QMenu();
 
-    m_menu->setStyleSheet(
-        "QMenu {"
-        "  padding: 8px;"
-        "  min-width: 180px;"
-        "}"
-        "QMenu::item {"
-        "  padding: 8px 28px 8px 18px;"
-        "  min-height: 28px;"
-        "}"
-        "QMenu::separator {"
-        "  height: 1px;"
-        "  margin: 6px 8px;"
-        "}"
-    );
+    ThemeManager &theme = ThemeManager::instance();
+    m_menu->setStyleSheet(theme.menuStyleSheet());
 
     QAction *showAction = m_menu->addAction(tr("显示桌宠"));
     QAction *hideAction = m_menu->addAction(tr("隐藏桌宠"));

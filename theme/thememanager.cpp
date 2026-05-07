@@ -987,6 +987,51 @@ QString ThemeManager::listWidgetStyleSheet() const
     );
 }
 
+QString ThemeManager::innerListWidgetStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+
+    return QString(
+        "QListWidget {"
+        "  background-color: transparent;"
+        "  color: %1;"
+        "  border: none;"
+        "  border-radius: 0;"
+        "  outline: none;"
+        "  padding: 4px;"
+        "}"
+        "QListWidget::item {"
+        "  background-color: transparent;"
+        "  border: 1px solid transparent;"
+        "  border-radius: 8px;"
+        "  margin: 2px;"
+        "  padding: 10px 12px;"
+        "}"
+        "QListWidget::item:hover {"
+        "  background-color: %2;"
+        "}"
+        "QListWidget::item:selected {"
+        "  background-color: %3;"
+        "  color: %4;"
+        "  border-color: %5;"
+        "}"
+        "QListWidget::item:selected:hover {"
+        "  background-color: %6;"
+        "}"
+        "QListWidget::item:disabled {"
+        "  color: %7;"
+        "}"
+    ).arg(
+        p.listText,
+        p.listHoverBg,
+        p.listSelectedBg,
+        p.listSelectedText,
+        p.inputFocusBorder,
+        p.listSelectedBg,
+        p.listDisabledText
+    );
+}
+
 QString ThemeManager::menuStyleSheet() const
 {
     ThemePalette p = currentPalette();
@@ -996,29 +1041,39 @@ QString ThemeManager::menuStyleSheet() const
         "  background-color: %1;"
         "  color: %2;"
         "  border: 1px solid %3;"
-        "  border-radius: 6px;"
-        "  padding: 4px;"
+        "  border-radius: 10px;"
+        "  padding: 6px 4px;"
         "}"
         "QMenu::item {"
-        "  padding: 8px 24px;"
-        "  border-radius: 4px;"
+        "  padding: 8px 28px 8px 24px;"
+        "  border-radius: 6px;"
+        "  margin: 2px 4px;"
         "}"
         "QMenu::item:selected {"
         "  background-color: %4;"
         "  color: %5;"
         "}"
+        "QMenu::item:disabled {"
+        "  color: %6;"
+        "}"
         "QMenu::separator {"
         "  height: 1px;"
-        "  background-color: %6;"
-        "  margin: 4px 8px;"
+        "  background-color: %7;"
+        "  margin: 6px 12px;"
+        "}"
+        "QMenu::indicator {"
+        "  width: 16px;"
+        "  height: 16px;"
+        "  margin-left: 6px;"
         "}"
     ).arg(
-        p.menuBackground,
-        p.menuText,
+        p.cardBackground,
+        p.textPrimary,
         p.border,
-        p.menuHoverBg,
-        p.menuHoverText,
-        p.menuSeparator
+        p.accentSoft,
+        p.textPrimary,
+        p.disabledText,
+        p.separator
     );
 }
 
@@ -1027,9 +1082,16 @@ QString ThemeManager::splitterStyleSheet() const
     ThemePalette p = currentPalette();
     return QString(
         "QSplitter::handle {"
+        "  background-color: transparent;"
+        "  width: 6px;"
+        "}"
+        "QSplitter::handle:hover {"
         "  background-color: %1;"
         "}"
-    ).arg(p.border);
+        "QSplitter::handle:pressed {"
+        "  background-color: %2;"
+        "}"
+    ).arg(p.accentSoft, p.border);
 }
 
 QString ThemeManager::tabWidgetStyleSheet() const
@@ -1059,6 +1121,40 @@ QString ThemeManager::tabWidgetStyleSheet() const
         "  background-color: %7;"
         "}"
     ).arg(p.tabBorder, p.cardBackground, p.pageBackground, p.tabText, p.tabSelectedBg, p.tabSelectedText, p.tabHoverBg);
+}
+
+QString ThemeManager::innerTabWidgetStyleSheet() const
+{
+    ThemePalette p = currentPalette();
+    return QString(
+        "QTabWidget::pane {"
+        "  border: 1px solid %1;"
+        "  border-radius: 10px;"
+        "  background-color: %2;"
+        "  margin-top: 4px;"
+        "}"
+        "QTabBar::tab {"
+        "  background-color: %3;"
+        "  color: %4;"
+        "  padding: 8px 16px;"
+        "  border-top-left-radius: 6px;"
+        "  border-top-right-radius: 6px;"
+        "  border-bottom-left-radius: 0;"
+        "  border-bottom-right-radius: 0;"
+        "  margin-right: 2px;"
+        "}"
+        "QTabBar::tab:selected {"
+        "  background-color: %2;"
+        "  color: %5;"
+        "  border: 1px solid %1;"
+        "  border-bottom: none;"
+        "  border-top-left-radius: 6px;"
+        "  border-top-right-radius: 6px;"
+        "}"
+        "QTabBar::tab:hover:!selected {"
+        "  background-color: %6;"
+        "}"
+    ).arg(p.border, p.listBackground, p.pageBackground, p.tabText, p.tabSelectedText, p.tabHoverBg);
 }
 
 QString ThemeManager::dialogStyleSheet() const

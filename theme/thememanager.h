@@ -175,9 +175,11 @@ public:
     QString spinBoxStyleSheet() const;
     QString sliderStyleSheet() const;
     QString listWidgetStyleSheet() const;
+    QString innerListWidgetStyleSheet() const;
     QString menuStyleSheet() const;
     QString splitterStyleSheet() const;
     QString tabWidgetStyleSheet() const;
+    QString innerTabWidgetStyleSheet() const;
     QString dialogStyleSheet() const;
     QString timeEditStyleSheet() const;
 

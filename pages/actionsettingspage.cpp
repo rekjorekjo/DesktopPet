@@ -135,7 +135,7 @@ void ActionSettingsPage::setupUi()
 
     QSplitter *splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
     splitter->setStyleSheet(theme.splitterStyleSheet());
-    splitter->setHandleWidth(1);
+    splitter->setHandleWidth(6);
 
     m_libraryCard = new SoftCardWidget(splitter);
     m_libraryCard->setObjectName("libraryCard");
@@ -203,10 +203,11 @@ void ActionSettingsPage::setupUi()
     rightLayout->addWidget(m_configTitleLabel);
 
     m_categoryTabs = new ActionCategoryTabWidget(m_configCard);
-    m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
+    m_categoryTabs->setStyleSheet(theme.innerTabWidgetStyleSheet());
 
     m_dailyActionList = new ActionCategoryListWidget(m_categoryTabs);
-    m_dailyActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_dailyActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_dailyActionList->viewport()->setAutoFillBackground(false);
     m_dailyActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_dailyActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_dailyActionList->setDragDropMode(QAbstractItemView::InternalMove);
@@ -216,7 +217,8 @@ void ActionSettingsPage::setupUi()
     m_categoryTabs->addTab(m_dailyActionList, tr("日常动作"));
 
     m_randomActionList = new ActionCategoryListWidget(m_categoryTabs);
-    m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_randomActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_randomActionList->viewport()->setAutoFillBackground(false);
     m_randomActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_randomActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_randomActionList->setDragDropMode(QAbstractItemView::InternalMove);
@@ -226,7 +228,8 @@ void ActionSettingsPage::setupUi()
     m_categoryTabs->addTab(m_randomActionList, tr("随机动作"));
 
     m_scheduledActionList = new ActionCategoryListWidget(m_categoryTabs);
-    m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_scheduledActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_scheduledActionList->viewport()->setAutoFillBackground(false);
     m_scheduledActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scheduledActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scheduledActionList->setDragDropMode(QAbstractItemView::InternalMove);
@@ -236,7 +239,8 @@ void ActionSettingsPage::setupUi()
     m_categoryTabs->addTab(m_scheduledActionList, tr("定时动作"));
 
     m_emotionActionList = new ActionCategoryListWidget(m_categoryTabs);
-    m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_emotionActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_emotionActionList->viewport()->setAutoFillBackground(false);
     m_emotionActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_emotionActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_emotionActionList->setDragDropMode(QAbstractItemView::InternalMove);
@@ -579,11 +583,11 @@ void ActionSettingsPage::applyTheme()
 
     m_configTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));
-    m_categoryTabs->setStyleSheet(theme.tabWidgetStyleSheet());
-    m_dailyActionList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_randomActionList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_scheduledActionList->setStyleSheet(theme.listWidgetStyleSheet());
-    m_emotionActionList->setStyleSheet(theme.listWidgetStyleSheet());
+    m_categoryTabs->setStyleSheet(theme.innerTabWidgetStyleSheet());
+    m_dailyActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_randomActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_scheduledActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+    m_emotionActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
 
     m_moveUpButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_moveDownButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));

@@ -88,6 +88,8 @@ qt_add_executable(DesktopPet
     widgets/softdialogtitlebar.h
     widgets/softmessagebox.cpp
     widgets/softmessagebox.h
+    widgets/softinputdialog.cpp
+    widgets/softinputdialog.h
     utils/imageutils.cpp
     utils/imageutils.h
 )
