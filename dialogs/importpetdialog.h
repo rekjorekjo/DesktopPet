@@ -23,6 +23,10 @@ public:
     QSize canvasSize() const;
     QSize displaySize() const;
 
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
 private slots:
     void onBrowseDirectory();
     void onConfirm();
@@ -32,6 +36,11 @@ private:
     void connectSignals();
     bool validateInput();
     void tryLoadPetConfig();
+    void handleSelectedPetFolder(const QString &folderPath);
+    QString suggestPetIdFromFolder(const QString &folderPath) const;
+    bool validatePetId(const QString &id) const;
+
+    QString m_lastAutoSuggestedPetId;
 
     SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_directoryEdit;

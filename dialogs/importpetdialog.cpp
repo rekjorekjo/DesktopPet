@@ -7,13 +7,18 @@
 #include "widgets/softmessagebox.h"
 
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMimeData>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSpinBox>
+#include <QUrl>
 #include <QVBoxLayout>
 
 ImportPetDialog::ImportPetDialog(QWidget *parent)
@@ -73,6 +78,7 @@ void ImportPetDialog::setupUi()
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
+    setAcceptDrops(true);
     setStyleSheet(theme.dialogStyleSheet());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -223,21 +229,42 @@ void ImportPetDialog::onBrowseDirectory()
         return;
     }
 
-    QString petJsonPath = selectedDir + "/pet.json";
-    QString playlistPath = selectedDir + "/playlist.json";
+    handleSelectedPetFolder(selectedDir);
+}
 
-    if (!QFile::exists(petJsonPath)) {
+void ImportPetDialog::handleSelectedPetFolder(const QString &folderPath)
+{
+    QString petJsonPath = folderPath + "/pet.json";
+    QString playlistPath = folderPath + "/playlist.json";
+
+    bool hasPetJson = QFile::exists(petJsonPath);
+    bool hasPlaylist = QFile::exists(playlistPath);
+
+    if (!hasPetJson && !hasPlaylist) {
+        SoftMessageBox::warning(this, tr("提示"), tr("所选目录缺少 pet.json 和 playlist.json 文件。"));
+        return;
+    }
+
+    if (!hasPetJson) {
         SoftMessageBox::warning(this, tr("提示"), tr("所选目录缺少 pet.json 文件。"));
         return;
     }
 
-    if (!QFile::exists(playlistPath)) {
+    if (!hasPlaylist) {
         SoftMessageBox::warning(this, tr("提示"), tr("所选目录缺少 playlist.json 文件。"));
         return;
     }
 
-    m_directoryEdit->setText(selectedDir);
+    m_directoryEdit->setText(folderPath);
     tryLoadPetConfig();
+
+    if (m_petIdEdit->text().trimmed().isEmpty()) {
+        QString suggestedId = suggestPetIdFromFolder(folderPath);
+        if (!suggestedId.isEmpty()) {
+            m_petIdEdit->setText(suggestedId);
+            m_lastAutoSuggestedPetId = suggestedId;
+        }
+    }
 }
 
 void ImportPetDialog::tryLoadPetConfig()
@@ -251,12 +278,12 @@ void ImportPetDialog::tryLoadPetConfig()
 
     PetBasicInfo info;
     if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-        SoftMessageBox::warning(this, tr("提示"), tr("无法读取宠物配置。"));
         return;
     }
 
     if (!info.id.isEmpty()) {
         m_petIdEdit->setText(info.id);
+        m_lastAutoSuggestedPetId = info.id;
     }
 
     if (!info.name.isEmpty()) {
@@ -301,11 +328,93 @@ bool ImportPetDialog::validateInput()
         return false;
     }
 
-    static QRegularExpression re("^[a-zA-Z0-9_-]+$");
-    if (!re.match(id).hasMatch()) {
+    if (!validatePetId(id)) {
         SoftMessageBox::warning(this, tr("提示"), tr("宠物 ID 只能包含字母、数字、下划线和短横线。"));
         return false;
     }
 
     return true;
+}
+
+void ImportPetDialog::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> urls = event->mimeData()->urls();
+        for (const QUrl &url : urls) {
+            if (url.isLocalFile()) {
+                QString path = url.toLocalFile();
+                QDir dir(path);
+                if (dir.exists()) {
+                    event->acceptProposedAction();
+                    return;
+                }
+            }
+        }
+    }
+    event->ignore();
+}
+
+void ImportPetDialog::dropEvent(QDropEvent *event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    QList<QUrl> urls = event->mimeData()->urls();
+    for (const QUrl &url : urls) {
+        if (!url.isLocalFile()) {
+            continue;
+        }
+
+        QString folderPath = url.toLocalFile();
+        QDir dir(folderPath);
+        if (!dir.exists()) {
+            continue;
+        }
+
+        handleSelectedPetFolder(folderPath);
+        event->acceptProposedAction();
+        return;
+    }
+
+    event->ignore();
+}
+
+QString ImportPetDialog::suggestPetIdFromFolder(const QString &folderPath) const
+{
+    QString folderName = QFileInfo(folderPath).fileName();
+    if (folderName.isEmpty() || folderName == "." || folderName == "..") {
+        return QString();
+    }
+
+    QString suggestedId = folderName.trimmed();
+    suggestedId.replace(" ", "_");
+    suggestedId.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+
+    while (suggestedId.contains("__")) {
+        suggestedId.replace("__", "_");
+    }
+    while (suggestedId.startsWith("_")) {
+        suggestedId.remove(0, 1);
+    }
+    while (suggestedId.endsWith("_")) {
+        suggestedId.chop(1);
+    }
+
+    if (suggestedId.isEmpty()) {
+        return QString();
+    }
+
+    if (!validatePetId(suggestedId)) {
+        return QString();
+    }
+
+    return suggestedId;
+}
+
+bool ImportPetDialog::validatePetId(const QString &id) const
+{
+    static QRegularExpression re("^[a-zA-Z0-9_-]+$");
+    return re.match(id).hasMatch();
 }
