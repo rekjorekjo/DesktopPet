@@ -459,11 +459,70 @@ QColor SoftCardWidget::applyOpacity(const QColor &color, int opacity) const
 void SoftCardWidget::randomizeGradientSeed()
 {
     if (AppSettings::randomCardGradientEnabled()) {
-        m_gradientStartX = -0.1 + QRandomGenerator::global()->bounded(0.35);
-        m_gradientStartY = -0.1 + QRandomGenerator::global()->bounded(0.35);
-        m_gradientEndX = 0.75 + QRandomGenerator::global()->bounded(0.35);
-        m_gradientEndY = 0.75 + QRandomGenerator::global()->bounded(0.35);
-        m_highlightOffset = 0.35 + QRandomGenerator::global()->bounded(0.15);
+        int direction = QRandomGenerator::global()->bounded(6);
+        bool valid = false;
+        int attempts = 0;
+
+        while (!valid && attempts < 3) {
+            switch (direction) {
+            case 0:
+                m_gradientStartX = -0.10 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientStartY = -0.10 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientEndX = 0.80 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientEndY = 0.80 + QRandomGenerator::global()->bounded(0.30);
+                break;
+            case 1:
+                m_gradientStartX = 0.80 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientStartY = -0.10 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientEndX = -0.10 + QRandomGenerator::global()->bounded(0.30);
+                m_gradientEndY = 0.80 + QRandomGenerator::global()->bounded(0.30);
+                break;
+            case 2:
+                m_gradientStartX = -0.15 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientStartY = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientEndX = 0.90 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientEndY = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                break;
+            case 3:
+                m_gradientStartX = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientStartY = -0.15 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientEndX = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientEndY = 0.90 + QRandomGenerator::global()->bounded(0.25);
+                break;
+            case 4:
+                m_gradientStartX = 0.90 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientStartY = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientEndX = -0.15 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientEndY = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                break;
+            case 5:
+                m_gradientStartX = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientStartY = 0.90 + QRandomGenerator::global()->bounded(0.25);
+                m_gradientEndX = 0.25 + QRandomGenerator::global()->bounded(0.50);
+                m_gradientEndY = -0.15 + QRandomGenerator::global()->bounded(0.25);
+                break;
+            }
+
+            qreal dx = m_gradientEndX - m_gradientStartX;
+            qreal dy = m_gradientEndY - m_gradientStartY;
+            qreal distance = qSqrt(dx * dx + dy * dy);
+
+            if (distance >= 0.65) {
+                valid = true;
+            } else {
+                attempts++;
+                direction = QRandomGenerator::global()->bounded(6);
+            }
+        }
+
+        if (!valid) {
+            m_gradientStartX = 0.0;
+            m_gradientStartY = 0.0;
+            m_gradientEndX = 1.0;
+            m_gradientEndY = 1.0;
+        }
+
+        m_highlightOffset = 0.28 + QRandomGenerator::global()->bounded(0.30);
     } else {
         m_gradientStartX = 0.0;
         m_gradientStartY = 0.0;
