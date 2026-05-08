@@ -86,23 +86,27 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
     return true;
 }
 
+void PetAnimationPlayer::applyPlaybackOptions(bool loop, int repeat)
+{
+    bool infinite = loop || repeat == 0;
+
+    if (infinite) {
+        m_loop = true;
+        m_targetRepeat = 0;
+    } else {
+        m_loop = false;
+        m_targetRepeat = qBound(1, repeat, 10);
+    }
+}
+
 void PetAnimationPlayer::play(bool loop, int repeat)
 {
-    Q_UNUSED(loop);
-
     if (m_frames.isEmpty()) {
         emit errorOccurred("Cannot play: no frames loaded");
         return;
     }
 
-    m_targetRepeat = repeat;
-
-    if (m_targetRepeat == 0 || m_targetRepeat > 10) {
-        m_loop = true;
-        m_targetRepeat = 0;
-    } else {
-        m_loop = false;
-    }
+    applyPlaybackOptions(loop, repeat);
 
     m_currentFrameIndex = 0;
     m_currentLoopCount = 0;
@@ -162,6 +166,15 @@ void PetAnimationPlayer::setSpeedMultiplier(double multiplier)
 double PetAnimationPlayer::speedMultiplier() const
 {
     return m_speedMultiplier;
+}
+
+void PetAnimationPlayer::updatePlaybackOptions(bool loop, int repeat)
+{
+    applyPlaybackOptions(loop, repeat);
+
+    if (!m_loop && m_targetRepeat > 0 && m_currentLoopCount > m_targetRepeat) {
+        m_currentLoopCount = qMax(0, m_targetRepeat - 1);
+    }
 }
 
 bool PetAnimationPlayer::isPlaying() const

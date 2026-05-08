@@ -25,6 +25,8 @@ public:
     void setSpeedMultiplier(double multiplier);
     double speedMultiplier() const;
 
+    void updatePlaybackOptions(bool loop, int repeat);
+
     bool isPlaying() const;
     bool isPaused() const;
     bool isLoaded() const;
@@ -45,6 +47,7 @@ private:
 
     static int clampFps(int fps);
     static int calculateIntervalMs(int fps, double speedMultiplier);
+    void applyPlaybackOptions(bool loop, int repeat);
 
     QList<QPixmap> m_frames;
     QTimer *m_timer;

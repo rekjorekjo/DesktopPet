@@ -447,8 +447,18 @@ void PetWidget::reloadPlaylistPreservePlayback()
     if (!m_currentActionId.isEmpty()) {
         PetActionRef newRef;
         if (m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
-            MoveAxis oldMoveAxis = m_currentActionRef.moveAxis;
+            PetActionRef oldRef = m_currentActionRef;
             m_currentActionRef = newRef;
+
+            if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
+                m_player->setSpeedMultiplier(newRef.animationSpeed);
+            }
+
+            if (oldRef.loop != newRef.loop || oldRef.repeat != newRef.repeat) {
+                m_player->updatePlaybackOptions(newRef.loop, newRef.repeat);
+            }
+
+            MoveAxis oldMoveAxis = oldRef.moveAxis;
 
             if (newRef.moveEnabled && newRef.movementSpeed > 0) {
                 m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
