@@ -97,6 +97,7 @@ private:
     qreal m_gradientEndX;
     qreal m_gradientEndY;
     qreal m_highlightOffset;
+    bool m_hovered;
 };
 
 #endif // SOFTCARDWIDGET_H

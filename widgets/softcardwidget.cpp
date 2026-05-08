@@ -61,6 +61,7 @@ SoftCardWidget::SoftCardWidget(QWidget *parent)
     , m_gradientEndX(1.0)
     , m_gradientEndY(1.0)
     , m_highlightOffset(0.42)
+    , m_hovered(false)
 {
     init();
 }
@@ -84,6 +85,7 @@ SoftCardWidget::SoftCardWidget(const QString &title, QWidget *parent)
     , m_gradientEndX(1.0)
     , m_gradientEndY(1.0)
     , m_highlightOffset(0.42)
+    , m_hovered(false)
 {
     init();
     ensureInternalLayout();
@@ -392,6 +394,14 @@ void SoftCardWidget::resizeEvent(QResizeEvent *event)
 void SoftCardWidget::enterEvent(QEnterEvent *event)
 {
     QFrame::enterEvent(event);
+
+    if (!m_hovered) {
+        m_hovered = true;
+        if (AppSettings::randomCardGradientEnabled()) {
+            randomizeGradient();
+        }
+    }
+
     if (m_hoverAnimationEnabled) {
         animateHover(1.0, true);
     }
@@ -400,6 +410,7 @@ void SoftCardWidget::enterEvent(QEnterEvent *event)
 void SoftCardWidget::leaveEvent(QEvent *event)
 {
     QFrame::leaveEvent(event);
+    m_hovered = false;
     if (m_hoverAnimationEnabled) {
         animateHover(0.0, false);
     }
