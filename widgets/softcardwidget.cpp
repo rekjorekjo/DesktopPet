@@ -1,5 +1,6 @@
 #include "softcardwidget.h"
 #include "theme/thememanager.h"
+#include "core/appsettings.h"
 
 #include <QPainter>
 #include <QVBoxLayout>
@@ -7,6 +8,40 @@
 #include <QLinearGradient>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QRandomGenerator>
+
+namespace {
+
+QLinearGradient createCardGradient(
+    const QRectF &rect,
+    const SoftCardGradientColors &colors,
+    qreal startX,
+    qreal startY,
+    qreal endX,
+    qreal endY)
+{
+    QPointF startPoint(rect.left() + rect.width() * startX,
+                       rect.top() + rect.height() * startY);
+    QPointF endPoint(rect.left() + rect.width() * endX,
+                     rect.top() + rect.height() * endY);
+
+    QLinearGradient gradient(startPoint, endPoint);
+
+    QColor topLeft = colors.topLeft;
+    QColor topRight = colors.topRight;
+    QColor bottomRight = colors.bottomRight;
+    topLeft.setAlpha(colors.baseAlpha);
+    topRight.setAlpha(colors.baseAlpha);
+    bottomRight.setAlpha(colors.baseAlpha);
+
+    gradient.setColorAt(0.0, topLeft);
+    gradient.setColorAt(0.48, topRight);
+    gradient.setColorAt(1.0, bottomRight);
+
+    return gradient;
+}
+
+} // namespace
 
 SoftCardWidget::SoftCardWidget(QWidget *parent)
     : QFrame(parent)
@@ -21,6 +56,11 @@ SoftCardWidget::SoftCardWidget(QWidget *parent)
     , m_hoverAnimationEnabled(true)
     , m_hoverAnimation(nullptr)
     , m_contentWidget(nullptr)
+    , m_gradientStartX(0.0)
+    , m_gradientStartY(0.0)
+    , m_gradientEndX(1.0)
+    , m_gradientEndY(1.0)
+    , m_highlightOffset(0.42)
 {
     init();
 }
@@ -39,6 +79,11 @@ SoftCardWidget::SoftCardWidget(const QString &title, QWidget *parent)
     , m_hoverAnimation(nullptr)
     , m_title(title)
     , m_contentWidget(nullptr)
+    , m_gradientStartX(0.0)
+    , m_gradientStartY(0.0)
+    , m_gradientEndX(1.0)
+    , m_gradientEndY(1.0)
+    , m_highlightOffset(0.42)
 {
     init();
     ensureInternalLayout();
@@ -55,6 +100,8 @@ void SoftCardWidget::init()
     QEasingCurve enterCurve(QEasingCurve::OutBack);
     enterCurve.setOvershoot(0.45);
     m_hoverAnimation->setEasingCurve(enterCurve);
+
+    randomizeGradientSeed();
 
     applyTheme();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &SoftCardWidget::applyTheme);
@@ -311,20 +358,14 @@ void SoftCardWidget::paintEvent(QPaintEvent *event)
         painter.fillPath(shadowPath, shadowColor);
     }
 
-    QLinearGradient cardGrad(cardRect.topLeft(), cardRect.bottomRight());
-    QColor topLeft = colors.topLeft;
-    QColor topRight = colors.topRight;
-    QColor bottomRight = colors.bottomRight;
-    topLeft.setAlpha(colors.baseAlpha);
-    topRight.setAlpha(colors.baseAlpha);
-    bottomRight.setAlpha(colors.baseAlpha);
-    cardGrad.setColorAt(0.0, topLeft);
-    cardGrad.setColorAt(0.48, topRight);
-    cardGrad.setColorAt(1.0, bottomRight);
+    QLinearGradient cardGrad = createCardGradient(cardRect, colors,
+                                                   m_gradientStartX, m_gradientStartY,
+                                                   m_gradientEndX, m_gradientEndY);
     painter.fillPath(bgPath, cardGrad);
 
     if (m_showHighlight && colors.highlightAlpha > 0) {
-        QLinearGradient highlightGrad(cardRect.topLeft(), QPointF(cardRect.left(), cardRect.top() + cardRect.height() * 0.42));
+        qreal highlightY = cardRect.top() + cardRect.height() * m_highlightOffset;
+        QLinearGradient highlightGrad(cardRect.topLeft(), QPointF(cardRect.left(), highlightY));
         QColor highlightColor = colors.highlight;
         int highlightAlpha = qMin(colors.highlightAlpha + qRound(4 * m_hoverProgress),
                                   m_highlightOpacity + qRound(14 * m_hoverProgress));
@@ -402,4 +443,27 @@ QColor SoftCardWidget::applyOpacity(const QColor &color, int opacity) const
     QColor result = color;
     result.setAlpha(opacity);
     return result;
+}
+
+void SoftCardWidget::randomizeGradientSeed()
+{
+    if (AppSettings::randomCardGradientEnabled()) {
+        m_gradientStartX = -0.1 + QRandomGenerator::global()->bounded(0.35);
+        m_gradientStartY = -0.1 + QRandomGenerator::global()->bounded(0.35);
+        m_gradientEndX = 0.75 + QRandomGenerator::global()->bounded(0.35);
+        m_gradientEndY = 0.75 + QRandomGenerator::global()->bounded(0.35);
+        m_highlightOffset = 0.35 + QRandomGenerator::global()->bounded(0.15);
+    } else {
+        m_gradientStartX = 0.0;
+        m_gradientStartY = 0.0;
+        m_gradientEndX = 1.0;
+        m_gradientEndY = 1.0;
+        m_highlightOffset = 0.42;
+    }
+    update();
+}
+
+void SoftCardWidget::randomizeGradient()
+{
+    randomizeGradientSeed();
 }

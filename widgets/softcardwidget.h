@@ -62,6 +62,7 @@ public:
 
 public slots:
     void applyTheme();
+    void randomizeGradient();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -75,6 +76,7 @@ private:
     void animateHover(qreal endValue, bool entering);
     QPainterPath createRoundedRectPath(const QRectF &rect, int radius) const;
     QColor applyOpacity(const QColor &color, int opacity) const;
+    void randomizeGradientSeed();
 
 private:
     int m_borderRadius;
@@ -89,6 +91,12 @@ private:
     QPropertyAnimation *m_hoverAnimation;
     QString m_title;
     QWidget *m_contentWidget;
+
+    qreal m_gradientStartX;
+    qreal m_gradientStartY;
+    qreal m_gradientEndX;
+    qreal m_gradientEndY;
+    qreal m_highlightOffset;
 };
 
 #endif // SOFTCARDWIDGET_H

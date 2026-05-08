@@ -30,6 +30,9 @@ public:
     static int cardGradientStrength();
     static void setCardGradientStrength(int value);
 
+    static bool randomCardGradientEnabled();
+    static void setRandomCardGradientEnabled(bool enabled);
+
 private:
     static double clampScale(double scale);
     static double clampOpacity(double opacity);

@@ -156,3 +156,15 @@ int AppSettings::clampGradientStrength(int value)
     }
     return value;
 }
+
+bool AppSettings::randomCardGradientEnabled()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    return settings.value("ui/randomCardGradientEnabled", true).toBool();
+}
+
+void AppSettings::setRandomCardGradientEnabled(bool enabled)
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("ui/randomCardGradientEnabled", enabled);
+}

@@ -203,6 +203,14 @@ void SettingsWindow::connectSignals()
                     card->update();
                 }
             });
+
+    connect(m_personalizationPage, &PersonalizationPage::randomCardGradientChanged,
+            this, [this](bool) {
+                const QList<SoftCardWidget *> cards = findChildren<SoftCardWidget *>();
+                for (SoftCardWidget *card : cards) {
+                    card->randomizeGradient();
+                }
+            });
 }
 
 void SettingsWindow::applyTheme()

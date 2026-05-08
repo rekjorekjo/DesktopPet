@@ -31,6 +31,7 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_gradientStrengthLabel(nullptr)
     , m_gradientStrengthSlider(nullptr)
     , m_gradientStrengthValueLabel(nullptr)
+    , m_randomGradientCheckBox(nullptr)
     , m_startupCard(nullptr)
     , m_startupCardTitle(nullptr)
     , m_autoStartOnBootCheckBox(nullptr)
@@ -192,6 +193,11 @@ void PersonalizationPage::setupUi()
     gradientStrengthLayout->addStretch();
     displayLayout->addLayout(gradientStrengthLayout);
 
+    m_randomGradientCheckBox = new QCheckBox(tr("随机渐变"), m_displayCard);
+    m_randomGradientCheckBox->setChecked(AppSettings::randomCardGradientEnabled());
+    m_randomGradientCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    displayLayout->addWidget(m_randomGradientCheckBox);
+
     contentLayout->addWidget(m_displayCard);
 
     m_startupCard = new SoftCardWidget(m_contentWidget);
@@ -245,6 +251,9 @@ void PersonalizationPage::connectSignals()
 
     connect(m_gradientStrengthSlider, &QSlider::valueChanged,
             this, &PersonalizationPage::onCardGradientStrengthChanged);
+
+    connect(m_randomGradientCheckBox, &QCheckBox::toggled,
+            this, &PersonalizationPage::onRandomCardGradientChanged);
 
     connect(m_autoStartOnBootCheckBox, &QCheckBox::toggled,
             this, &PersonalizationPage::onAutoStartOnBootChanged);
@@ -331,6 +340,12 @@ void PersonalizationPage::onCardGradientStrengthChanged(int value)
     emit cardGradientStrengthChanged(value);
 }
 
+void PersonalizationPage::onRandomCardGradientChanged(bool enabled)
+{
+    AppSettings::setRandomCardGradientEnabled(enabled);
+    emit randomCardGradientChanged(enabled);
+}
+
 void PersonalizationPage::onAutoStartOnBootChanged(bool enabled)
 {
     AppSettings::setAutoStartOnBoot(enabled);
@@ -387,6 +402,8 @@ void PersonalizationPage::applyTheme()
     m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_opacitySlider->setStyleSheet(theme.sliderStyleSheet());
     m_gradientStrengthSlider->setStyleSheet(theme.sliderStyleSheet());
+
+    m_randomGradientCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
 
     m_autoStartOnBootCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_autoPlayOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());

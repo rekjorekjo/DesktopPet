@@ -26,11 +26,13 @@ public slots:
 signals:
     void petOpacityChanged(double opacity);
     void cardGradientStrengthChanged(int value);
+    void randomCardGradientChanged(bool enabled);
 
 private slots:
     void onThemeItemClicked(QListWidgetItem *item);
     void onOpacityChanged(int value);
     void onCardGradientStrengthChanged(int value);
+    void onRandomCardGradientChanged(bool enabled);
     void onAutoStartOnBootChanged(bool enabled);
     void onAutoPlayOnLaunchChanged(bool enabled);
     void onOpenSettingsOnLaunchChanged(bool enabled);
@@ -63,6 +65,7 @@ private:
     QLabel *m_gradientStrengthLabel;
     QSlider *m_gradientStrengthSlider;
     QLabel *m_gradientStrengthValueLabel;
+    QCheckBox *m_randomGradientCheckBox;
 
     SoftCardWidget *m_startupCard;
     QLabel *m_startupCardTitle;
