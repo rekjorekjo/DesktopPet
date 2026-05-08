@@ -168,3 +168,28 @@ void AppSettings::setRandomCardGradientEnabled(bool enabled)
     QSettings settings("DesktopPet", "DesktopPet");
     settings.setValue("ui/randomCardGradientEnabled", enabled);
 }
+
+int AppSettings::baseMoveSpeed()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    int speed = settings.value("ui/baseMoveSpeed", BaseMoveSpeedDefault).toInt();
+    return clampBaseMoveSpeed(speed);
+}
+
+void AppSettings::setBaseMoveSpeed(int speed)
+{
+    speed = clampBaseMoveSpeed(speed);
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("ui/baseMoveSpeed", speed);
+}
+
+int AppSettings::clampBaseMoveSpeed(int speed)
+{
+    if (speed < BaseMoveSpeedMin) {
+        return BaseMoveSpeedMin;
+    }
+    if (speed > BaseMoveSpeedMax) {
+        return BaseMoveSpeedMax;
+    }
+    return speed;
+}

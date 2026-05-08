@@ -47,7 +47,9 @@ signals:
     void startPetRequested();
     void pausePetRequested();
     void applyPetConfigRequested();
+    void actionConfigApplied();
     void petOpacityChanged(double opacity);
+    void baseMoveSpeedChanged(int speed);
 
 protected:
     void changeEvent(QEvent *event) override;

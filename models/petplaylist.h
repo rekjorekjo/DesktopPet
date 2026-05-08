@@ -7,6 +7,13 @@
 
 #include "models/timedtrigger.h"
 
+enum class MoveAxis
+{
+    Random,
+    Horizontal,
+    Vertical
+};
+
 struct PetActionRef
 {
     QString actionId;
@@ -18,6 +25,7 @@ struct PetActionRef
     bool moveEnabled;
     double movementSpeed;
     double animationSpeed;
+    MoveAxis moveAxis;
     TimedTriggerMode timedTriggerMode;
     QString triggerTime;
 
@@ -77,6 +85,8 @@ public:
 
     int removeActionReferences(const QString &actionId);
     int replaceActionReferences(const QString &oldActionId, const QString &newActionId);
+
+    bool findFirstActionRef(const QString &actionId, PetActionRef *outRef) const;
 
 private:
     bool moveActionUp(QList<PetActionRef> &list, int index);

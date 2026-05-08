@@ -666,6 +666,21 @@ QJsonObject PetConfigManager::actionRefToJson(const PetActionRef &ref)
     obj["moveEnabled"] = ref.moveEnabled;
     obj["movementSpeed"] = ref.movementSpeed;
     obj["animationSpeed"] = ref.animationSpeed;
+
+    QString moveAxisStr = "random";
+    switch (ref.moveAxis) {
+    case MoveAxis::Random:
+        moveAxisStr = "random";
+        break;
+    case MoveAxis::Horizontal:
+        moveAxisStr = "horizontal";
+        break;
+    case MoveAxis::Vertical:
+        moveAxisStr = "vertical";
+        break;
+    }
+    obj["moveAxis"] = moveAxisStr;
+
     obj["timedTriggerMode"] = timedTriggerModeToString(ref.timedTriggerMode);
     obj["triggerTime"] = ref.triggerTime;
     return obj;
@@ -697,6 +712,15 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
         animSpeed = 5.0;
     }
     ref.animationSpeed = animSpeed;
+
+    QString moveAxisStr = obj.value("moveAxis").toString("random").toLower();
+    if (moveAxisStr == "horizontal") {
+        ref.moveAxis = MoveAxis::Horizontal;
+    } else if (moveAxisStr == "vertical") {
+        ref.moveAxis = MoveAxis::Vertical;
+    } else {
+        ref.moveAxis = MoveAxis::Random;
+    }
 
     QString triggerModeStr = obj.value("timedTriggerMode").toString("interval");
     ref.timedTriggerMode = timedTriggerModeFromString(triggerModeStr);

@@ -2,6 +2,7 @@
 #define PETWIDGET_H
 
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QHash>
 #include <QLabel>
 #include <QMap>
@@ -48,9 +49,11 @@ public slots:
     void startPet();
     void pausePet();
     void reloadPet();
+    void reloadPlaylistPreservePlayback();
     void setPetScaleFactor(double scale);
     void setPetOpacity(double opacity);
     void playEmotion(const QString &emotion);
+    void setBaseMoveSpeed(int speed);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -69,6 +72,7 @@ private slots:
     void onErrorOccurred(const QString &message);
     void triggerRandomAction();
     void checkTimedActions();
+    void updateMovement();
 
 private:
     void setupUi();
@@ -84,11 +88,17 @@ private:
     bool hasAnyEnabledPet() const;
     void showStatusMessage(const QString &title, const QString &subtitle);
     void clearStatusMessage();
+    void startMovement();
+    void stopMovement();
+    void updateMoveDirection();
+    QRect getAvailableScreenGeometry() const;
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
     QTimer *m_randomTimer;
     QTimer *m_timedCheckTimer;
+    QTimer *m_moveTimer;
+    QElapsedTimer m_moveElapsedTimer;
     QMap<int, QDateTime> m_lastTimedTriggerTimes;
     QHash<QString, QDate> m_clockTimedLastTriggeredDate;
 
@@ -106,6 +116,13 @@ private:
 
     bool m_dragging;
     QPoint m_dragPosition;
+
+    bool m_moveEnabled;
+    int m_moveDirection;
+    qreal m_moveVelocity;
+    MoveAxis m_moveAxis;
+    qreal m_moveRemainderX;
+    qreal m_moveRemainderY;
 };
 
 #endif // PETWIDGET_H

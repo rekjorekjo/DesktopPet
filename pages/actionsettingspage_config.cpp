@@ -25,6 +25,7 @@ void ActionSettingsPage::updateActionConfigPanel()
     QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
     QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
     QSignalBlocker speedBlocker(m_speedComboBox);
+    QSignalBlocker moveAxisBlocker(m_moveAxisComboBox);
     QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
     QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
     QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
@@ -33,9 +34,24 @@ void ActionSettingsPage::updateActionConfigPanel()
     m_repeatSpinBox->setValue(ref.repeat);
     m_moveEnabledCheckBox->setChecked(ref.moveEnabled);
     m_speedComboBox->setEnabled(ref.moveEnabled);
+    m_moveAxisComboBox->setEnabled(ref.moveEnabled);
 
     int speedIndex = findSpeedIndex(ref.movementSpeed);
     m_speedComboBox->setCurrentIndex(speedIndex);
+
+    int moveAxisIndex = 0;
+    switch (ref.moveAxis) {
+    case MoveAxis::Random:
+        moveAxisIndex = 0;
+        break;
+    case MoveAxis::Horizontal:
+        moveAxisIndex = 1;
+        break;
+    case MoveAxis::Vertical:
+        moveAxisIndex = 2;
+        break;
+    }
+    m_moveAxisComboBox->setCurrentIndex(moveAxisIndex);
 
     bool customAnimSpeed = !qFuzzyCompare(ref.animationSpeed, 1.0);
     m_animationSpeedCheckBox->setChecked(customAnimSpeed);
@@ -92,6 +108,7 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         QSignalBlocker animSpeedBlocker(m_animationSpeedComboBox);
         QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
         QSignalBlocker speedBlocker(m_speedComboBox);
+        QSignalBlocker moveAxisBlocker(m_moveAxisComboBox);
         QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
         QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
         QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
@@ -106,6 +123,8 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         m_moveEnabledCheckBox->setChecked(false);
         m_speedComboBox->setEnabled(false);
         m_speedComboBox->setCurrentIndex(3);
+        m_moveAxisComboBox->setEnabled(false);
+        m_moveAxisComboBox->setCurrentIndex(0);
 
         m_timedTriggerModeComboBox->setCurrentIndex(0);
         m_timedIntervalSpinBox->setValue(300);
@@ -247,6 +266,7 @@ void ActionSettingsPage::onMoveEnabledChanged(int state)
     bool enabled = (state == Qt::Checked);
     ref.moveEnabled = enabled;
     m_speedComboBox->setEnabled(enabled);
+    m_moveAxisComboBox->setEnabled(enabled);
     updateCurrentSelectedRef(ref);
 }
 
@@ -263,6 +283,22 @@ void ActionSettingsPage::onSpeedChanged(int index)
 
     double speed = m_speedComboBox->itemData(index).toDouble();
     ref.movementSpeed = speed;
+    updateCurrentSelectedRef(ref);
+}
+
+void ActionSettingsPage::onMoveAxisChanged(int index)
+{
+    QListWidget *list = currentCategoryList();
+    if (!list) return;
+
+    int row = list->currentRow();
+    if (row < 0) return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid()) return;
+
+    MoveAxis axis = static_cast<MoveAxis>(m_moveAxisComboBox->itemData(index).toInt());
+    ref.moveAxis = axis;
     updateCurrentSelectedRef(ref);
 }
 

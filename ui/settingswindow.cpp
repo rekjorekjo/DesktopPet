@@ -184,7 +184,7 @@ void SettingsWindow::connectSignals()
             this, &SettingsWindow::pausePetRequested);
 
     connect(m_actionSettingsPage, &ActionSettingsPage::applyConfigRequested,
-            this, &SettingsWindow::applyPetConfigRequested);
+            this, &SettingsWindow::actionConfigApplied);
 
     connect(m_petManagePage, &PetManagePage::applyConfigRequested, this, [this]() {
         if (m_actionSettingsPage) {
@@ -195,6 +195,9 @@ void SettingsWindow::connectSignals()
 
     connect(m_personalizationPage, &PersonalizationPage::petOpacityChanged,
             this, &SettingsWindow::petOpacityChanged);
+
+    connect(m_personalizationPage, &PersonalizationPage::baseMoveSpeedChanged,
+            this, &SettingsWindow::baseMoveSpeedChanged);
 
     connect(m_personalizationPage, &PersonalizationPage::cardGradientStrengthChanged,
             this, [this](int) {

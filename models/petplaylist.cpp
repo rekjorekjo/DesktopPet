@@ -7,6 +7,7 @@ PetActionRef::PetActionRef()
     , moveEnabled(false)
     , movementSpeed(1.0)
     , animationSpeed(1.0)
+    , moveAxis(MoveAxis::Random)
     , timedTriggerMode(TimedTriggerMode::Interval)
     , triggerTime("00:00")
 {
@@ -20,6 +21,7 @@ PetActionRef::PetActionRef(const QString &id)
     , moveEnabled(false)
     , movementSpeed(1.0)
     , animationSpeed(1.0)
+    , moveAxis(MoveAxis::Random)
     , timedTriggerMode(TimedTriggerMode::Interval)
     , triggerTime("00:00")
 {
@@ -340,6 +342,45 @@ int PetPlaylist::removeActionReferences(const QString &actionId)
     }
 
     return count;
+}
+
+bool PetPlaylist::findFirstActionRef(const QString &actionId, PetActionRef *outRef) const
+{
+    if (!outRef) {
+        return false;
+    }
+
+    for (const PetActionRef &ref : m_idleActions) {
+        if (ref.actionId == actionId) {
+            *outRef = ref;
+            return true;
+        }
+    }
+
+    for (const PetActionRef &ref : m_randomActions) {
+        if (ref.actionId == actionId) {
+            *outRef = ref;
+            return true;
+        }
+    }
+
+    for (const PetActionRef &ref : m_timedActions) {
+        if (ref.actionId == actionId) {
+            *outRef = ref;
+            return true;
+        }
+    }
+
+    for (const QList<PetActionRef> &list : m_emotionActions) {
+        for (const PetActionRef &ref : list) {
+            if (ref.actionId == actionId) {
+                *outRef = ref;
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 int PetPlaylist::replaceActionReferences(const QString &oldActionId, const QString &newActionId)

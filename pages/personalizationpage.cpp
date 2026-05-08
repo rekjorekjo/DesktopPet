@@ -198,6 +198,26 @@ void PersonalizationPage::setupUi()
     m_randomGradientCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     displayLayout->addWidget(m_randomGradientCheckBox);
 
+    QHBoxLayout *baseMoveSpeedLayout = new QHBoxLayout();
+    m_baseMoveSpeedLabel = new QLabel(tr("基础移动速度:"), m_displayCard);
+    m_baseMoveSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                             .arg(p.textSecondary));
+    m_baseMoveSpeedSlider = new QSlider(Qt::Horizontal, m_displayCard);
+    m_baseMoveSpeedSlider->setRange(AppSettings::BaseMoveSpeedMin, AppSettings::BaseMoveSpeedMax);
+    m_baseMoveSpeedSlider->setValue(AppSettings::baseMoveSpeed());
+    m_baseMoveSpeedSlider->setMinimumWidth(200);
+    m_baseMoveSpeedSlider->setStyleSheet(theme.sliderStyleSheet());
+    m_baseMoveSpeedValueLabel = new QLabel(m_displayCard);
+    m_baseMoveSpeedValueLabel->setMinimumWidth(60);
+    m_baseMoveSpeedValueLabel->setText(QString("%1 px/s").arg(m_baseMoveSpeedSlider->value()));
+    m_baseMoveSpeedValueLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                                  .arg(p.textSecondary));
+    baseMoveSpeedLayout->addWidget(m_baseMoveSpeedLabel);
+    baseMoveSpeedLayout->addWidget(m_baseMoveSpeedSlider);
+    baseMoveSpeedLayout->addWidget(m_baseMoveSpeedValueLabel);
+    baseMoveSpeedLayout->addStretch();
+    displayLayout->addLayout(baseMoveSpeedLayout);
+
     contentLayout->addWidget(m_displayCard);
 
     m_startupCard = new SoftCardWidget(m_contentWidget);
@@ -254,6 +274,9 @@ void PersonalizationPage::connectSignals()
 
     connect(m_randomGradientCheckBox, &QCheckBox::toggled,
             this, &PersonalizationPage::onRandomCardGradientChanged);
+
+    connect(m_baseMoveSpeedSlider, &QSlider::valueChanged,
+            this, &PersonalizationPage::onBaseMoveSpeedChanged);
 
     connect(m_autoStartOnBootCheckBox, &QCheckBox::toggled,
             this, &PersonalizationPage::onAutoStartOnBootChanged);
@@ -344,6 +367,13 @@ void PersonalizationPage::onRandomCardGradientChanged(bool enabled)
 {
     AppSettings::setRandomCardGradientEnabled(enabled);
     emit randomCardGradientChanged(enabled);
+}
+
+void PersonalizationPage::onBaseMoveSpeedChanged(int value)
+{
+    m_baseMoveSpeedValueLabel->setText(QString("%1 px/s").arg(value));
+    AppSettings::setBaseMoveSpeed(value);
+    emit baseMoveSpeedChanged(value);
 }
 
 void PersonalizationPage::onAutoStartOnBootChanged(bool enabled)

@@ -6,6 +6,10 @@
 class AppSettings
 {
 public:
+    static constexpr int BaseMoveSpeedMin = 1;
+    static constexpr int BaseMoveSpeedMax = 100;
+    static constexpr int BaseMoveSpeedDefault = 20;
+
     static QString currentPetId();
     static void setCurrentPetId(const QString &petId);
 
@@ -33,10 +37,14 @@ public:
     static bool randomCardGradientEnabled();
     static void setRandomCardGradientEnabled(bool enabled);
 
+    static int baseMoveSpeed();
+    static void setBaseMoveSpeed(int speed);
+
 private:
     static double clampScale(double scale);
     static double clampOpacity(double opacity);
     static int clampGradientStrength(int value);
+    static int clampBaseMoveSpeed(int speed);
 };
 
 #endif // APPSETTINGS_H

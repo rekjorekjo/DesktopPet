@@ -9,9 +9,11 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QGuiApplication>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QRandomGenerator>
+#include <QScreen>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -21,11 +23,18 @@ PetWidget::PetWidget(QWidget *parent)
     , m_player(nullptr)
     , m_randomTimer(nullptr)
     , m_timedCheckTimer(nullptr)
+    , m_moveTimer(nullptr)
     , m_currentMode(PetPlayMode::Idle)
     , m_petRunning(AppSettings::autoPlayOnLaunch())
     , m_petScaleFactor(1.0)
     , m_idleActionIndex(0)
     , m_dragging(false)
+    , m_moveEnabled(false)
+    , m_moveDirection(0)
+    , m_moveVelocity(0.0)
+    , m_moveAxis(MoveAxis::Random)
+    , m_moveRemainderX(0.0)
+    , m_moveRemainderY(0.0)
 {
     setupUi();
 
@@ -39,6 +48,9 @@ PetWidget::PetWidget(QWidget *parent)
 
     m_timedCheckTimer = new QTimer(this);
     connect(m_timedCheckTimer, &QTimer::timeout, this, &PetWidget::checkTimedActions);
+
+    m_moveTimer = new QTimer(this);
+    connect(m_moveTimer, &QTimer::timeout, this, &PetWidget::updateMovement);
 
     setWindowOpacity(AppSettings::petOpacity());
 
@@ -275,6 +287,8 @@ void PetWidget::loadGlobalActionLibrary()
 
 bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
 {
+    stopMovement();
+
     if (!action.isValid()) {
         showStatusMessage(tr("动作无效"), QString());
         return false;
@@ -294,6 +308,17 @@ bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
     clearStatusMessage();
 
     m_player->play(ref.loop, ref.repeat);
+
+    if (ref.moveEnabled && ref.movementSpeed > 0) {
+        m_moveEnabled = true;
+        m_moveVelocity = AppSettings::baseMoveSpeed() * ref.movementSpeed;
+        m_moveAxis = ref.moveAxis;
+        m_moveRemainderX = 0.0;
+        m_moveRemainderY = 0.0;
+        updateMoveDirection();
+        startMovement();
+    }
+
     return true;
 }
 
@@ -358,6 +383,9 @@ void PetWidget::startPet()
 
     if (m_player->isPaused()) {
         m_player->resume();
+        if (m_moveEnabled) {
+            startMovement();
+        }
     } else {
         playIdleAction();
     }
@@ -375,6 +403,7 @@ void PetWidget::pausePet()
     m_petRunning = false;
     m_randomTimer->stop();
     m_timedCheckTimer->stop();
+    m_moveTimer->stop();
     m_player->pause();
 }
 
@@ -382,6 +411,7 @@ void PetWidget::reloadPet()
 {
     m_randomTimer->stop();
     m_timedCheckTimer->stop();
+    m_moveTimer->stop();
     m_player->stop();
 
     m_currentAction = PetAction();
@@ -391,8 +421,56 @@ void PetWidget::reloadPet()
     m_lastTimedTriggerTimes.clear();
     m_clockTimedLastTriggeredDate.clear();
     m_idleActionIndex = 0;
+    m_moveEnabled = false;
+    m_moveAxis = MoveAxis::Random;
+    m_moveRemainderX = 0.0;
+    m_moveRemainderY = 0.0;
 
     loadPet(PetPaths::currentPetDirectory());
+}
+
+void PetWidget::reloadPlaylistPreservePlayback()
+{
+    QString currentPetId = AppSettings::currentPetId();
+    QString currentPetDir = PetPaths::petDirectory(currentPetId);
+    QString playlistPath = currentPetDir + "/playlist.json";
+
+    PetPlaylist newPlaylist;
+    bool loaded = PetConfigManager::loadPlaylistFromJson(playlistPath, newPlaylist);
+    if (!loaded) {
+        qWarning() << "reloadPlaylistPreservePlayback: Failed to load playlist.json";
+        return;
+    }
+
+    m_playlist = newPlaylist;
+
+    if (!m_currentActionId.isEmpty()) {
+        PetActionRef newRef;
+        if (m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
+            MoveAxis oldMoveAxis = m_currentActionRef.moveAxis;
+            m_currentActionRef = newRef;
+
+            if (newRef.moveEnabled && newRef.movementSpeed > 0) {
+                m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
+                m_moveAxis = newRef.moveAxis;
+
+                if (oldMoveAxis != newRef.moveAxis) {
+                    updateMoveDirection();
+                }
+
+                if (!m_moveEnabled && m_petRunning) {
+                    m_moveEnabled = true;
+                    m_moveRemainderX = 0.0;
+                    m_moveRemainderY = 0.0;
+                    startMovement();
+                }
+            } else {
+                stopMovement();
+            }
+        } else {
+            stopMovement();
+        }
+    }
 }
 
 void PetWidget::setPetScaleFactor(double scale)
@@ -435,6 +513,16 @@ void PetWidget::setPetOpacity(double opacity)
     }
 
     setWindowOpacity(opacity);
+}
+
+void PetWidget::setBaseMoveSpeed(int speed)
+{
+    Q_UNUSED(speed);
+
+    if (m_moveEnabled && m_currentActionRef.moveEnabled && m_currentActionRef.movementSpeed > 0) {
+        m_moveVelocity = AppSettings::baseMoveSpeed() * m_currentActionRef.movementSpeed;
+        m_moveElapsedTimer.restart();
+    }
 }
 
 void PetWidget::playEmotion(const QString &emotion)
@@ -630,4 +718,145 @@ void PetWidget::checkTimedActions()
 void PetWidget::onErrorOccurred(const QString &message)
 {
     showStatusMessage(tr("播放错误"), message);
+}
+
+void PetWidget::startMovement()
+{
+    if (!m_moveEnabled) {
+        return;
+    }
+
+    m_moveElapsedTimer.start();
+    m_moveTimer->start(16);
+}
+
+void PetWidget::stopMovement()
+{
+    m_moveEnabled = false;
+    m_moveTimer->stop();
+    m_moveRemainderX = 0.0;
+    m_moveRemainderY = 0.0;
+}
+
+void PetWidget::updateMoveDirection()
+{
+    switch (m_moveAxis) {
+    case MoveAxis::Random:
+        m_moveDirection = QRandomGenerator::global()->bounded(4);
+        break;
+    case MoveAxis::Horizontal:
+        m_moveDirection = QRandomGenerator::global()->bounded(2);
+        break;
+    case MoveAxis::Vertical:
+        m_moveDirection = 2 + QRandomGenerator::global()->bounded(2);
+        break;
+    }
+}
+
+void PetWidget::updateMovement()
+{
+    if (!m_moveEnabled || m_dragging) {
+        m_moveElapsedTimer.restart();
+        return;
+    }
+
+    qint64 elapsedMs = m_moveElapsedTimer.elapsed();
+    m_moveElapsedTimer.restart();
+
+    qreal elapsedSec = elapsedMs / 1000.0;
+    qreal distance = m_moveVelocity * elapsedSec;
+
+    qreal floatDx = 0.0;
+    qreal floatDy = 0.0;
+
+    switch (m_moveDirection) {
+    case 0:
+        floatDx = -distance;
+        break;
+    case 1:
+        floatDx = distance;
+        break;
+    case 2:
+        floatDy = -distance;
+        break;
+    case 3:
+        floatDy = distance;
+        break;
+    }
+
+    m_moveRemainderX += floatDx;
+    m_moveRemainderY += floatDy;
+
+    int dx = 0;
+    int dy = 0;
+
+    if (qAbs(m_moveRemainderX) >= 1.0) {
+        dx = static_cast<int>(m_moveRemainderX);
+        m_moveRemainderX -= dx;
+    }
+
+    if (qAbs(m_moveRemainderY) >= 1.0) {
+        dy = static_cast<int>(m_moveRemainderY);
+        m_moveRemainderY -= dy;
+    }
+
+    if (dx == 0 && dy == 0) {
+        return;
+    }
+
+    QPoint currentPos = pos();
+    QPoint newPos = currentPos + QPoint(dx, dy);
+
+    QRect screenRect = getAvailableScreenGeometry();
+    QRect widgetRect = QRect(newPos, size());
+
+    if (widgetRect.left() < screenRect.left()) {
+        newPos.setX(screenRect.left());
+        m_moveRemainderX = 0.0;
+        if (m_moveAxis == MoveAxis::Horizontal) {
+            m_moveDirection = 1;
+        } else if (m_moveAxis == MoveAxis::Random) {
+            m_moveDirection = 1;
+        }
+    } else if (widgetRect.right() > screenRect.right()) {
+        newPos.setX(screenRect.right() - width());
+        m_moveRemainderX = 0.0;
+        if (m_moveAxis == MoveAxis::Horizontal) {
+            m_moveDirection = 0;
+        } else if (m_moveAxis == MoveAxis::Random) {
+            m_moveDirection = 0;
+        }
+    }
+
+    if (widgetRect.top() < screenRect.top()) {
+        newPos.setY(screenRect.top());
+        m_moveRemainderY = 0.0;
+        if (m_moveAxis == MoveAxis::Vertical) {
+            m_moveDirection = 3;
+        } else if (m_moveAxis == MoveAxis::Random) {
+            m_moveDirection = 3;
+        }
+    } else if (widgetRect.bottom() > screenRect.bottom()) {
+        newPos.setY(screenRect.bottom() - height());
+        m_moveRemainderY = 0.0;
+        if (m_moveAxis == MoveAxis::Vertical) {
+            m_moveDirection = 2;
+        } else if (m_moveAxis == MoveAxis::Random) {
+            m_moveDirection = 2;
+        }
+    }
+
+    move(newPos);
+}
+
+QRect PetWidget::getAvailableScreenGeometry() const
+{
+    QScreen *screen = QGuiApplication::screenAt(pos());
+    if (!screen) {
+        screen = QGuiApplication::primaryScreen();
+    }
+    if (screen) {
+        return screen->availableGeometry();
+    }
+    return QRect(0, 0, 1920, 1080);
 }

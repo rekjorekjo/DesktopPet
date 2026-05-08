@@ -88,6 +88,7 @@ private slots:
     void onAnimationSpeedChanged(int index);
     void onMoveEnabledChanged(int state);
     void onSpeedChanged(int index);
+    void onMoveAxisChanged(int index);
     void onTimedTriggerModeChanged(int index);
     void onTimedIntervalChanged(int value);
     void onTriggerTimeChanged(const QTime &time);
@@ -135,6 +136,8 @@ private:
     QCheckBox *m_moveEnabledCheckBox;
     QLabel *m_speedLabel;
     QComboBox *m_speedComboBox;
+    QLabel *m_moveAxisLabel;
+    QComboBox *m_moveAxisComboBox;
 
     QLabel *m_timedTriggerModeLabel;
     QComboBox *m_timedTriggerModeComboBox;

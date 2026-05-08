@@ -372,6 +372,30 @@ void ActionSettingsPage::setupUi()
     row3Layout->addStretch();
     configPanelOuterLayout->addLayout(row3Layout);
 
+    QHBoxLayout *rowMoveAxisLayout = new QHBoxLayout();
+    rowMoveAxisLayout->setSpacing(16);
+
+    int moveEnabledCheckBoxWidth = m_moveEnabledCheckBox->sizeHint().width() + 16;
+    QSpacerItem *spacer = new QSpacerItem(moveEnabledCheckBoxWidth, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    rowMoveAxisLayout->addSpacerItem(spacer);
+
+    m_moveAxisLabel = new QLabel(tr("移动方向"), m_actionConfigPanel);
+    m_moveAxisLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                        .arg(theme.textSecondaryColor()));
+    rowMoveAxisLayout->addWidget(m_moveAxisLabel);
+
+    m_moveAxisComboBox = new QComboBox(m_actionConfigPanel);
+    m_moveAxisComboBox->addItem(tr("随机"), static_cast<int>(MoveAxis::Random));
+    m_moveAxisComboBox->addItem(tr("水平"), static_cast<int>(MoveAxis::Horizontal));
+    m_moveAxisComboBox->addItem(tr("竖直"), static_cast<int>(MoveAxis::Vertical));
+    m_moveAxisComboBox->setCurrentIndex(0);
+    m_moveAxisComboBox->setFixedWidth(100);
+    m_moveAxisComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    rowMoveAxisLayout->addWidget(m_moveAxisComboBox);
+
+    rowMoveAxisLayout->addStretch();
+    configPanelOuterLayout->addLayout(rowMoveAxisLayout);
+
     QHBoxLayout *row4Layout = new QHBoxLayout();
     row4Layout->setSpacing(16);
 
@@ -537,6 +561,7 @@ void ActionSettingsPage::connectSignals()
     connect(m_animationSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onAnimationSpeedChanged);
     connect(m_moveEnabledCheckBox, &QCheckBox::stateChanged, this, &ActionSettingsPage::onMoveEnabledChanged);
     connect(m_speedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onSpeedChanged);
+    connect(m_moveAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onMoveAxisChanged);
     connect(m_timedTriggerModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onTimedTriggerModeChanged);
     connect(m_timedIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onTimedIntervalChanged);
     connect(m_triggerTimeEdit, &QTimeEdit::timeChanged, this, &ActionSettingsPage::onTriggerTimeChanged);

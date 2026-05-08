@@ -45,8 +45,14 @@ int main(int argc, char *argv[])
     QObject::connect(&settings, &SettingsWindow::applyPetConfigRequested,
                      &pet, &PetWidget::reloadPet);
 
+    QObject::connect(&settings, &SettingsWindow::actionConfigApplied,
+                     &pet, &PetWidget::reloadPlaylistPreservePlayback);
+
     QObject::connect(&settings, &SettingsWindow::petOpacityChanged,
                      &pet, &PetWidget::setPetOpacity);
+
+    QObject::connect(&settings, &SettingsWindow::baseMoveSpeedChanged,
+                     &pet, &PetWidget::setBaseMoveSpeed);
 
     QObject::connect(&tray, &TrayManager::showPetRequested, &pet, &PetWidget::show);
 
