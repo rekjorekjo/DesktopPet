@@ -1067,13 +1067,13 @@ QString ThemeManager::menuStyleSheet() const
         "  margin-left: 6px;"
         "}"
     ).arg(
-        p.cardBackground,
-        p.textPrimary,
-        p.border,
-        p.accentSoft,
-        p.textPrimary,
+        p.menuBackground,
+        p.menuText,
+        p.menuSeparator,
+        p.menuHoverBg,
+        p.menuHoverText,
         p.disabledText,
-        p.separator
+        p.menuSeparator
     );
 }
 

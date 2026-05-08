@@ -3,6 +3,7 @@
 #include "core/appsettings.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "theme/thememanager.h"
 
 #include <QContextMenuEvent>
 #include <QDebug>
@@ -503,6 +504,8 @@ void PetWidget::mouseReleaseEvent(QMouseEvent *event)
 void PetWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
+    menu.setStyleSheet(ThemeManager::instance().menuStyleSheet());
+
     QAction *startAction = menu.addAction(tr("开始"));
     QAction *pauseAction = menu.addAction(tr("暂停"));
     menu.addSeparator();

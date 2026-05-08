@@ -50,6 +50,8 @@ TrayManager::TrayManager(QObject *parent)
 
     connect(m_trayIcon, &QSystemTrayIcon::activated,
             this, &TrayManager::onTrayActivated);
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
+            this, &TrayManager::applyTheme);
 }
 
 TrayManager::~TrayManager()
@@ -84,6 +86,8 @@ void TrayManager::createMenu()
     m_menu->addSeparator();
 
     QMenu *emotionMenu = m_menu->addMenu(tr("测试情绪"));
+    emotionMenu->setStyleSheet(theme.menuStyleSheet());
+
     QAction *happyAction = emotionMenu->addAction("happy");
     QAction *sadAction = emotionMenu->addAction("sad");
     QAction *angryAction = emotionMenu->addAction("angry");
@@ -113,4 +117,20 @@ void TrayManager::createMenu()
 
 void TrayManager::onTrayActivated()
 {
+}
+
+void TrayManager::applyTheme()
+{
+    if (!m_menu) {
+        return;
+    }
+
+    QString style = ThemeManager::instance().menuStyleSheet();
+    m_menu->setStyleSheet(style);
+
+    for (QAction *action : m_menu->actions()) {
+        if (QMenu *subMenu = action->menu()) {
+            subMenu->setStyleSheet(style);
+        }
+    }
 }

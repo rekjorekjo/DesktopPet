@@ -30,6 +30,7 @@ private slots:
 
 private:
     void createMenu();
+    void applyTheme();
 
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_menu;
