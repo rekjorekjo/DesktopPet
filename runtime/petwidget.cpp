@@ -361,8 +361,8 @@ void PetWidget::playIdleAction()
         for (const PetAction &action : m_actions) {
             if (action.enabled && action.isValid() && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
                 PetActionRef defaultRef(action.id);
-                defaultRef.loop = true;
-                defaultRef.repeat = 0;
+                defaultRef.loop = false;
+                defaultRef.repeat = 1;
                 if (playAction(action, defaultRef)) {
                     return;
                 }
@@ -479,6 +479,14 @@ void PetWidget::reloadPlaylistPreservePlayback()
             }
         } else {
             stopMovement();
+            m_player->stop();
+            m_currentAction = PetAction();
+            m_currentActionRef = PetActionRef();
+            m_currentActionId.clear();
+
+            if (m_petRunning) {
+                playIdleAction();
+            }
         }
     }
 }

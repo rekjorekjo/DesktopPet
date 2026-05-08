@@ -298,7 +298,7 @@ void ActionSettingsPage::setupUi()
     row1Layout->addWidget(m_repeatLabel);
 
     m_repeatSpinBox = new QSpinBox(m_actionConfigPanel);
-    m_repeatSpinBox->setRange(0, 10);
+    m_repeatSpinBox->setRange(1, 10);
     m_repeatSpinBox->setValue(1);
     m_repeatSpinBox->setMinimumWidth(120);
     m_repeatSpinBox->setFixedWidth(120);

@@ -98,10 +98,12 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
     int tabIndex = m_categoryTabs->currentIndex();
 
     QString repeatText;
-    if (ref.repeat == 0 || ref.repeat > 10) {
+    if (ref.loop && ref.repeat == 0) {
         repeatText = tr("无限循环");
+    } else if (ref.loop) {
+        repeatText = tr("播放 %1 次").arg(qBound(1, ref.repeat, 10));
     } else {
-        repeatText = tr("播放 %1 次").arg(ref.repeat);
+        repeatText = tr("播放 1 次");
     }
 
     if (tabIndex == 2) {

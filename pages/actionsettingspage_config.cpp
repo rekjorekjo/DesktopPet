@@ -32,6 +32,16 @@ void ActionSettingsPage::updateActionConfigPanel()
 
     m_loopCheckBox->setChecked(ref.loop);
     m_repeatSpinBox->setValue(ref.repeat);
+
+    if (ref.loop) {
+        m_repeatSpinBox->setRange(0, 10);
+    } else {
+        m_repeatSpinBox->setRange(1, 10);
+        if (ref.repeat < 1) {
+            m_repeatSpinBox->setValue(1);
+        }
+    }
+
     m_moveEnabledCheckBox->setChecked(ref.moveEnabled);
     m_speedComboBox->setEnabled(ref.moveEnabled);
     m_moveAxisComboBox->setEnabled(ref.moveEnabled);
@@ -171,14 +181,20 @@ void ActionSettingsPage::onLoopChanged(int state)
     bool loopChecked = (state == Qt::Checked);
     ref.loop = loopChecked;
 
-    if (loopChecked && ref.repeat == 1) {
-        ref.repeat = 0;
-        QSignalBlocker blocker(m_repeatSpinBox);
-        m_repeatSpinBox->setValue(0);
-    } else if (!loopChecked && ref.repeat == 0) {
-        ref.repeat = 1;
-        QSignalBlocker blocker(m_repeatSpinBox);
-        m_repeatSpinBox->setValue(1);
+    if (loopChecked) {
+        m_repeatSpinBox->setRange(0, 10);
+        if (ref.repeat < 0) {
+            ref.repeat = 1;
+            QSignalBlocker blocker(m_repeatSpinBox);
+            m_repeatSpinBox->setValue(1);
+        }
+    } else {
+        m_repeatSpinBox->setRange(1, 10);
+        if (ref.repeat < 1) {
+            ref.repeat = 1;
+            QSignalBlocker blocker(m_repeatSpinBox);
+            m_repeatSpinBox->setValue(1);
+        }
     }
 
     updateCurrentSelectedRef(ref);
@@ -198,12 +214,6 @@ void ActionSettingsPage::onRepeatChanged(int value)
     if (!ref.isValid()) return;
 
     ref.repeat = value;
-
-    if (value == 0) {
-        ref.loop = true;
-        QSignalBlocker blocker(m_loopCheckBox);
-        m_loopCheckBox->setChecked(true);
-    }
 
     updateCurrentSelectedRef(ref);
     refreshCurrentCategoryList();

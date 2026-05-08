@@ -88,14 +88,14 @@ bool PetAnimationPlayer::loadAction(const PetAction &action, const QSize &displa
 
 void PetAnimationPlayer::applyPlaybackOptions(bool loop, int repeat)
 {
-    bool infinite = loop || repeat == 0;
+    bool infinite = loop && repeat == 0;
 
     if (infinite) {
         m_loop = true;
         m_targetRepeat = 0;
     } else {
         m_loop = false;
-        m_targetRepeat = qBound(1, repeat, 10);
+        m_targetRepeat = loop ? qBound(1, repeat, 10) : 1;
     }
 }
 

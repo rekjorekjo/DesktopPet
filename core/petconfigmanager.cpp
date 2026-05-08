@@ -693,6 +693,13 @@ PetActionRef PetConfigManager::jsonToActionRef(const QJsonObject &obj)
     ref.displayName = obj.value("displayName").toString().trimmed();
     ref.loop = obj.value("loop").toBool(false);
     ref.repeat = obj.value("repeat").toInt(1);
+
+    if (ref.loop) {
+        ref.repeat = qBound(0, ref.repeat, 10);
+    } else {
+        ref.repeat = qBound(1, ref.repeat, 10);
+    }
+
     ref.intervalSeconds = obj.value("intervalSeconds").toInt(0);
     ref.emotion = obj.value("emotion").toString();
     ref.moveEnabled = obj.value("moveEnabled").toBool(false);
