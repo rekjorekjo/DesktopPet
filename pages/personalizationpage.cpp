@@ -428,10 +428,14 @@ void PersonalizationPage::applyTheme()
     m_gradientStrengthLabel->setStyleSheet(normalLabelStyle);
     m_gradientStrengthValueLabel->setStyleSheet(normalLabelStyle);
 
+    m_baseMoveSpeedLabel->setStyleSheet(normalLabelStyle);
+    m_baseMoveSpeedValueLabel->setStyleSheet(normalLabelStyle);
+
     m_lightThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_darkThemeList->setStyleSheet(theme.listWidgetStyleSheet());
     m_opacitySlider->setStyleSheet(theme.sliderStyleSheet());
     m_gradientStrengthSlider->setStyleSheet(theme.sliderStyleSheet());
+    m_baseMoveSpeedSlider->setStyleSheet(theme.sliderStyleSheet());
 
     m_randomGradientCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
 

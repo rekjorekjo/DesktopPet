@@ -630,6 +630,9 @@ void ActionSettingsPage::applyTheme()
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(p.textSecondary));
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    m_moveAxisLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                        .arg(p.textSecondary));
+    m_moveAxisComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     m_animationSpeedCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                              .arg(p.textSecondary));
