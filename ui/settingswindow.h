@@ -9,6 +9,7 @@
 class PetManagePage;
 class ActionSettingsPage;
 class ApiConfigPage;
+class LogPage;
 class PersonalizationPage;
 class AboutPage;
 class SettingsTitleBar;
@@ -70,6 +71,7 @@ private:
     PetManagePage *m_petManagePage;
     ActionSettingsPage *m_actionSettingsPage;
     ApiConfigPage *m_apiConfigPage;
+    LogPage *m_logPage;
     PersonalizationPage *m_personalizationPage;
     AboutPage *m_aboutPage;
 };
