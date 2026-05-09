@@ -20,6 +20,18 @@ void AppSettings::setCurrentPetId(const QString &petId)
     settings.setValue("pet/currentPetId", petId);
 }
 
+QString AppSettings::currentApiConfigName()
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    return settings.value("api/currentConfigName", "").toString();
+}
+
+void AppSettings::setCurrentApiConfigName(const QString &name)
+{
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("api/currentConfigName", name);
+}
+
 double AppSettings::petScaleFactor()
 {
     QSettings settings("DesktopPet", "DesktopPet");

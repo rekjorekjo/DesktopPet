@@ -1,5 +1,6 @@
 #include "apiconfigpage.h"
 
+#include "core/appsettings.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
 #include "widgets/softinputdialog.h"
@@ -252,6 +253,7 @@ void ApiConfigPage::loadApiConfigToEditor(const QString &profileName)
         clearApiEditor();
         m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
         m_currentApiProfile.clear();
+        AppSettings::setCurrentApiConfigName("");
         return;
     }
 
@@ -262,6 +264,7 @@ void ApiConfigPage::loadApiConfigToEditor(const QString &profileName)
 
     m_currentApiProfile = profileName;
     m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(profileName));
+    AppSettings::setCurrentApiConfigName(profileName);
 }
 
 void ApiConfigPage::saveCurrentApiConfig()
@@ -322,6 +325,7 @@ void ApiConfigPage::onRemoveApiProfile()
         clearApiEditor();
         m_currentApiProfile.clear();
         m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
+        AppSettings::setCurrentApiConfigName("");
     }
 }
 
@@ -332,6 +336,7 @@ void ApiConfigPage::onApiProfileSelectionChanged()
         clearApiEditor();
         m_currentApiProfile.clear();
         m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
+        AppSettings::setCurrentApiConfigName("");
         return;
     }
 

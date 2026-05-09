@@ -16,6 +16,7 @@
 
 class QContextMenuEvent;
 class QTimer;
+class PetChatWidget;
 
 enum class PetPlayMode
 {
@@ -60,6 +61,8 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
 
 signals:
     void openSettingsRequested();
@@ -73,6 +76,7 @@ private slots:
     void triggerRandomAction();
     void checkTimedActions();
     void updateMovement();
+    void onChatCloseRequested();
 
 private:
     void setupUi();
@@ -92,6 +96,14 @@ private:
     void stopMovement();
     void updateMoveDirection();
     QRect getAvailableScreenGeometry() const;
+
+    void toggleChatWidget();
+    void showChatWidget();
+    void hideChatWidget();
+    void updateChatWidgetGeometry();
+    bool isAutoMoving() const;
+    void pauseAutoMovementForChat();
+    void resumeAutoMovementAfterChat();
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
@@ -117,12 +129,20 @@ private:
     bool m_dragging;
     QPoint m_dragPosition;
 
+    bool m_mousePressing;
+    QPoint m_mousePressGlobalPos;
+    bool m_mouseDragDetected;
+
     bool m_moveEnabled;
     int m_moveDirection;
     qreal m_moveVelocity;
     MoveAxis m_moveAxis;
     qreal m_moveRemainderX;
     qreal m_moveRemainderY;
+
+    PetChatWidget *m_chatWidget;
+    bool m_chatVisible;
+    bool m_autoMovementPausedByChat;
 };
 
 #endif // PETWIDGET_H

@@ -86,6 +86,8 @@ qt_add_executable(DesktopPet
     widgets/wheelguardlistwidget.h
     widgets/softcardwidget.cpp
     widgets/softcardwidget.h
+    widgets/petchatwidget.cpp
+    widgets/petchatwidget.h
     widgets/settingstitlebar.cpp
     widgets/settingstitlebar.h
     widgets/softdialogtitlebar.cpp

@@ -4,14 +4,17 @@
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "theme/thememanager.h"
+#include "widgets/petchatwidget.h"
 
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
+#include <QHideEvent>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QMoveEvent>
 #include <QRandomGenerator>
 #include <QScreen>
 #include <QTimer>
@@ -29,12 +32,17 @@ PetWidget::PetWidget(QWidget *parent)
     , m_petScaleFactor(1.0)
     , m_idleActionIndex(0)
     , m_dragging(false)
+    , m_mousePressing(false)
+    , m_mouseDragDetected(false)
     , m_moveEnabled(false)
     , m_moveDirection(0)
     , m_moveVelocity(0.0)
     , m_moveAxis(MoveAxis::Random)
     , m_moveRemainderX(0.0)
     , m_moveRemainderY(0.0)
+    , m_chatWidget(nullptr)
+    , m_chatVisible(false)
+    , m_autoMovementPausedByChat(false)
 {
     setupUi();
 
@@ -52,6 +60,15 @@ PetWidget::PetWidget(QWidget *parent)
     m_moveTimer = new QTimer(this);
     connect(m_moveTimer, &QTimer::timeout, this, &PetWidget::updateMovement);
 
+    m_chatWidget = new PetChatWidget();
+    connect(m_chatWidget, &PetChatWidget::closeRequested, this, &PetWidget::onChatCloseRequested);
+
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
+        if (m_chatWidget) {
+            m_chatWidget->applyTheme();
+        }
+    });
+
     setWindowOpacity(AppSettings::petOpacity());
 
     loadPet(PetPaths::currentPetDirectory());
@@ -59,6 +76,11 @@ PetWidget::PetWidget(QWidget *parent)
 
 PetWidget::~PetWidget()
 {
+    if (m_chatWidget) {
+        m_chatWidget->hide();
+        m_chatWidget->deleteLater();
+        m_chatWidget = nullptr;
+    }
 }
 
 void PetWidget::setupUi()
@@ -579,7 +601,9 @@ PetAction PetWidget::findActionById(const QString &actionId) const
 void PetWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        m_dragging = true;
+        m_mousePressing = true;
+        m_mousePressGlobalPos = event->globalPosition().toPoint();
+        m_mouseDragDetected = false;
         m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
         event->accept();
         return;
@@ -589,10 +613,20 @@ void PetWidget::mousePressEvent(QMouseEvent *event)
 
 void PetWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-        move(event->globalPosition().toPoint() - m_dragPosition);
-        event->accept();
-        return;
+    if (m_mousePressing && (event->buttons() & Qt::LeftButton)) {
+        QPoint currentPos = event->globalPosition().toPoint();
+        int distance = (currentPos - m_mousePressGlobalPos).manhattanLength();
+
+        if (!m_mouseDragDetected && distance > 5) {
+            m_mouseDragDetected = true;
+            m_dragging = true;
+        }
+
+        if (m_dragging) {
+            move(currentPos - m_dragPosition);
+            event->accept();
+            return;
+        }
     }
     QWidget::mouseMoveEvent(event);
 }
@@ -600,6 +634,11 @@ void PetWidget::mouseMoveEvent(QMouseEvent *event)
 void PetWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
+        if (!m_mouseDragDetected && m_mousePressing) {
+            toggleChatWidget();
+        }
+        m_mousePressing = false;
+        m_mouseDragDetected = false;
         m_dragging = false;
         event->accept();
         return;
@@ -773,7 +812,7 @@ void PetWidget::updateMoveDirection()
 
 void PetWidget::updateMovement()
 {
-    if (!m_moveEnabled || m_dragging) {
+    if (!m_moveEnabled || m_dragging || m_chatVisible || m_autoMovementPausedByChat) {
         m_moveElapsedTimer.restart();
         return;
     }
@@ -877,4 +916,128 @@ QRect PetWidget::getAvailableScreenGeometry() const
         return screen->availableGeometry();
     }
     return QRect(0, 0, 1920, 1080);
+}
+
+void PetWidget::moveEvent(QMoveEvent *event)
+{
+    QWidget::moveEvent(event);
+    if (m_chatWidget && m_chatVisible) {
+        updateChatWidgetGeometry();
+    }
+}
+
+void PetWidget::hideEvent(QHideEvent *event)
+{
+    QWidget::hideEvent(event);
+    hideChatWidget();
+}
+
+void PetWidget::toggleChatWidget()
+{
+    if (m_chatVisible) {
+        hideChatWidget();
+    } else {
+        showChatWidget();
+    }
+}
+
+void PetWidget::showChatWidget()
+{
+    if (!m_chatWidget) {
+        return;
+    }
+
+    if (isAutoMoving()) {
+        pauseAutoMovementForChat();
+    }
+
+    m_chatWidget->setPetName(m_petInfo.name);
+    m_chatWidget->setApiConfigName(AppSettings::currentApiConfigName());
+    m_chatWidget->applyTheme();
+
+    updateChatWidgetGeometry();
+    m_chatWidget->show();
+    m_chatVisible = true;
+    m_chatWidget->raise();
+    m_chatWidget->activateWindow();
+    m_chatWidget->focusInput();
+}
+
+void PetWidget::hideChatWidget()
+{
+    if (!m_chatWidget) {
+        return;
+    }
+
+    m_chatWidget->hide();
+    m_chatVisible = false;
+
+    resumeAutoMovementAfterChat();
+}
+
+void PetWidget::updateChatWidgetGeometry()
+{
+    if (!m_chatWidget) {
+        return;
+    }
+
+    QSize petSize = currentDisplaySize();
+    QRect screenRect = getAvailableScreenGeometry();
+
+    int chatWidth = qMax(260, petSize.width() * 2);
+    chatWidth = qMin(chatWidth, screenRect.width() - 20);
+
+    int chatHeight = qMax(180, static_cast<int>(petSize.height() * 1.35));
+    chatHeight = qMin(chatHeight, screenRect.height() / 3);
+
+    m_chatWidget->setFixedSize(chatWidth, chatHeight);
+
+    QPoint petCenter = geometry().center();
+    int chatX = petCenter.x() - chatWidth / 2;
+    int chatY = geometry().bottom() + 4;
+
+    if (chatX < screenRect.left()) {
+        chatX = screenRect.left() + 10;
+    } else if (chatX + chatWidth > screenRect.right()) {
+        chatX = screenRect.right() - chatWidth - 10;
+    }
+
+    if (chatY + chatHeight > screenRect.bottom()) {
+        int spaceBelow = screenRect.bottom() - chatY;
+        if (spaceBelow < 100) {
+            chatY = geometry().top() - chatHeight - 4;
+            if (chatY < screenRect.top()) {
+                chatY = screenRect.top() + 10;
+            }
+        }
+    }
+
+    m_chatWidget->move(chatX, chatY);
+}
+
+bool PetWidget::isAutoMoving() const
+{
+    return m_moveEnabled && m_moveTimer->isActive() && !m_dragging;
+}
+
+void PetWidget::pauseAutoMovementForChat()
+{
+    if (m_moveEnabled && m_moveTimer->isActive()) {
+        m_autoMovementPausedByChat = true;
+        m_moveTimer->stop();
+    }
+}
+
+void PetWidget::resumeAutoMovementAfterChat()
+{
+    if (m_autoMovementPausedByChat && m_moveEnabled && m_petRunning && !m_dragging) {
+        m_autoMovementPausedByChat = false;
+        m_moveElapsedTimer.restart();
+        m_moveTimer->start(16);
+    }
+}
+
+void PetWidget::onChatCloseRequested()
+{
+    hideChatWidget();
 }
