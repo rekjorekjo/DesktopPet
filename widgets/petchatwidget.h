@@ -1,10 +1,11 @@
 #ifndef PETCHATWIDGET_H
 #define PETCHATWIDGET_H
 
-#include <QLabel>
 #include <QPlainTextEdit>
-#include <QPushButton>
+#include <QStackedWidget>
 #include <QWidget>
+
+class EmptyStateWidget;
 
 class PetChatWidget : public QWidget
 {
@@ -16,6 +17,7 @@ public:
 
     void setPetName(const QString &name);
     void setApiConfigName(const QString &name);
+    void setApiInfo(const QString &apiConfigName, const QString &model);
 
     void appendUserMessage(const QString &content);
     void appendAiMessage(const QString &content);
@@ -30,7 +32,6 @@ public slots:
 
 signals:
     void messageSubmitted(const QString &message);
-    void closeRequested();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -38,19 +39,19 @@ protected:
 
 private:
     void setupUi();
-    void connectSignals();
-    void onSendClicked();
+    void submitMessage();
+    void showEmptyState();
+    void hideEmptyState();
 
-    QLabel *m_petNameLabel;
-    QLabel *m_apiConfigLabel;
-    QPushButton *m_closeButton;
-
+    QStackedWidget *m_messageStack;
+    EmptyStateWidget *m_emptyState;
     QPlainTextEdit *m_messageDisplay;
     QPlainTextEdit *m_inputEdit;
-    QPushButton *m_sendButton;
 
     QString m_petName;
     QString m_apiConfigName;
+    QString m_model;
+    bool m_hasMessages;
 };
 
 #endif // PETCHATWIDGET_H

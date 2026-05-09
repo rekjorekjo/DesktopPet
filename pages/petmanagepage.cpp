@@ -276,6 +276,15 @@ void PetManagePage::loadPetInfo()
         }
     }
 
+    if (isCurrentPetConfigMissing()) {
+        m_loadSuccess = false;
+        m_petInfo = PetBasicInfo();
+        m_playlist.clearAll();
+        updateInfoDisplay();
+        updateButtonStates();
+        return;
+    }
+
     bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
@@ -335,6 +344,32 @@ int PetManagePage::globalActionResourceCount() const
     return count;
 }
 
+bool PetManagePage::isCurrentPetConfigMissing() const
+{
+    QString currentPetId = AppSettings::currentPetId();
+    if (currentPetId.isEmpty()) {
+        return true;
+    }
+
+    QString petDir = PetPaths::currentPetDirectory();
+    QDir dir(petDir);
+    if (!dir.exists()) {
+        return true;
+    }
+
+    QString petJsonPath = petDir + "/pet.json";
+    if (!QFile::exists(petJsonPath)) {
+        return true;
+    }
+
+    QString playlistPath = petDir + "/playlist.json";
+    if (!QFile::exists(playlistPath)) {
+        return true;
+    }
+
+    return false;
+}
+
 QString PetManagePage::petDisplayName(const QString &petId) const
 {
     QString petDir = PetPaths::petDirectory(petId);
@@ -345,7 +380,7 @@ QString PetManagePage::petDisplayName(const QString &petId) const
         return QString("%1 (%2)").arg(info.name).arg(info.id);
     }
 
-    return QString("%1 (加载失败)").arg(petId);
+    return QString("%1 (%2)").arg(petId, tr("配置异常"));
 }
 
 void PetManagePage::refreshPetList()
@@ -356,29 +391,43 @@ void PetManagePage::refreshPetList()
 
     QDir petsDir(PetPaths::petsDirectory());
     if (!petsDir.exists()) {
+        if (!petsDir.mkpath(".")) {
+            qWarning() << "Failed to create pets directory:" << PetPaths::petsDirectory();
+        }
         return;
     }
 
     QStringList petFolders = petsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
     for (const QString &petId : petFolders) {
-        QString petJsonPath = PetPaths::petDirectory(petId) + "/pet.json";
-        if (!QFile::exists(petJsonPath)) {
-            continue;
-        }
+        QString petDir = PetPaths::petDirectory(petId);
+        QString petJsonPath = petDir + "/pet.json";
+        QString playlistPath = petDir + "/playlist.json";
 
         PetBasicInfo info;
-        if (PetConfigManager::loadPetInfoJson(petJsonPath, info) && !info.enabled) {
+        bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, info);
+        bool playlistExists = QFile::exists(playlistPath);
+
+        bool configInvalid = !petLoaded || !playlistExists;
+
+        if (petLoaded && !info.enabled) {
             continue;
         }
 
-        QString displayName = petDisplayName(petId);
+        QString displayName;
+        if (petLoaded) {
+            displayName = QString("%1 (%2)").arg(info.name).arg(info.id);
+        } else {
+            displayName = QString("%1 (%2)").arg(petId, tr("配置异常"));
+        }
+
         if (petId == currentPetId) {
             displayName = tr("当前：") + displayName;
         }
 
         QListWidgetItem *item = new QListWidgetItem(displayName, m_petListWidget);
         item->setData(Qt::UserRole, petId);
+        item->setData(Qt::UserRole + 1, configInvalid);
 
         if (petId == currentPetId) {
             m_petListWidget->setCurrentItem(item);
@@ -388,16 +437,29 @@ void PetManagePage::refreshPetList()
 
 void PetManagePage::updateInfoDisplay()
 {
-    if (!m_loadSuccess) {
-        m_currentPetLabel->setText(tr("当前宠物：加载失败"));
+    if (isCurrentPetConfigMissing()) {
+        m_currentPetLabel->setText(tr("当前宠物：配置缺失"));
         m_petNameLabel->setText(tr("宠物名称: -"));
-        m_petIdLabel->setText(tr("宠物 ID: -"));
-        m_petDirLabel->setText(tr("宠物目录: ") + PetPaths::currentPetDirectory());
+        m_petIdLabel->setText(tr("宠物 ID: ") + AppSettings::currentPetId());
+        m_petDirLabel->setText(tr("宠物目录: ") + PetPaths::currentPetDirectory() + tr(" (配置缺失)"));
         m_canvasSizeLabel->setText(tr("画布尺寸: -"));
         m_displaySizeLabel->setText(tr("显示尺寸: -"));
         m_petActionCountLabel->setText(tr("当前宠物动作数: 0"));
         m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalActionResourceCount()));
-        m_statusLabel->setText(tr("运行状态: 加载失败"));
+        m_statusLabel->setText(tr("运行状态: 当前宠物配置缺失，可通过\"新建宠物\"重新创建"));
+        return;
+    }
+
+    if (!m_loadSuccess) {
+        m_currentPetLabel->setText(tr("当前宠物：配置异常"));
+        m_petNameLabel->setText(tr("宠物名称: -"));
+        m_petIdLabel->setText(tr("宠物 ID: ") + AppSettings::currentPetId());
+        m_petDirLabel->setText(tr("宠物目录: ") + PetPaths::currentPetDirectory() + tr(" (配置异常)"));
+        m_canvasSizeLabel->setText(tr("画布尺寸: -"));
+        m_displaySizeLabel->setText(tr("显示尺寸: -"));
+        m_petActionCountLabel->setText(tr("当前宠物动作数: 0"));
+        m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalActionResourceCount()));
+        m_statusLabel->setText(tr("运行状态: 宠物配置异常，可右键修复、移除或删除"));
         return;
     }
 
@@ -439,15 +501,17 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
     PetPlaylist playlist;
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, playlist);
 
-    if (!infoLoaded) {
-        m_petNameLabel->setText(tr("宠物名称: 加载失败"));
+    bool configInvalid = !infoLoaded || !playlistLoaded;
+
+    if (configInvalid) {
+        m_petNameLabel->setText(tr("宠物名称: -"));
         m_petIdLabel->setText(tr("宠物 ID: ") + petId);
-        m_petDirLabel->setText(tr("宠物目录: ") + petDir);
+        m_petDirLabel->setText(tr("宠物目录: ") + petDir + tr(" (配置异常)"));
         m_canvasSizeLabel->setText(tr("画布尺寸: -"));
         m_displaySizeLabel->setText(tr("显示尺寸: -"));
-        m_petActionCountLabel->setText(tr("当前宠物动作数: -"));
+        m_petActionCountLabel->setText(tr("当前宠物动作数: 0"));
         m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalActionResourceCount()));
-        m_statusLabel->setText(tr("运行状态: 加载失败"));
+        m_statusLabel->setText(tr("运行状态: 宠物配置异常，可右键修复、移除或删除"));
         return;
     }
 
@@ -600,6 +664,7 @@ void PetManagePage::onPetListContextMenu(const QPoint &pos)
     m_petListWidget->setCurrentItem(item);
 
     QString petId = item->data(Qt::UserRole).toString();
+    bool configInvalid = item->data(Qt::UserRole + 1).toBool();
     QString currentPetId = AppSettings::currentPetId();
 
     QMenu menu(this);
@@ -610,7 +675,7 @@ void PetManagePage::onPetListContextMenu(const QPoint &pos)
     if (petId == currentPetId) {
         switchAction->setEnabled(false);
     }
-    QAction *editAction = menu.addAction(tr("编辑宠物"));
+    QAction *editAction = menu.addAction(configInvalid ? tr("修复配置") : tr("编辑宠物"));
     menu.addSeparator();
     QAction *disableAction = menu.addAction(tr("移除宠物"));
     QAction *deleteAction = menu.addAction(tr("删除宠物"));
@@ -619,7 +684,11 @@ void PetManagePage::onPetListContextMenu(const QPoint &pos)
     if (selectedAction == switchAction) {
         onSwitchToPet();
     } else if (selectedAction == editAction) {
-        onEditPet();
+        if (configInvalid) {
+            repairPetConfig(petId);
+        } else {
+            editPetById(petId);
+        }
     } else if (selectedAction == disableAction) {
         onDisablePet();
     } else if (selectedAction == deleteAction) {
@@ -650,24 +719,28 @@ void PetManagePage::onSwitchToPet()
     emit applyConfigRequested();
 }
 
-void PetManagePage::onEditPet()
+void PetManagePage::editPetById(const QString &petId)
 {
-    QListWidgetItem *item = m_petListWidget->currentItem();
-    if (!item) {
+    if (petId.isEmpty()) {
         return;
     }
 
-    QString oldPetId = item->data(Qt::UserRole).toString();
-    if (oldPetId.isEmpty()) {
+    QString petDir = PetPaths::petDirectory(petId);
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
+
+    QDir dir(petDir);
+    if (!dir.exists()) {
+        createOrRepairCurrentPetConfig();
         return;
     }
-
-    QString oldPetDir = PetPaths::petDirectory(oldPetId);
-    QString petJsonPath = oldPetDir + "/pet.json";
 
     PetBasicInfo info;
-    if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-        SoftMessageBox::warning(this, tr("编辑宠物"), tr("无法加载宠物配置。"));
+    bool petJsonLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, info);
+    bool playlistExists = QFile::exists(playlistPath);
+
+    if (!petJsonLoaded || !playlistExists) {
+        repairPetConfig(petId);
         return;
     }
 
@@ -681,17 +754,17 @@ void PetManagePage::onEditPet()
     dialog->setCanvasSize(info.canvasSize);
     dialog->setDisplaySize(info.displaySize);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog, oldPetId, oldPetDir, info]() mutable {
+    connect(dialog, &QDialog::accepted, this, [this, dialog, petId, petDir, info]() mutable {
         QString newPetId = dialog->petId().trimmed();
         QString newPetDir = PetPaths::petDirectory(newPetId);
 
-        if (newPetId != oldPetId) {
+        if (newPetId != petId) {
             if (QDir(newPetDir).exists()) {
                 SoftMessageBox::warning(this, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
                 return;
             }
 
-            if (!QDir().rename(oldPetDir, newPetDir)) {
+            if (!QDir().rename(petDir, newPetDir)) {
                 SoftMessageBox::warning(this, tr("编辑宠物"), tr("重命名宠物目录失败。"));
                 return;
             }
@@ -709,7 +782,7 @@ void PetManagePage::onEditPet()
             return;
         }
 
-        if (oldPetId == AppSettings::currentPetId()) {
+        if (petId == AppSettings::currentPetId()) {
             AppSettings::setCurrentPetId(newPetId);
             loadPetInfo();
             emit applyConfigRequested();
@@ -717,6 +790,98 @@ void PetManagePage::onEditPet()
 
         refreshPetList();
         SoftMessageBox::information(this, tr("编辑宠物"), tr("宠物信息已更新。"));
+    });
+
+    dialog->open();
+}
+
+void PetManagePage::createOrRepairCurrentPetConfig()
+{
+    QString currentPetId = AppSettings::currentPetId();
+
+    auto *dialog = new NewPetDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowModality(Qt::WindowModal);
+    dialog->setWindowTitle(tr("创建宠物配置"));
+    dialog->setConfirmButtonText(tr("创建"));
+    if (!currentPetId.isEmpty()) {
+        dialog->setPetId(currentPetId);
+    }
+
+    connect(dialog, &QDialog::accepted, this, [this, dialog]() {
+        PetCreationResult result = PetCreationService::createOrRepairPetConfig(
+            dialog->petId(),
+            dialog->petName(),
+            dialog->canvasSize(),
+            dialog->displaySize()
+        );
+
+        if (!result.success) {
+            SoftMessageBox::warning(this, tr("创建宠物配置失败"), result.message);
+            return;
+        }
+
+        AppSettings::setCurrentPetId(result.petId);
+        refreshPetList();
+        loadPetInfo();
+        emit applyConfigRequested();
+
+        SoftMessageBox::information(this, tr("创建宠物配置"), result.message);
+    });
+
+    dialog->open();
+}
+
+void PetManagePage::repairPetConfig(const QString &petId)
+{
+    if (petId.isEmpty()) {
+        return;
+    }
+
+    QString petDir = PetPaths::petDirectory(petId);
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
+
+    auto *dialog = new NewPetDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowModality(Qt::WindowModal);
+    dialog->setWindowTitle(tr("修复宠物配置"));
+    dialog->setConfirmButtonText(tr("修复"));
+    dialog->setPetId(petId);
+
+    connect(dialog, &QDialog::accepted, this, [this, dialog, petId, petJsonPath, playlistPath]() {
+        if (QFile::exists(petJsonPath)) {
+            if (!QFile::remove(petJsonPath)) {
+                SoftMessageBox::warning(this, tr("修复宠物配置"), tr("清理旧配置文件失败。"));
+                return;
+            }
+        }
+
+        if (QFile::exists(playlistPath)) {
+            if (!QFile::remove(playlistPath)) {
+                SoftMessageBox::warning(this, tr("修复宠物配置"), tr("清理旧播放列表文件失败。"));
+                return;
+            }
+        }
+
+        PetCreationResult result = PetCreationService::createOrRepairPetConfig(
+            petId,
+            dialog->petName(),
+            dialog->canvasSize(),
+            dialog->displaySize()
+        );
+
+        if (!result.success) {
+            SoftMessageBox::warning(this, tr("修复宠物配置失败"), result.message);
+            return;
+        }
+
+        AppSettings::setCurrentPetId(petId);
+        refreshPetList();
+        loadPetInfo();
+        emit applyConfigRequested();
+
+        SoftMessageBox::information(this, tr("修复宠物配置"), result.message);
     });
 
     dialog->open();
@@ -752,7 +917,7 @@ void PetManagePage::onDisablePet()
         return;
     }
 
-    if (!result.nextCurrentPetId.isEmpty()) {
+    if (petId == AppSettings::currentPetId()) {
         AppSettings::setCurrentPetId(result.nextCurrentPetId);
     }
 
@@ -793,7 +958,7 @@ void PetManagePage::onDeletePet()
         return;
     }
 
-    if (!result.nextCurrentPetId.isEmpty()) {
+    if (petId == AppSettings::currentPetId()) {
         AppSettings::setCurrentPetId(result.nextCurrentPetId);
     }
 

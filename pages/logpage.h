@@ -31,7 +31,6 @@ private:
     void connectSignals();
     void applyTheme();
     void displayEntries(const QList<ChatLogEntry> &entries);
-    void showPlaceholder(const QString &message);
 
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;

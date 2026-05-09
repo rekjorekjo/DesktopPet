@@ -214,6 +214,7 @@ void ActionSettingsPage::setupUi()
     m_dailyActionList->setDefaultDropAction(Qt::MoveAction);
     m_dailyActionList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_dailyActionList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_dailyActionList->setEmptyStateText(tr("暂无可用动作"), tr("请前往动作库添加动作"));
     m_categoryTabs->addTab(m_dailyActionList, tr("日常动作"));
 
     m_randomActionList = new ActionCategoryListWidget(m_categoryTabs);
@@ -225,6 +226,7 @@ void ActionSettingsPage::setupUi()
     m_randomActionList->setDefaultDropAction(Qt::MoveAction);
     m_randomActionList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_randomActionList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_randomActionList->setEmptyStateText(tr("暂无可用动作"), tr("请前往动作库添加动作"));
     m_categoryTabs->addTab(m_randomActionList, tr("随机动作"));
 
     m_scheduledActionList = new ActionCategoryListWidget(m_categoryTabs);
@@ -236,6 +238,7 @@ void ActionSettingsPage::setupUi()
     m_scheduledActionList->setDefaultDropAction(Qt::MoveAction);
     m_scheduledActionList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_scheduledActionList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_scheduledActionList->setEmptyStateText(tr("暂无可用动作"), tr("请前往动作库添加动作"));
     m_categoryTabs->addTab(m_scheduledActionList, tr("定时动作"));
 
     m_emotionActionList = new ActionCategoryListWidget(m_categoryTabs);
@@ -247,6 +250,7 @@ void ActionSettingsPage::setupUi()
     m_emotionActionList->setDefaultDropAction(Qt::MoveAction);
     m_emotionActionList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_emotionActionList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_emotionActionList->setEmptyStateText(tr("暂无可用动作"), tr("请前往动作库添加动作"));
     m_categoryTabs->addTab(m_emotionActionList, tr("情绪动作"));
 
     rightLayout->addWidget(m_categoryTabs, 1);
@@ -481,11 +485,8 @@ void ActionSettingsPage::initData()
     QString playlistPath = petDir + "/playlist.json";
 
     bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
-    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
-    if (petLoaded && playlistLoaded) {
-        m_loadedSuccessfully = true;
-    } else {
+    if (!petLoaded) {
         m_loadedSuccessfully = false;
         m_actionLibraryList->clear();
         m_actionLibraryList->addItem(tr("宠物配置加载失败"));
@@ -500,7 +501,36 @@ void ActionSettingsPage::initData()
         m_saveAndApplyButton->setEnabled(false);
         m_categoryTabs->setEnabled(false);
         m_actionConfigPanel->setEnabled(false);
+        return;
     }
+
+    bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
+
+    if (!playlistLoaded) {
+        if (!QFile::exists(playlistPath)) {
+            m_playlist = PetPlaylist();
+            PetConfigManager::savePlaylistToJson(playlistPath, m_playlist);
+        } else {
+            qWarning() << "Playlist exists but failed to parse:" << playlistPath;
+            m_loadedSuccessfully = false;
+            m_actionLibraryList->clear();
+            m_actionLibraryList->addItem(tr("播放列表解析失败"));
+            m_actionLibraryList->setEnabled(false);
+
+            m_newActionButton->setEnabled(false);
+            m_importActionButton->setEnabled(false);
+            m_moveUpButton->setEnabled(false);
+            m_moveDownButton->setEnabled(false);
+            m_removeButton->setEnabled(false);
+            m_saveConfigButton->setEnabled(false);
+            m_saveAndApplyButton->setEnabled(false);
+            m_categoryTabs->setEnabled(false);
+            m_actionConfigPanel->setEnabled(false);
+            return;
+        }
+    }
+
+    m_loadedSuccessfully = true;
 }
 
 void ActionSettingsPage::connectSignals()
@@ -613,6 +643,11 @@ void ActionSettingsPage::applyTheme()
     m_randomActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
     m_scheduledActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
     m_emotionActionList->setStyleSheet(theme.innerListWidgetStyleSheet());
+
+    m_dailyActionList->applyTheme();
+    m_randomActionList->applyTheme();
+    m_scheduledActionList->applyTheme();
+    m_emotionActionList->applyTheme();
 
     m_moveUpButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_moveDownButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));

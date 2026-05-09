@@ -15,6 +15,8 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QMoveEvent>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QRandomGenerator>
 #include <QScreen>
 #include <QTimer>
@@ -61,7 +63,6 @@ PetWidget::PetWidget(QWidget *parent)
     connect(m_moveTimer, &QTimer::timeout, this, &PetWidget::updateMovement);
 
     m_chatWidget = new PetChatWidget();
-    connect(m_chatWidget, &PetChatWidget::closeRequested, this, &PetWidget::onChatCloseRequested);
 
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
         if (m_chatWidget) {
@@ -103,6 +104,14 @@ void PetWidget::setupUi()
     layout->addWidget(m_displayLabel, 0, Qt::AlignCenter);
 
     setLayout(layout);
+}
+
+void PetWidget::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    QPainter painter(this);
+    painter.fillRect(rect(), QColor(0, 0, 0, 1));
 }
 
 QSize PetWidget::currentDisplaySize() const
@@ -183,10 +192,18 @@ void PetWidget::showStatusMessage(const QString &title, const QString &subtitle)
 {
     QString html;
     if (subtitle.isEmpty()) {
-        html = QString("<div style='text-align: center;'><b>%1</b></div>").arg(title);
+        html = QString(
+            "<div style='text-align: center; padding: 20px;'>"
+            "<span style='font-size: 16px; font-weight: bold; color: #374151;'>%1</span>"
+            "</div>"
+        ).arg(title);
     } else {
-        html = QString("<div style='text-align: center;'><b>%1</b><br/><span style='font-size: 12px; color: #6B7280;'>%2</span></div>")
-               .arg(title, subtitle);
+        html = QString(
+            "<div style='text-align: center; padding: 20px;'>"
+            "<span style='font-size: 16px; font-weight: bold; color: #374151;'>%1</span><br/><br/>"
+            "<span style='font-size: 13px; color: #6B7280;'>%2</span>"
+            "</div>"
+        ).arg(title, subtitle);
     }
 
     m_displayLabel->setText(html);
@@ -195,12 +212,10 @@ void PetWidget::showStatusMessage(const QString &title, const QString &subtitle)
     m_displayLabel->setWordWrap(true);
     m_displayLabel->setStyleSheet(
         "QLabel {"
-        "  background-color: rgba(255, 255, 255, 215);"
+        "  background: transparent;"
+        "  border: none;"
+        "  padding: 0px;"
         "  color: #4B5563;"
-        "  border: 1px solid rgba(120, 120, 120, 90);"
-        "  border-radius: 12px;"
-        "  padding: 14px 18px;"
-        "  font-size: 14px;"
         "}"
     );
 }
@@ -220,26 +235,35 @@ bool PetWidget::loadPet(const QString &petDirPath)
 
     QDir petDir(currentPetDir);
     QString petJsonPath = currentPetDir + "/pet.json";
+    QString playlistPath = currentPetDir + "/playlist.json";
 
-    if (!petDir.exists() || !QFile::exists(petJsonPath)) {
+    if (currentPetId.isEmpty()) {
         QString firstEnabledPet = findFirstEnabledPetId();
         if (!firstEnabledPet.isEmpty()) {
             AppSettings::setCurrentPetId(firstEnabledPet);
             currentPetDir = PetPaths::petDirectory(firstEnabledPet);
             petJsonPath = currentPetDir + "/pet.json";
+            playlistPath = currentPetDir + "/playlist.json";
+            petDir = QDir(currentPetDir);
         } else {
             m_petRunning = false;
-            showStatusMessage(tr("尚未创建宠物"), tr("请前往设置 > 宠物管理新建宠物"));
+            hideChatWidget();
+            showStatusMessage(tr("尚未创建宠物"), tr("请在宠物管理中新建宠物"));
             return false;
         }
+    } else if (!petDir.exists() || !QFile::exists(petJsonPath) || !QFile::exists(playlistPath)) {
+        m_petRunning = false;
+        hideChatWidget();
+        showStatusMessage(tr("当前宠物配置缺失"), tr("请在宠物管理中重新创建配置"));
+        return false;
     }
 
     bool petLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, m_petInfo);
-    QString playlistPath = currentPetDir + "/playlist.json";
     bool playlistLoaded = PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
 
     if (!petLoaded) {
         m_petRunning = false;
+        hideChatWidget();
         showStatusMessage(tr("宠物配置加载失败"), tr("请前往宠物管理检查配置"));
         return false;
     }
@@ -250,18 +274,21 @@ bool PetWidget::loadPet(const QString &petDirPath)
 
     if (!hasAnyActionResources()) {
         m_petRunning = false;
+        hideChatWidget();
         showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
         return false;
     }
 
     if (!hasAnyUsableEnabledAction()) {
         m_petRunning = false;
+        hideChatWidget();
         showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
         return false;
     }
 
     if (!hasAnyPlaylistAction()) {
         m_petRunning = false;
+        hideChatWidget();
         showStatusMessage(tr("当前宠物暂无动作配置"), tr("请前往动作设置添加动作"));
         return false;
     }
@@ -1035,9 +1062,4 @@ void PetWidget::resumeAutoMovementAfterChat()
         m_moveElapsedTimer.restart();
         m_moveTimer->start(16);
     }
-}
-
-void PetWidget::onChatCloseRequested()
-{
-    hideChatWidget();
 }

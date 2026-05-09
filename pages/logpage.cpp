@@ -8,6 +8,7 @@
 #include <QFileDialog>
 #include <QFont>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QVBoxLayout>
 
 LogPage::LogPage(QWidget *parent)
@@ -104,7 +105,6 @@ void LogPage::setupUi()
 
     m_logDisplay = new QPlainTextEdit(m_logCard);
     m_logDisplay->setReadOnly(true);
-    m_logDisplay->setPlainText(tr("请选择日志文件。"));
     m_logDisplay->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_logDisplay->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_logDisplay->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -117,6 +117,7 @@ void LogPage::setupUi()
                  theme.currentPalette().border,
                  theme.currentPalette().accent));
     m_logDisplay->setMinimumHeight(400);
+    m_logDisplay->clear();
     cardLayout->addWidget(m_logDisplay, 1);
 
     contentLayout->addWidget(m_logCard, 1);
@@ -178,7 +179,7 @@ void LogPage::onLoadLogClicked()
     m_currentEntries = ChatLogService::loadLogFile(filePath);
 
     if (m_currentEntries.isEmpty()) {
-        showPlaceholder(tr("该日志文件暂无内容。"));
+        m_logDisplay->clear();
         return;
     }
 
@@ -194,7 +195,7 @@ void LogPage::onSearchTextChanged(const QString &text)
     QList<ChatLogEntry> filtered = ChatLogService::filterEntries(m_currentEntries, text);
 
     if (filtered.isEmpty()) {
-        showPlaceholder(tr("未找到匹配的日志记录。"));
+        m_logDisplay->clear();
     } else {
         displayEntries(filtered);
     }
@@ -204,9 +205,4 @@ void LogPage::displayEntries(const QList<ChatLogEntry> &entries)
 {
     QString displayText = ChatLogService::formatEntriesForDisplay(entries);
     m_logDisplay->setPlainText(displayText);
-}
-
-void LogPage::showPlaceholder(const QString &message)
-{
-    m_logDisplay->setPlainText(message);
 }

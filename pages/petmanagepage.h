@@ -46,6 +46,10 @@ private:
 
     int usablePetActionCount() const;
     int globalActionResourceCount() const;
+    bool isCurrentPetConfigMissing() const;
+    void editPetById(const QString &petId);
+    void repairPetConfig(const QString &petId);
+    void createOrRepairCurrentPetConfig();
 
 private slots:
     void onCreatePet();
@@ -53,7 +57,6 @@ private slots:
     void onPetListItemClicked(QListWidgetItem *item);
     void onPetListContextMenu(const QPoint &pos);
     void onSwitchToPet();
-    void onEditPet();
     void onDisablePet();
     void onDeletePet();
 

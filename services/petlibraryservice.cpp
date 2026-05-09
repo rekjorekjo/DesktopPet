@@ -20,19 +20,30 @@ PetLibraryOperationResult PetLibraryService::disablePet(const QString &petId)
     QString petDir = PetPaths::petDirectory(petId);
     QString petJsonPath = petDir + "/pet.json";
 
+    QDir dir(petDir);
+    if (!dir.exists()) {
+        QString currentPetId = AppSettings::currentPetId();
+        if (petId == currentPetId) {
+            result.nextCurrentPetId = findFirstEnabledPetId(petId);
+        }
+        result.success = true;
+        result.message = QObject::tr("宠物目录不存在，已移除引用。");
+        return result;
+    }
+
     PetBasicInfo info;
-    if (!PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-        result.message = QObject::tr("无法加载宠物配置。");
-        return result;
+    bool petJsonLoaded = PetConfigManager::loadPetInfoJson(petJsonPath, info);
+
+    if (petJsonLoaded) {
+        info.enabled = false;
+    } else {
+        info.id = petId;
+        info.name = petId;
+        info.enabled = false;
+        info.canvasSize = QSize(400, 400);
+        info.displaySize = QSize(200, 200);
     }
 
-    int enabledCount = countEnabledPets();
-    if (enabledCount <= 1) {
-        result.message = QObject::tr("至少需要保留一个可用宠物。");
-        return result;
-    }
-
-    info.enabled = false;
     if (!PetConfigManager::savePetInfoJson(petJsonPath, info)) {
         result.message = QObject::tr("保存宠物配置失败。");
         return result;
@@ -63,25 +74,30 @@ PetLibraryOperationResult PetLibraryService::deletePet(const QString &petId)
     QDir dir(petDir);
 
     QString canonicalPetDir = dir.canonicalPath();
+
     if (canonicalPetDir.isEmpty()) {
-        result.message = QObject::tr("宠物目录不存在。");
+        QString currentPetId = AppSettings::currentPetId();
+        if (petId == currentPetId) {
+            result.nextCurrentPetId = findFirstEnabledPetId(petId);
+        }
+        result.success = true;
+        result.message = QObject::tr("宠物目录不存在，已移除引用。");
         return result;
     }
 
     QString petsDir = QDir(PetPaths::petsDirectory()).canonicalPath();
     if (petsDir.isEmpty()) {
-        result.message = QObject::tr("宠物根目录不存在。");
+        QString currentPetId = AppSettings::currentPetId();
+        if (petId == currentPetId) {
+            result.nextCurrentPetId = findFirstEnabledPetId(petId);
+        }
+        result.success = true;
+        result.message = QObject::tr("宠物根目录不存在，已移除引用。");
         return result;
     }
 
     if (!canonicalPetDir.startsWith(petsDir + "/")) {
         result.message = QObject::tr("只能删除宠物目录下的宠物。");
-        return result;
-    }
-
-    int enabledCount = countEnabledPets();
-    if (enabledCount <= 1) {
-        result.message = QObject::tr("至少需要保留一个可用宠物。");
         return result;
     }
 
