@@ -72,7 +72,7 @@ QDialog* SoftMessageBox::createDialog(QWidget *parent, const QString &title, con
 
     QDialog *dialog = new QDialog(parent);
     dialog->setWindowTitle(title);
-    dialog->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    dialog->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     dialog->setAttribute(Qt::WA_StyledBackground, true);
     dialog->setAutoFillBackground(false);
     dialog->setStyleSheet(theme.dialogStyleSheet());

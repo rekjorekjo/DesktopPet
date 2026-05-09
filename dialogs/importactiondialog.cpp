@@ -115,7 +115,7 @@ void ImportActionDialog::setupUi()
 
     setWindowTitle(tr("导入动作"));
     setMinimumWidth(450);
-    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
     setAcceptDrops(true);
@@ -374,7 +374,15 @@ void ImportActionDialog::onConfirm()
     if (!validateInput()) {
         return;
     }
-    accept();
+    emit submitRequested();
+}
+
+void ImportActionDialog::focusActionId()
+{
+    if (m_idEdit) {
+        m_idEdit->setFocus();
+        m_idEdit->selectAll();
+    }
 }
 
 bool ImportActionDialog::validateInput()

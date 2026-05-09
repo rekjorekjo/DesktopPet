@@ -19,7 +19,7 @@ void ActionSettingsPage::onNewAction()
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowModality(Qt::WindowModal);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
+    connect(dialog, &NewActionDialog::submitRequested, this, [this, dialog, petDir]() {
         ActionImportWorker::ImportGifTask task;
         task.petDir = petDir;
         task.currentPlaylist = m_playlist;
@@ -32,7 +32,8 @@ void ActionSettingsPage::onNewAction()
         task.timedTriggerMode = dialog->timedTriggerMode();
         task.triggerTime = dialog->triggerTime();
 
-        startImportGifTask(task);
+        QPointer<NewActionDialog> pendingDialog(dialog);
+        startImportGifTask(task, pendingDialog);
     });
 
     dialog->open();
@@ -46,7 +47,7 @@ void ActionSettingsPage::onImportAction()
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowModality(Qt::WindowModal);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog, petDir]() {
+    connect(dialog, &ImportActionDialog::submitRequested, this, [this, dialog, petDir]() {
         ActionImportWorker::ImportFolderTask task;
         task.petDir = petDir;
         task.currentPlaylist = m_playlist;
@@ -59,17 +60,22 @@ void ActionSettingsPage::onImportAction()
         task.timedTriggerMode = dialog->timedTriggerMode();
         task.triggerTime = dialog->triggerTime();
 
-        startImportFolderTask(task);
+        QPointer<ImportActionDialog> pendingDialog(dialog);
+        startImportFolderTask(task, pendingDialog);
     });
 
     dialog->open();
 }
 
-void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportFolderTask &task)
+void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportFolderTask &task, QPointer<ImportActionDialog> dialog)
 {
     m_newActionButton->setEnabled(false);
     m_importActionButton->setEnabled(false);
     m_actionLibraryList->setEnabled(false);
+
+    if (dialog) {
+        dialog->setEnabled(false);
+    }
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -80,7 +86,7 @@ void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportF
 
     connect(thread, &QThread::started, worker, &ActionImportWorker::processImportFolder);
 
-    connect(worker, &ActionImportWorker::finished, this, [this, thread](const ActionImportResult &result) {
+    connect(worker, &ActionImportWorker::finished, this, [this, thread, dialog](const ActionImportResult &result) {
         QApplication::restoreOverrideCursor();
 
         m_newActionButton->setEnabled(true);
@@ -88,14 +94,24 @@ void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportF
         m_actionLibraryList->setEnabled(true);
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("导入动作失败"), result.message);
-        } else if (result.warning) {
-            SoftMessageBox::warning(this, tr("提示"), result.message);
+            if (dialog) {
+                dialog->setEnabled(true);
+                SoftMessageBox::warning(dialog, tr("导入动作失败"), result.message);
+                dialog->focusActionId();
+            } else {
+                SoftMessageBox::warning(this, tr("导入动作失败"), result.message);
+            }
         } else {
-            SoftMessageBox::information(this, tr("提示"), result.message);
-        }
+            if (dialog) {
+                dialog->accept();
+            }
 
-        if (result.success) {
+            if (result.warning) {
+                SoftMessageBox::warning(this, tr("提示"), result.message);
+            } else {
+                SoftMessageBox::information(this, tr("提示"), result.message);
+            }
+
             initData();
             if (m_loadedSuccessfully) {
                 refreshActionLibraryList();
@@ -119,11 +135,15 @@ void ActionSettingsPage::startImportFolderTask(const ActionImportWorker::ImportF
     thread->start();
 }
 
-void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifTask &task)
+void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifTask &task, QPointer<NewActionDialog> dialog)
 {
     m_newActionButton->setEnabled(false);
     m_importActionButton->setEnabled(false);
     m_actionLibraryList->setEnabled(false);
+
+    if (dialog) {
+        dialog->setEnabled(false);
+    }
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -134,7 +154,7 @@ void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifT
 
     connect(thread, &QThread::started, worker, &ActionImportWorker::processImportGif);
 
-    connect(worker, &ActionImportWorker::finished, this, [this, thread](const ActionImportResult &result) {
+    connect(worker, &ActionImportWorker::finished, this, [this, thread, dialog](const ActionImportResult &result) {
         QApplication::restoreOverrideCursor();
 
         m_newActionButton->setEnabled(true);
@@ -142,14 +162,24 @@ void ActionSettingsPage::startImportGifTask(const ActionImportWorker::ImportGifT
         m_actionLibraryList->setEnabled(true);
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("新建动作失败"), result.message);
-        } else if (result.warning) {
-            SoftMessageBox::warning(this, tr("新建动作"), result.message);
+            if (dialog) {
+                dialog->setEnabled(true);
+                SoftMessageBox::warning(dialog, tr("新建动作失败"), result.message);
+                dialog->focusActionId();
+            } else {
+                SoftMessageBox::warning(this, tr("新建动作失败"), result.message);
+            }
         } else {
-            SoftMessageBox::information(this, tr("新建动作"), result.message);
-        }
+            if (dialog) {
+                dialog->accept();
+            }
 
-        if (result.success) {
+            if (result.warning) {
+                SoftMessageBox::warning(this, tr("新建动作"), result.message);
+            } else {
+                SoftMessageBox::information(this, tr("新建动作"), result.message);
+            }
+
             initData();
             if (m_loadedSuccessfully) {
                 refreshActionLibraryList();

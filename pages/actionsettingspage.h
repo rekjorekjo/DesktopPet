@@ -3,6 +3,7 @@
 
 #include <QLabel>
 #include <QListWidget>
+#include <QPointer>
 #include <QScrollArea>
 #include <QTime>
 #include <QWidget>
@@ -23,6 +24,8 @@ class ActionCategoryListWidget;
 class ActionCategoryTabWidget;
 class ActionLibraryListWidget;
 struct ActionImportResult;
+class NewActionDialog;
+class ImportActionDialog;
 
 class ActionSettingsPage : public QWidget
 {
@@ -68,8 +71,8 @@ private:
     int findSpeedIndex(double speed) const;
     bool saveCurrentPlaylist();
 
-    void startImportFolderTask(const ActionImportWorker::ImportFolderTask &task);
-    void startImportGifTask(const ActionImportWorker::ImportGifTask &task);
+    void startImportFolderTask(const ActionImportWorker::ImportFolderTask &task, QPointer<ImportActionDialog> dialog = nullptr);
+    void startImportGifTask(const ActionImportWorker::ImportGifTask &task, QPointer<NewActionDialog> dialog = nullptr);
 
 private slots:
     void onActionLibraryContextMenu(const QPoint &pos);

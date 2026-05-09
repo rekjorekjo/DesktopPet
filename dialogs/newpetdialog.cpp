@@ -34,7 +34,7 @@ void NewPetDialog::setupUi()
 
     setWindowTitle(tr("新建宠物"));
     setMinimumWidth(400);
-    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
     setStyleSheet(theme.dialogStyleSheet());
@@ -137,7 +137,7 @@ void NewPetDialog::setupUi()
     contentLayout->addLayout(buttonLayout);
 
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(m_confirmButton, &QPushButton::clicked, this, &NewPetDialog::accept);
+    connect(m_confirmButton, &QPushButton::clicked, this, &NewPetDialog::onConfirmClicked);
 
     cancelButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     m_confirmButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
@@ -206,6 +206,14 @@ void NewPetDialog::setConfirmButtonText(const QString &text)
     }
 }
 
+void NewPetDialog::focusPetId()
+{
+    if (m_petIdEdit) {
+        m_petIdEdit->setFocus();
+        m_petIdEdit->selectAll();
+    }
+}
+
 bool NewPetDialog::validateInput()
 {
     QString id = petId();
@@ -226,9 +234,9 @@ bool NewPetDialog::validateInput()
     return true;
 }
 
-void NewPetDialog::accept()
+void NewPetDialog::onConfirmClicked()
 {
     if (validateInput()) {
-        QDialog::accept();
+        emit submitRequested();
     }
 }

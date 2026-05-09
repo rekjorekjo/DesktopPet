@@ -22,6 +22,10 @@ public:
     QString petName() const;
     QSize canvasSize() const;
     QSize displaySize() const;
+    void focusPetId();
+
+signals:
+    void submitRequested();
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;

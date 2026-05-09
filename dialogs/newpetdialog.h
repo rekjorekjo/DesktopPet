@@ -26,9 +26,13 @@ public:
     void setDisplaySize(const QSize &size);
     void setPetIdReadOnly(bool readOnly);
     void setConfirmButtonText(const QString &text);
+    void focusPetId();
+
+signals:
+    void submitRequested();
 
 private slots:
-    void accept() override;
+    void onConfirmClicked();
 
 private:
     void setupUi();

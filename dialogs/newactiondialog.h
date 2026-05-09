@@ -32,6 +32,10 @@ public:
     QString triggerTime() const;
 
     void clearForm();
+    void focusActionId();
+
+signals:
+    void submitRequested();
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;

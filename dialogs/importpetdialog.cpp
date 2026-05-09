@@ -75,7 +75,7 @@ void ImportPetDialog::setupUi()
 
     setWindowTitle(tr("导入宠物"));
     setMinimumWidth(450);
-    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
     setAcceptDrops(true);
@@ -306,7 +306,15 @@ void ImportPetDialog::onConfirm()
     if (!validateInput()) {
         return;
     }
-    accept();
+    emit submitRequested();
+}
+
+void ImportPetDialog::focusPetId()
+{
+    if (m_petIdEdit) {
+        m_petIdEdit->setFocus();
+        m_petIdEdit->selectAll();
+    }
 }
 
 bool ImportPetDialog::validateInput()

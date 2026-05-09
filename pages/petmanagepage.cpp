@@ -612,7 +612,7 @@ void PetManagePage::onCreatePet()
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowModality(Qt::WindowModal);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog]() {
+    connect(dialog, &NewPetDialog::submitRequested, this, [this, dialog]() {
         PetCreationResult result = PetCreationService::createPet(
             dialog->petId(),
             dialog->petName(),
@@ -621,7 +621,8 @@ void PetManagePage::onCreatePet()
         );
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("新建宠物失败"), result.message);
+            SoftMessageBox::warning(dialog, tr("新建宠物失败"), result.message);
+            dialog->focusPetId();
             return;
         }
 
@@ -629,6 +630,8 @@ void PetManagePage::onCreatePet()
         refreshPetList();
         loadPetInfo();
         emit applyConfigRequested();
+
+        dialog->accept();
 
         if (result.warning) {
             SoftMessageBox::warning(this, tr("新建宠物"), result.message);
@@ -754,18 +757,19 @@ void PetManagePage::editPetById(const QString &petId)
     dialog->setCanvasSize(info.canvasSize);
     dialog->setDisplaySize(info.displaySize);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog, petId, petDir, info]() mutable {
+    connect(dialog, &NewPetDialog::submitRequested, this, [this, dialog, petId, petDir, info]() mutable {
         QString newPetId = dialog->petId().trimmed();
         QString newPetDir = PetPaths::petDirectory(newPetId);
 
         if (newPetId != petId) {
             if (QDir(newPetDir).exists()) {
-                SoftMessageBox::warning(this, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
+                SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
+                dialog->focusPetId();
                 return;
             }
 
             if (!QDir().rename(petDir, newPetDir)) {
-                SoftMessageBox::warning(this, tr("编辑宠物"), tr("重命名宠物目录失败。"));
+                SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("重命名宠物目录失败。"));
                 return;
             }
         }
@@ -778,7 +782,7 @@ void PetManagePage::editPetById(const QString &petId)
 
         QString targetPetJsonPath = newPetDir + "/pet.json";
         if (!PetConfigManager::savePetInfoJson(targetPetJsonPath, updatedInfo)) {
-            SoftMessageBox::warning(this, tr("编辑宠物"), tr("保存宠物配置失败。"));
+            SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("保存宠物配置失败。"));
             return;
         }
 
@@ -789,6 +793,7 @@ void PetManagePage::editPetById(const QString &petId)
         }
 
         refreshPetList();
+        dialog->accept();
         SoftMessageBox::information(this, tr("编辑宠物"), tr("宠物信息已更新。"));
     });
 
@@ -808,7 +813,7 @@ void PetManagePage::createOrRepairCurrentPetConfig()
         dialog->setPetId(currentPetId);
     }
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog]() {
+    connect(dialog, &NewPetDialog::submitRequested, this, [this, dialog]() {
         PetCreationResult result = PetCreationService::createOrRepairPetConfig(
             dialog->petId(),
             dialog->petName(),
@@ -817,7 +822,8 @@ void PetManagePage::createOrRepairCurrentPetConfig()
         );
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("创建宠物配置失败"), result.message);
+            SoftMessageBox::warning(dialog, tr("创建宠物配置失败"), result.message);
+            dialog->focusPetId();
             return;
         }
 
@@ -826,6 +832,7 @@ void PetManagePage::createOrRepairCurrentPetConfig()
         loadPetInfo();
         emit applyConfigRequested();
 
+        dialog->accept();
         SoftMessageBox::information(this, tr("创建宠物配置"), result.message);
     });
 
@@ -848,18 +855,19 @@ void PetManagePage::repairPetConfig(const QString &petId)
     dialog->setWindowTitle(tr("修复宠物配置"));
     dialog->setConfirmButtonText(tr("修复"));
     dialog->setPetId(petId);
+    dialog->setPetIdReadOnly(true);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog, petId, petJsonPath, playlistPath]() {
+    connect(dialog, &NewPetDialog::submitRequested, this, [this, dialog, petId, petJsonPath, playlistPath]() {
         if (QFile::exists(petJsonPath)) {
             if (!QFile::remove(petJsonPath)) {
-                SoftMessageBox::warning(this, tr("修复宠物配置"), tr("清理旧配置文件失败。"));
+                SoftMessageBox::warning(dialog, tr("修复宠物配置"), tr("清理旧配置文件失败。"));
                 return;
             }
         }
 
         if (QFile::exists(playlistPath)) {
             if (!QFile::remove(playlistPath)) {
-                SoftMessageBox::warning(this, tr("修复宠物配置"), tr("清理旧播放列表文件失败。"));
+                SoftMessageBox::warning(dialog, tr("修复宠物配置"), tr("清理旧播放列表文件失败。"));
                 return;
             }
         }
@@ -872,7 +880,7 @@ void PetManagePage::repairPetConfig(const QString &petId)
         );
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("修复宠物配置失败"), result.message);
+            SoftMessageBox::warning(dialog, tr("修复宠物配置失败"), result.message);
             return;
         }
 
@@ -881,6 +889,7 @@ void PetManagePage::repairPetConfig(const QString &petId)
         loadPetInfo();
         emit applyConfigRequested();
 
+        dialog->accept();
         SoftMessageBox::information(this, tr("修复宠物配置"), result.message);
     });
 
@@ -995,7 +1004,7 @@ void PetManagePage::onImportPet()
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowModality(Qt::WindowModal);
 
-    connect(dialog, &QDialog::accepted, this, [this, dialog]() {
+    connect(dialog, &ImportPetDialog::submitRequested, this, [this, dialog]() {
         PetImportResult result = PetImportService::importPet(
             dialog->sourceDirectory(),
             dialog->petId(),
@@ -1005,7 +1014,8 @@ void PetManagePage::onImportPet()
         );
 
         if (!result.success) {
-            SoftMessageBox::warning(this, tr("导入宠物"), result.message);
+            SoftMessageBox::warning(dialog, tr("导入宠物"), result.message);
+            dialog->focusPetId();
             return;
         }
 
@@ -1013,6 +1023,8 @@ void PetManagePage::onImportPet()
         refreshPetList();
         loadPetInfo();
         emit applyConfigRequested();
+
+        dialog->accept();
 
         if (result.warning) {
             SoftMessageBox::warning(this, tr("导入宠物"), result.message);
