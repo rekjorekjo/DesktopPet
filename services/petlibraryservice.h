@@ -1,6 +1,7 @@
 #ifndef PETLIBRARYSERVICE_H
 #define PETLIBRARYSERVICE_H
 
+#include "services/petlibraryindexservice.h"
 #include <QString>
 
 struct PetLibraryOperationResult

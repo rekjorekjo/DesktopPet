@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/petlibraryindexservice.h"
 
 #include <QDir>
 #include <QFile>
@@ -29,16 +30,21 @@ PetCreationResult PetCreationService::createPet(
         return result;
     }
 
-    QString targetDir = PetPaths::petDirectory(trimmedId);
-    if (QDir(targetDir).exists()) {
+    PetLibraryIndexService::ensureLibrary();
+
+    if (PetLibraryIndexService::containsPetId(trimmedId)) {
         result.message = QObject::tr("宠物 ID 已存在，请使用其他 ID。");
         return result;
     }
 
+    QString targetDir = PetPaths::petDirectory(trimmedId);
+
     QDir dir;
-    if (!dir.mkpath(targetDir)) {
-        result.message = QObject::tr("创建宠物目录失败。");
-        return result;
+    if (!QDir(targetDir).exists()) {
+        if (!dir.mkpath(targetDir)) {
+            result.message = QObject::tr("创建宠物目录失败。");
+            return result;
+        }
     }
 
     PetBasicInfo info;
@@ -89,6 +95,13 @@ PetCreationResult PetCreationService::createPet(
         return result;
     }
 
+    PetLibraryEntry entry;
+    entry.id = trimmedId;
+    entry.name = info.name;
+    entry.dir = "pets/" + trimmedId;
+    entry.enabled = true;
+    PetLibraryIndexService::addOrUpdatePet(entry);
+
     result.success = true;
     result.petId = trimmedId;
 
@@ -123,6 +136,8 @@ PetCreationResult PetCreationService::createOrRepairPetConfig(
         return result;
     }
 
+    PetLibraryIndexService::ensureLibrary();
+
     QString targetDir = PetPaths::petDirectory(trimmedId);
     QString petJsonPath = targetDir + "/pet.json";
     QString playlistPath = targetDir + "/playlist.json";
@@ -130,7 +145,7 @@ PetCreationResult PetCreationService::createOrRepairPetConfig(
     bool petJsonExists = QFile::exists(petJsonPath);
     bool playlistExists = QFile::exists(playlistPath);
 
-    if (petJsonExists && playlistExists) {
+    if (petJsonExists && playlistExists && PetLibraryIndexService::containsPetId(trimmedId)) {
         result.message = QObject::tr("宠物 ID 已存在，请使用其他 ID。");
         return result;
     }
@@ -143,10 +158,12 @@ PetCreationResult PetCreationService::createOrRepairPetConfig(
         }
     }
 
+    QString finalName = petName.trimmed().isEmpty() ? trimmedId : petName.trimmed();
+
     if (!petJsonExists) {
         PetBasicInfo info;
         info.id = trimmedId;
-        info.name = petName.trimmed().isEmpty() ? trimmedId : petName.trimmed();
+        info.name = finalName;
         info.canvasSize = canvasSize.isValid() ? canvasSize : QSize(400, 400);
         info.displaySize = displaySize.isValid() ? displaySize : QSize(200, 200);
 
@@ -163,6 +180,13 @@ PetCreationResult PetCreationService::createOrRepairPetConfig(
             return result;
         }
     }
+
+    PetLibraryEntry entry;
+    entry.id = trimmedId;
+    entry.name = finalName;
+    entry.dir = "pets/" + trimmedId;
+    entry.enabled = true;
+    PetLibraryIndexService::addOrUpdatePet(entry);
 
     result.success = true;
     result.petId = trimmedId;

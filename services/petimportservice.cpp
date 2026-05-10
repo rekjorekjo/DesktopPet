@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/petlibraryindexservice.h"
 
 #include <QDir>
 #include <QFile>
@@ -52,35 +53,47 @@ PetImportResult PetImportService::importPet(
         return result;
     }
 
-    QString targetDir = PetPaths::petDirectory(targetPetId);
-    if (QDir(targetDir).exists()) {
+    PetLibraryIndexService::ensureLibrary();
+
+    if (PetLibraryIndexService::containsPetId(targetPetId)) {
         result.message = QObject::tr("宠物 ID 已存在，请使用其他 ID。");
         return result;
     }
 
-    if (!QDir().mkpath(targetDir)) {
-        result.message = QObject::tr("创建目标目录失败。");
-        return result;
+    QString targetDir = PetPaths::petDirectory(targetPetId);
+
+    if (!QDir(targetDir).exists()) {
+        if (!QDir().mkpath(targetDir)) {
+            result.message = QObject::tr("创建目标目录失败。");
+            return result;
+        }
     }
 
     QString targetPetJson = targetDir + "/pet.json";
     QString targetPlaylist = targetDir + "/playlist.json";
 
+    if (QFile::exists(targetPetJson)) {
+        QFile::remove(targetPetJson);
+    }
+    if (QFile::exists(targetPlaylist)) {
+        QFile::remove(targetPlaylist);
+    }
+
     if (!QFile::copy(sourcePetJson, targetPetJson)) {
-        QDir(targetDir).removeRecursively();
         result.message = QObject::tr("复制 pet.json 失败。");
         return result;
     }
 
     if (!QFile::copy(sourcePlaylist, targetPlaylist)) {
-        QDir(targetDir).removeRecursively();
+        QFile::remove(targetPetJson);
         result.message = QObject::tr("复制 playlist.json 失败。");
         return result;
     }
 
     PetBasicInfo info;
     if (!PetConfigManager::loadPetInfoJson(targetPetJson, info)) {
-        QDir(targetDir).removeRecursively();
+        QFile::remove(targetPetJson);
+        QFile::remove(targetPlaylist);
         result.message = QObject::tr("读取宠物配置失败。");
         return result;
     }
@@ -92,10 +105,18 @@ PetImportResult PetImportService::importPet(
     info.enabled = true;
 
     if (!PetConfigManager::savePetInfoJson(targetPetJson, info)) {
-        QDir(targetDir).removeRecursively();
+        QFile::remove(targetPetJson);
+        QFile::remove(targetPlaylist);
         result.message = QObject::tr("保存宠物配置失败。");
         return result;
     }
+
+    PetLibraryEntry entry;
+    entry.id = targetPetId;
+    entry.name = info.name;
+    entry.dir = "pets/" + targetPetId;
+    entry.enabled = true;
+    PetLibraryIndexService::addOrUpdatePet(entry);
 
     result.success = true;
     result.petId = targetPetId;

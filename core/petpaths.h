@@ -27,7 +27,6 @@ public:
 private:
     static bool migrateFromLegacyStructure();
     static bool copyDirectory(const QString &source, const QString &destination);
-    static bool ensureDefaultPetConfig();
 };
 
 #endif // PETPATHS_H

@@ -7,6 +7,7 @@
 #include "dialogs/newpetdialog.h"
 #include "services/petcreationservice.h"
 #include "services/petimportservice.h"
+#include "services/petlibraryindexservice.h"
 #include "services/petlibraryservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
@@ -389,17 +390,12 @@ void PetManagePage::refreshPetList()
 
     QString currentPetId = AppSettings::currentPetId();
 
-    QDir petsDir(PetPaths::petsDirectory());
-    if (!petsDir.exists()) {
-        if (!petsDir.mkpath(".")) {
-            qWarning() << "Failed to create pets directory:" << PetPaths::petsDirectory();
-        }
-        return;
-    }
+    PetLibraryIndexService::ensureLibrary();
 
-    QStringList petFolders = petsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    QList<PetLibraryEntry> entries = PetLibraryIndexService::loadEntries();
 
-    for (const QString &petId : petFolders) {
+    for (const PetLibraryEntry &entry : entries) {
+        QString petId = entry.id;
         QString petDir = PetPaths::petDirectory(petId);
         QString petJsonPath = petDir + "/pet.json";
         QString playlistPath = petDir + "/playlist.json";
@@ -410,15 +406,12 @@ void PetManagePage::refreshPetList()
 
         bool configInvalid = !petLoaded || !playlistExists;
 
-        if (petLoaded && !info.enabled) {
-            continue;
-        }
-
         QString displayName;
         if (petLoaded) {
             displayName = QString("%1 (%2)").arg(info.name).arg(info.id);
         } else {
-            displayName = QString("%1 (%2)").arg(petId, tr("配置异常"));
+            QString name = entry.name.isEmpty() ? petId : entry.name;
+            displayName = QString("%1 (%2)").arg(name, tr("配置异常"));
         }
 
         if (petId == currentPetId) {
@@ -762,7 +755,7 @@ void PetManagePage::editPetById(const QString &petId)
         QString newPetDir = PetPaths::petDirectory(newPetId);
 
         if (newPetId != petId) {
-            if (QDir(newPetDir).exists()) {
+            if (PetLibraryIndexService::containsPetId(newPetId)) {
                 SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("宠物 ID 已存在，请使用其他 ID。"));
                 dialog->focusPetId();
                 return;
@@ -772,6 +765,8 @@ void PetManagePage::editPetById(const QString &petId)
                 SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("重命名宠物目录失败。"));
                 return;
             }
+
+            PetLibraryIndexService::removePetEntry(petId);
         }
 
         PetBasicInfo updatedInfo = info;
@@ -785,6 +780,13 @@ void PetManagePage::editPetById(const QString &petId)
             SoftMessageBox::warning(dialog, tr("编辑宠物"), tr("保存宠物配置失败。"));
             return;
         }
+
+        PetLibraryEntry entry;
+        entry.id = newPetId;
+        entry.name = updatedInfo.name;
+        entry.dir = "pets/" + newPetId;
+        entry.enabled = true;
+        PetLibraryIndexService::addOrUpdatePet(entry);
 
         if (petId == AppSettings::currentPetId()) {
             AppSettings::setCurrentPetId(newPetId);
@@ -980,22 +982,7 @@ void PetManagePage::onDeletePet()
 
 QString PetManagePage::firstEnabledPetId() const
 {
-    QDir petsDir(PetPaths::petsDirectory());
-    if (!petsDir.exists()) {
-        return QString();
-    }
-
-    QStringList petFolders = petsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-    for (const QString &petId : petFolders) {
-        QString petJsonPath = PetPaths::petDirectory(petId) + "/pet.json";
-        PetBasicInfo info;
-        if (PetConfigManager::loadPetInfoJson(petJsonPath, info) && info.enabled) {
-            return petId;
-        }
-    }
-
-    return QString();
+    return PetLibraryIndexService::findFirstEnabledPetId();
 }
 
 void PetManagePage::onImportPet()

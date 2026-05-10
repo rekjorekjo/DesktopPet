@@ -4,6 +4,7 @@
 #include "core/petconfigmanager.h"
 #include "models/petaction.h"
 #include "models/petplaylist.h"
+#include "services/petlibraryindexservice.h"
 
 #include <QDebug>
 #include <QDir>
@@ -104,52 +105,12 @@ bool PetPaths::ensureDefaultStructure()
         }
     }
 
-    QDir defaultPetDir(defaultPetDirectory());
-    if (!defaultPetDir.exists()) {
-        if (!defaultPetDir.mkpath(".")) {
-            qWarning() << "Failed to create default pet directory:" << defaultPetDirectory();
-            return false;
-        }
-    }
-
     if (!migrateFromLegacyStructure()) {
         qWarning() << "Migration from legacy structure encountered issues, but continuing...";
     }
 
-    if (!ensureDefaultPetConfig()) {
-        qWarning() << "Failed to ensure default pet config, but continuing...";
-    }
-
-    return true;
-}
-
-bool PetPaths::ensureDefaultPetConfig()
-{
-    QString petJsonPath = defaultPetJsonPath();
-    QString playlistPath = defaultPlaylistPath();
-
-    if (!QFile::exists(petJsonPath)) {
-        PetBasicInfo info;
-        info.id = "default_pet";
-        info.name = "Default Pet";
-        info.canvasSize = QSize(400, 400);
-        info.displaySize = QSize(200, 200);
-
-        if (!PetConfigManager::savePetInfoJson(petJsonPath, info)) {
-            qWarning() << "Failed to create default pet.json";
-            return false;
-        }
-        qDebug() << "Created default pet.json";
-    }
-
-    if (!QFile::exists(playlistPath)) {
-        PetPlaylist playlist;
-
-        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
-            qWarning() << "Failed to create default playlist.json";
-            return false;
-        }
-        qDebug() << "Created default playlist.json";
+    if (!PetLibraryIndexService::ensureLibrary()) {
+        qWarning() << "Failed to ensure pet library index, but continuing...";
     }
 
     return true;

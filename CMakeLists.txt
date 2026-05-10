@@ -47,6 +47,8 @@ qt_add_executable(DesktopPet
     services/petimportservice.h
     services/petlibraryservice.cpp
     services/petlibraryservice.h
+    services/petlibraryindexservice.cpp
+    services/petlibraryindexservice.h
     services/chatlogservice.cpp
     services/chatlogservice.h
     pages/petmanagepage.cpp

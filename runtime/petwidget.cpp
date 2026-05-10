@@ -3,6 +3,7 @@
 #include "core/appsettings.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/petlibraryindexservice.h"
 #include "theme/thememanager.h"
 #include "widgets/petchatwidget.h"
 
@@ -160,27 +161,7 @@ bool PetWidget::hasAnyPlaylistAction() const
 
 QString PetWidget::findFirstEnabledPetId() const
 {
-    QString petsDir = PetPaths::petsDirectory();
-    QDir dir(petsDir);
-    if (!dir.exists()) {
-        return QString();
-    }
-
-    QStringList petFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-    for (const QString &petId : petFolders) {
-        QString petJsonPath = petsDir + "/" + petId + "/pet.json";
-        if (QFile::exists(petJsonPath)) {
-            PetBasicInfo info;
-            if (PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-                if (info.enabled) {
-                    return petId;
-                }
-            }
-        }
-    }
-
-    return QString();
+    return PetLibraryIndexService::findFirstEnabledPetId();
 }
 
 bool PetWidget::hasAnyEnabledPet() const
