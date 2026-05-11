@@ -21,6 +21,7 @@ public:
     void stop();
     void pause();
     void resume();
+    void clear();
 
     void setSpeedMultiplier(double multiplier);
     double speedMultiplier() const;

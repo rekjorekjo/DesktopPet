@@ -26,6 +26,9 @@ public:
 public slots:
     void refreshTheme();
     void reloadPetInfo();
+    void onPetStarted();
+    void onPetPaused();
+    void onPetStartFailed(const QString &message);
 
 signals:
     void startPetRequested();

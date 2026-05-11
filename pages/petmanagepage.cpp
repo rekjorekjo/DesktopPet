@@ -57,12 +57,10 @@ void PetManagePage::connectSignals()
             return;
         }
 
-        setRunningStatus(true);
         emit startPetRequested();
     });
 
     connect(m_pauseButton, &QPushButton::clicked, this, [this]() {
-        setRunningStatus(false);
         emit pausePetRequested();
     });
 
@@ -649,6 +647,22 @@ void PetManagePage::setRunningStatus(bool running)
     } else {
         m_statusLabel->setText(tr("运行状态: 已暂停"));
     }
+}
+
+void PetManagePage::onPetStarted()
+{
+    setRunningStatus(true);
+}
+
+void PetManagePage::onPetPaused()
+{
+    setRunningStatus(false);
+}
+
+void PetManagePage::onPetStartFailed(const QString &message)
+{
+    Q_UNUSED(message);
+    loadPetInfo();
 }
 
 void PetManagePage::onCreatePet()

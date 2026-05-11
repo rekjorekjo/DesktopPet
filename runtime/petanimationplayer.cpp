@@ -147,6 +147,19 @@ void PetAnimationPlayer::resume()
     m_timer->start(m_intervalMs);
 }
 
+void PetAnimationPlayer::clear()
+{
+    stop();
+    m_frames.clear();
+    m_currentFrameIndex = 0;
+    m_currentLoopCount = 0;
+    m_targetRepeat = 1;
+    m_loop = false;
+    m_speedMultiplier = 1.0;
+    m_baseFps = DefaultFps;
+    m_intervalMs = calculateIntervalMs(DefaultFps, 1.0);
+}
+
 void PetAnimationPlayer::setSpeedMultiplier(double multiplier)
 {
     if (multiplier < 0.1) {

@@ -44,7 +44,7 @@ public:
     ~PetWidget();
 
     bool loadPet(const QString &petDirPath);
-    void playIdleAction();
+    bool playIdleAction();
 
 public slots:
     void startPet();
@@ -70,6 +70,9 @@ signals:
     void openSettingsRequested();
     void hidePetRequested();
     void quitRequested();
+    void petStarted();
+    void petStartFailed(const QString &message);
+    void petPaused();
 
 private slots:
     void onFrameChanged(const QPixmap &pixmap);
@@ -93,6 +96,7 @@ private:
     bool hasAnyEnabledPet() const;
     void showStatusMessage(const QString &title, const QString &subtitle);
     void clearStatusMessage();
+    void prepareDisplayLabelForPixmap();
     void startMovement();
     void stopMovement();
     void updateMoveDirection();

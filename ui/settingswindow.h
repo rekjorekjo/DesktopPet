@@ -52,6 +52,11 @@ signals:
     void petOpacityChanged(double opacity);
     void baseMoveSpeedChanged(int speed);
 
+public slots:
+    void onPetStarted();
+    void onPetPaused();
+    void onPetStartFailed(const QString &message);
+
 protected:
     void changeEvent(QEvent *event) override;
 

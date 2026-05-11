@@ -226,6 +226,27 @@ void SettingsWindow::connectSignals()
             });
 }
 
+void SettingsWindow::onPetStarted()
+{
+    if (m_petManagePage) {
+        m_petManagePage->onPetStarted();
+    }
+}
+
+void SettingsWindow::onPetPaused()
+{
+    if (m_petManagePage) {
+        m_petManagePage->onPetPaused();
+    }
+}
+
+void SettingsWindow::onPetStartFailed(const QString &message)
+{
+    if (m_petManagePage) {
+        m_petManagePage->onPetStartFailed(message);
+    }
+}
+
 void SettingsWindow::applyTheme()
 {
     ThemeManager &theme = ThemeManager::instance();
