@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/actionlibraryindexservice.h"
 
 #include <QDebug>
 #include <QDir>
@@ -36,6 +37,85 @@ ActionLibraryOperationResult ActionLibraryService::disableAction(
     return result;
 }
 
+ActionLibraryOperationResult ActionLibraryService::removeAction(
+    const QString &actionId)
+{
+    ActionLibraryOperationResult result;
+    result.success = false;
+    result.warning = false;
+
+    if (actionId.isEmpty()) {
+        result.message = QObject::tr("动作 ID 不能为空。");
+        return result;
+    }
+    if (actionId == "." || actionId == ".." || actionId.contains('/') || actionId.contains('\\')) {
+        result.message = QObject::tr("动作 ID 无效。");
+        return result;
+    }
+
+    if (!ActionLibraryIndexService::containsActionId(actionId)) {
+        result.message = QObject::tr("动作不存在于动作库中。");
+        return result;
+    }
+
+    if (!ActionLibraryIndexService::removeActionEntry(actionId)) {
+        result.message = QObject::tr("从动作库移除动作失败。");
+        return result;
+    }
+
+    QDir petsRoot(PetPaths::petsDirectory());
+    if (petsRoot.exists()) {
+        const QStringList petFolders = petsRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &petId : petFolders) {
+            const QString playlistPath = petsRoot.filePath(petId + "/playlist.json");
+            if (!QFile::exists(playlistPath)) {
+                continue;
+            }
+
+            PetPlaylist playlist;
+            if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
+                qWarning() << "Failed to load playlist while removing global action:"
+                           << playlistPath << "actionId:" << actionId;
+                ++result.failedPlaylistCount;
+                continue;
+            }
+
+            const int removedCount = playlist.removeActionReferences(actionId);
+            if (removedCount <= 0) {
+                continue;
+            }
+
+            if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+                qWarning() << "Failed to save playlist while removing global action:"
+                           << playlistPath << "actionId:" << actionId;
+                ++result.failedPlaylistCount;
+                continue;
+            }
+
+            result.removedReferenceCount += removedCount;
+            ++result.cleanedPetCount;
+        }
+    }
+
+    result.success = true;
+    result.warning = result.failedPlaylistCount > 0;
+
+    if (result.warning) {
+        result.message = QObject::tr("已从动作库移除动作 %1，已清理 %2 个引用，%3 个配置清理失败。动作文件仍保留。")
+            .arg(actionId)
+            .arg(result.removedReferenceCount)
+            .arg(result.failedPlaylistCount);
+    } else if (result.removedReferenceCount > 0) {
+        result.message = QObject::tr("已从动作库移除动作 %1，已清理 %2 个引用。动作文件仍保留。")
+            .arg(actionId)
+            .arg(result.removedReferenceCount);
+    } else {
+        result.message = QObject::tr("已从动作库移除动作 %1，动作文件仍保留。").arg(actionId);
+    }
+
+    return result;
+}
+
 ActionLibraryOperationResult ActionLibraryService::deleteAction(
     const QString &actionId)
 {
@@ -52,8 +132,13 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
         return result;
     }
 
+    auto entryOpt = ActionLibraryIndexService::findAction(actionId);
+    QString dirName = entryOpt.has_value() && !entryOpt->dir.isEmpty()
+        ? entryOpt->dir
+        : actionId;
+
     const QString actionsBaseDir = PetPaths::actionsDirectory();
-    const QString actionDirPath = QDir(actionsBaseDir).filePath(actionId);
+    const QString actionDirPath = QDir(actionsBaseDir).filePath(dirName);
     QDir actionDir(actionDirPath);
 
     bool actionDirExisted = actionDir.exists();
@@ -93,6 +178,8 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
 
         actionDirDeleted = true;
     }
+
+    ActionLibraryIndexService::removeActionEntry(actionId);
 
     QDir petsRoot(PetPaths::petsDirectory());
     if (petsRoot.exists()) {
@@ -219,13 +306,13 @@ ActionLibraryOperationResult ActionLibraryService::renameActionId(
     const QString newDirPath = QDir(actionsBaseDir).filePath(trimmedNew);
 
     QDir oldDir(oldDirPath);
-    if (!oldDir.exists()) {
-        result.message = QObject::tr("原动作目录不存在。");
+    if (!ActionLibraryIndexService::containsActionId(trimmedOld)) {
+        result.message = QObject::tr("原动作不存在于动作库中。");
         return result;
     }
 
     QDir newDir(newDirPath);
-    if (newDir.exists()) {
+    if (ActionLibraryIndexService::containsActionId(trimmedNew)) {
         result.message = QObject::tr("目标动作 ID 已存在，请选择其他名称。");
         return result;
     }
@@ -290,6 +377,16 @@ ActionLibraryOperationResult ActionLibraryService::renameActionId(
             qWarning() << "Failed to open action.json for writing during rename:" << actionJsonPath;
             result.warning = true;
         }
+    }
+
+    auto entry = ActionLibraryIndexService::findAction(trimmedOld);
+    if (entry.has_value()) {
+        ActionLibraryIndexService::removeActionEntry(trimmedOld);
+        ActionLibraryEntry newEntry;
+        newEntry.id = trimmedNew;
+        newEntry.name = entry->name.isEmpty() ? trimmedNew : entry->name;
+        newEntry.dir = trimmedNew;
+        ActionLibraryIndexService::addOrUpdateAction(newEntry);
     }
 
     QDir petsRoot(PetPaths::petsDirectory());

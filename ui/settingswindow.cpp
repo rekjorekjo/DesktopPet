@@ -189,7 +189,12 @@ void SettingsWindow::connectSignals()
             this, &SettingsWindow::pausePetRequested);
 
     connect(m_actionSettingsPage, &ActionSettingsPage::applyConfigRequested,
-            this, &SettingsWindow::actionConfigApplied);
+            this, [this]() {
+        if (m_petManagePage) {
+            m_petManagePage->reloadPetInfo();
+        }
+        emit actionConfigApplied();
+    });
 
     connect(m_petManagePage, &PetManagePage::applyConfigRequested, this, [this]() {
         if (m_actionSettingsPage) {

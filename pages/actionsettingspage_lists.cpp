@@ -2,6 +2,7 @@
 
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/actionlibraryindexservice.h"
 #include "widgets/actioncategorylistwidget.h"
 #include "widgets/actionlibrarylistwidget.h"
 #include "widgets/actioncategorytabwidget.h"
@@ -23,20 +24,18 @@ void ActionSettingsPage::loadGlobalActionLibrary()
 {
     m_actionLibrary.clear();
 
-    QString actionsDir = PetPaths::actionsDirectory();
-    QDir dir(actionsDir);
-    if (!dir.exists()) {
-        return;
-    }
+    ActionLibraryIndexService::ensureLibrary();
 
-    QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    QList<ActionLibraryEntry> entries = ActionLibraryIndexService::loadEntries();
 
-    for (const QString &actionId : actionFolders) {
-        QString actionDir = dir.filePath(actionId);
-        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDir);
+    for (const ActionLibraryEntry &entry : entries) {
+        QString dirName = entry.dir.isEmpty() ? entry.id : entry.dir;
+        QString actionDir = QDir(PetPaths::actionsDirectory()).filePath(dirName);
+        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(entry.id, actionDir);
 
         if (!action.isValid()) {
-            continue;
+            action.id = entry.id;
+            action.name = entry.name.isEmpty() ? entry.id : entry.name;
         }
 
         m_actionLibrary.append(action);

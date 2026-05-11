@@ -5,6 +5,7 @@
 #include "core/petpaths.h"
 #include "dialogs/importpetdialog.h"
 #include "dialogs/newpetdialog.h"
+#include "services/actionlibraryindexservice.h"
 #include "services/petcreationservice.h"
 #include "services/petimportservice.h"
 #include "services/petlibraryindexservice.h"
@@ -296,53 +297,23 @@ void PetManagePage::loadPetInfo()
 
 int PetManagePage::usablePetActionCount() const
 {
-    QSet<QString> actionIds;
-
-    for (const PetActionRef &ref : m_playlist.idleActions()) {
-        actionIds.insert(ref.actionId);
-    }
-    for (const PetActionRef &ref : m_playlist.randomActions()) {
-        actionIds.insert(ref.actionId);
-    }
-    for (const PetActionRef &ref : m_playlist.timedActions()) {
-        actionIds.insert(ref.actionId);
-    }
-    for (const QString &emotion : m_playlist.allEmotionActions().keys()) {
-        for (const PetActionRef &ref : m_playlist.emotionActions(emotion)) {
-            actionIds.insert(ref.actionId);
-        }
-    }
-
     int count = 0;
-    for (const PetAction &action : m_actions) {
-        if (actionIds.contains(action.id) && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
-            ++count;
-        }
+
+    count += m_playlist.idleActions().size();
+    count += m_playlist.randomActions().size();
+    count += m_playlist.timedActions().size();
+
+    for (const QString &emotion : m_playlist.allEmotionActions().keys()) {
+        count += m_playlist.emotionActions(emotion).size();
     }
+
     return count;
 }
 
 int PetManagePage::globalActionResourceCount() const
 {
-    QDir actionsDir(PetPaths::actionsDirectory());
-    if (!actionsDir.exists()) {
-        return 0;
-    }
-
-    QStringList actionFolders = actionsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-    int count = 0;
-
-    for (const QString &folder : actionFolders) {
-        QString folderPath = actionsDir.filePath(folder);
-
-        QStringList frameFiles = PetConfigManager::scanFrameFiles(folderPath);
-
-        if (!frameFiles.isEmpty()) {
-            ++count;
-        }
-    }
-
-    return count;
+    ActionLibraryIndexService::ensureLibrary();
+    return ActionLibraryIndexService::loadEntries().size();
 }
 
 bool PetManagePage::isCurrentPetConfigMissing() const
@@ -522,40 +493,12 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
     int globalCount = globalActionResourceCount();
 
     if (playlistLoaded) {
-        QSet<QString> actionIds;
+        petActionCount += playlist.idleActions().size();
+        petActionCount += playlist.randomActions().size();
+        petActionCount += playlist.timedActions().size();
 
-        for (const PetActionRef &ref : playlist.idleActions()) {
-            actionIds.insert(ref.actionId);
-        }
-        for (const PetActionRef &ref : playlist.randomActions()) {
-            actionIds.insert(ref.actionId);
-        }
-        for (const PetActionRef &ref : playlist.timedActions()) {
-            actionIds.insert(ref.actionId);
-        }
         for (const QString &emotion : playlist.allEmotionActions().keys()) {
-            for (const PetActionRef &ref : playlist.emotionActions(emotion)) {
-                actionIds.insert(ref.actionId);
-            }
-        }
-
-        QString actionsDir = PetPaths::actionsDirectory();
-        QDir dir(actionsDir);
-        if (dir.exists()) {
-            QStringList actionFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-            for (const QString &actionId : actionFolders) {
-                if (!actionIds.contains(actionId)) {
-                    continue;
-                }
-
-                QString actionDir = dir.filePath(actionId);
-                QStringList frameFiles = PetConfigManager::scanFrameFiles(actionDir);
-
-                if (!frameFiles.isEmpty()) {
-                    ++petActionCount;
-                }
-            }
+            petActionCount += playlist.emotionActions(emotion).size();
         }
     }
 

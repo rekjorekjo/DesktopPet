@@ -28,6 +28,9 @@ void ActionSettingsPage::onActionLibraryContextMenu(const QPoint &pos)
     QAction *addAction = menu.addAction(tr("添加到当前分类"));
     connect(addAction, &QAction::triggered, this, &ActionSettingsPage::onAddToCategory);
 
+    QAction *removeAction = menu.addAction(tr("移除动作"));
+    connect(removeAction, &QAction::triggered, this, &ActionSettingsPage::onRemoveLibraryAction);
+
     menu.addSeparator();
 
     QAction *renameAction = menu.addAction(tr("重命名动作 ID"));
@@ -62,14 +65,36 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
         return false;
     }
 
+    QString baseDisplayName = action.name.isEmpty() ? actionId : action.name;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+    QList<PetActionRef> existingRefs;
+
+    switch (tabIndex) {
+        case 0:
+            existingRefs = m_playlist.idleActions();
+            break;
+        case 1:
+            existingRefs = m_playlist.randomActions();
+            break;
+        case 2:
+            existingRefs = m_playlist.timedActions();
+            break;
+        case 3:
+            existingRefs = m_playlist.emotionActions("happy");
+            break;
+    }
+
+    QString uniqueDisplayName = makeUniqueDisplayNameForCategory(baseDisplayName, actionId, existingRefs);
+
     PetActionRef ref(action.id);
+    ref.displayName = uniqueDisplayName;
     ref.loop = false;
     ref.repeat = 1;
     ref.animationSpeed = 1.0;
     ref.moveEnabled = false;
     ref.movementSpeed = 1.0;
 
-    int tabIndex = m_categoryTabs->currentIndex();
     bool success = false;
 
     switch (tabIndex) {
@@ -92,6 +117,77 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
     }
 
     return success;
+}
+
+QString ActionSettingsPage::makeUniqueDisplayNameForCategory(
+    const QString &baseDisplayName,
+    const QString &actionId,
+    const QList<PetActionRef> &refs) const
+{
+    auto isDuplicate = [&](const QString &displayName) -> bool {
+        for (const PetActionRef &ref : refs) {
+            if (ref.actionId == actionId && ref.displayName.trimmed() == displayName.trimmed()) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (!isDuplicate(baseDisplayName)) {
+        return baseDisplayName;
+    }
+
+    int suffix = 2;
+    while (true) {
+        QString candidate = baseDisplayName + " " + QString::number(suffix);
+        if (!isDuplicate(candidate)) {
+            return candidate;
+        }
+        ++suffix;
+        if (suffix > 1000) {
+            break;
+        }
+    }
+
+    return baseDisplayName;
+}
+
+void ActionSettingsPage::onRemoveLibraryAction()
+{
+    QString actionId = currentLibraryActionId();
+    if (actionId.isEmpty()) {
+        return;
+    }
+
+    SoftMessageBox::StandardButton reply = SoftMessageBox::question(
+        this,
+        tr("移除动作"),
+        tr("确定要从动作库移除动作 %1 吗？\n\n动作将从动作库索引中移除，并从所有宠物的播放列表中清理引用，但动作文件仍保留。").arg(actionId),
+        SoftMessageBox::Yes | SoftMessageBox::No,
+        SoftMessageBox::No
+    );
+
+    if (reply != SoftMessageBox::Yes) {
+        return;
+    }
+
+    ActionLibraryOperationResult result = ActionLibraryService::removeAction(actionId);
+    if (!result.success) {
+        SoftMessageBox::warning(this, tr("移除动作失败"), result.message);
+        return;
+    }
+
+    initData();
+    refreshActionLibraryList();
+    refreshCurrentCategoryList();
+    emit applyConfigRequested();
+
+    if (result.warning) {
+        SoftMessageBox::warning(this, tr("移除动作"), result.message);
+        return;
+    }
+
+    SoftMessageBox::information(this, tr("移除动作"), result.message);
 }
 
 void ActionSettingsPage::onDeleteLibraryAction()
@@ -122,6 +218,7 @@ void ActionSettingsPage::onDeleteLibraryAction()
     initData();
     refreshActionLibraryList();
     refreshCurrentCategoryList();
+    emit applyConfigRequested();
 
     if (result.warning) {
         SoftMessageBox::warning(this, tr("删除动作"), result.message);

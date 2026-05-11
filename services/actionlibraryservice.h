@@ -29,6 +29,10 @@ public:
         const QString &actionId
     );
 
+    static ActionLibraryOperationResult removeAction(
+        const QString &actionId
+    );
+
     static ActionLibraryOperationResult deleteAction(
         const QString &actionId
     );

@@ -4,6 +4,7 @@
 #include "core/petconfigmanager.h"
 #include "models/petaction.h"
 #include "models/petplaylist.h"
+#include "services/actionlibraryindexservice.h"
 #include "services/petlibraryindexservice.h"
 
 #include <QDebug>
@@ -111,6 +112,10 @@ bool PetPaths::ensureDefaultStructure()
 
     if (!PetLibraryIndexService::ensureLibrary()) {
         qWarning() << "Failed to ensure pet library index, but continuing...";
+    }
+
+    if (!ActionLibraryIndexService::ensureLibrary()) {
+        qWarning() << "Failed to ensure action library index, but continuing...";
     }
 
     return true;

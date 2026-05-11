@@ -41,6 +41,8 @@ qt_add_executable(DesktopPet
     services/actionimportworker.h
     services/actionlibraryservice.cpp
     services/actionlibraryservice.h
+    services/actionlibraryindexservice.cpp
+    services/actionlibraryindexservice.h
     services/petcreationservice.cpp
     services/petcreationservice.h
     services/petimportservice.cpp

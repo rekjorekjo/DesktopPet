@@ -3,6 +3,7 @@
 #include "core/appsettings.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
+#include "services/actionlibraryindexservice.h"
 #include "services/petlibraryindexservice.h"
 #include "theme/thememanager.h"
 #include "widgets/petchatwidget.h"
@@ -295,19 +296,17 @@ void PetWidget::loadGlobalActionLibrary()
 {
     m_actions.clear();
 
-    const QString actionsDirPath = PetPaths::actionsDirectory();
-    QDir actionsDir(actionsDirPath);
-    if (!actionsDir.exists()) {
-        return;
-    }
+    ActionLibraryIndexService::ensureLibrary();
 
-    const QStringList actionFolders = actionsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    QList<ActionLibraryEntry> entries = ActionLibraryIndexService::loadEntries();
 
-    for (const QString &actionId : actionFolders) {
-        const QString actionDirPath = actionsDir.filePath(actionId);
-        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(actionId, actionDirPath);
+    for (const ActionLibraryEntry &entry : entries) {
+        QString dirName = entry.dir.isEmpty() ? entry.id : entry.dir;
+        QString actionDirPath = QDir(PetPaths::actionsDirectory()).filePath(dirName);
+        PetAction action = PetConfigManager::loadGlobalActionFromDirectory(entry.id, actionDirPath);
 
         if (!action.isValid()) {
+            qWarning() << "Failed to load action from actionlibrary.json:" << entry.id;
             continue;
         }
 
