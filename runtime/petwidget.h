@@ -51,6 +51,7 @@ public slots:
     void pausePet();
     void reloadPet();
     void reloadPlaylistPreservePlayback();
+    void reloadActionsAndPlaylistPreservePlayback();
     void setPetScaleFactor(double scale);
     void setPetOpacity(double opacity);
     void playEmotion(const QString &emotion);

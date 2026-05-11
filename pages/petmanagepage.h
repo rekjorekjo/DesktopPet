@@ -1,6 +1,7 @@
 #ifndef PETMANAGEPAGE_H
 #define PETMANAGEPAGE_H
 
+#include <QHash>
 #include <QWidget>
 
 #include "core/petconfigmanager.h"
@@ -45,7 +46,9 @@ private:
     QString firstEnabledPetId() const;
 
     int usablePetActionCount() const;
+    int availablePetActionCount() const;
     int globalActionResourceCount() const;
+    bool isActionResourceAvailable(const QString &actionId, QHash<QString, bool> &cache) const;
     bool isCurrentPetConfigMissing() const;
     void editPetById(const QString &petId);
     void repairPetConfig(const QString &petId);

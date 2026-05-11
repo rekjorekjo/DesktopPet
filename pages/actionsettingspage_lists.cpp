@@ -105,6 +105,11 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
         repeatText = tr("播放 1 次");
     }
 
+    QString resourceMissingSuffix;
+    if (!isActionResourceAvailable(actionId)) {
+        resourceMissingSuffix = tr(" [资源缺失]");
+    }
+
     if (tabIndex == 2) {
         QString triggerText;
         if (ref.timedTriggerMode == TimedTriggerMode::ClockTime) {
@@ -113,21 +118,21 @@ QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
             triggerText = tr("每 %1 秒").arg(ref.intervalSeconds);
         }
         if (showId) {
-            return QString("%1 (%2) - %3 / %4").arg(namePart, actionId, triggerText, repeatText);
+            return QString("%1 (%2) - %3 / %4%5").arg(namePart, actionId, triggerText, repeatText, resourceMissingSuffix);
         } else {
-            return QString("%1 - %2 / %3").arg(namePart, triggerText, repeatText);
+            return QString("%1 - %2 / %3%4").arg(namePart, triggerText, repeatText, resourceMissingSuffix);
         }
     } else if (tabIndex == 3) {
         if (showId) {
-            return QString("%1 (%2) - %3 / %4").arg(namePart, actionId, ref.emotion, repeatText);
+            return QString("%1 (%2) - %3 / %4%5").arg(namePart, actionId, ref.emotion, repeatText, resourceMissingSuffix);
         } else {
-            return QString("%1 - %2 / %3").arg(namePart, ref.emotion, repeatText);
+            return QString("%1 - %2 / %3%4").arg(namePart, ref.emotion, repeatText, resourceMissingSuffix);
         }
     } else {
         if (showId) {
-            return QString("%1 (%2) - %3").arg(namePart, actionId, repeatText);
+            return QString("%1 (%2) - %3%4").arg(namePart, actionId, repeatText, resourceMissingSuffix);
         } else {
-            return QString("%1 - %2").arg(namePart, repeatText);
+            return QString("%1 - %2%3").arg(namePart, repeatText, resourceMissingSuffix);
         }
     }
 }
@@ -140,6 +145,16 @@ QString ActionSettingsPage::getActionName(const QString &actionId) const
         }
     }
     return actionId;
+}
+
+bool ActionSettingsPage::isActionResourceAvailable(const QString &actionId) const
+{
+    for (const PetAction &action : m_actionLibrary) {
+        if (action.id == actionId) {
+            return action.isValid() && action.frameCount > 0 && !action.frameFiles.isEmpty();
+        }
+    }
+    return false;
 }
 
 QString ActionSettingsPage::currentLibraryActionId() const

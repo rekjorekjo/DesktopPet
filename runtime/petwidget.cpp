@@ -131,9 +131,17 @@ QSize PetWidget::currentDisplaySize() const
 
 bool PetWidget::hasAnyActionResources() const
 {
-    QDir actionsDir(PetPaths::actionsDirectory());
-    QStringList actionDirs = actionsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-    return !actionDirs.isEmpty();
+    if (m_actions.isEmpty()) {
+        return false;
+    }
+
+    for (const PetAction &action : m_actions) {
+        if (action.enabled && action.frameCount > 0 && !action.frameFiles.isEmpty()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool PetWidget::hasAnyUsableEnabledAction() const
@@ -408,6 +416,27 @@ void PetWidget::startPet()
         return;
     }
 
+    if (m_actions.isEmpty() || !hasAnyUsableEnabledAction()) {
+        loadGlobalActionLibrary();
+
+        QString currentPetId = AppSettings::currentPetId();
+        QString currentPetDir = PetPaths::petDirectory(currentPetId);
+        QString playlistPath = currentPetDir + "/playlist.json";
+        PetConfigManager::loadPlaylistFromJson(playlistPath, m_playlist);
+    }
+
+    if (m_actions.isEmpty() || !hasAnyUsableEnabledAction()) {
+        m_petRunning = false;
+        showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+        return;
+    }
+
+    if (!hasAnyPlaylistAction()) {
+        m_petRunning = false;
+        showStatusMessage(tr("当前宠物暂无动作配置"), tr("请前往动作设置添加动作"));
+        return;
+    }
+
     m_petRunning = true;
 
     if (m_player->isPaused()) {
@@ -516,6 +545,92 @@ void PetWidget::reloadPlaylistPreservePlayback()
             if (m_petRunning) {
                 playIdleAction();
             }
+        }
+    }
+}
+
+void PetWidget::reloadActionsAndPlaylistPreservePlayback()
+{
+    loadGlobalActionLibrary();
+
+    QString currentPetId = AppSettings::currentPetId();
+    QString currentPetDir = PetPaths::petDirectory(currentPetId);
+    QString playlistPath = currentPetDir + "/playlist.json";
+
+    PetPlaylist newPlaylist;
+    bool loaded = PetConfigManager::loadPlaylistFromJson(playlistPath, newPlaylist);
+    if (!loaded) {
+        qWarning() << "reloadActionsAndPlaylistPreservePlayback: Failed to load playlist.json";
+    } else {
+        m_playlist = newPlaylist;
+    }
+
+    if (!m_actions.isEmpty() && !m_currentActionId.isEmpty()) {
+        PetAction newAction = findActionById(m_currentActionId);
+        PetActionRef newRef;
+
+        if (newAction.isValid() && m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
+            PetActionRef oldRef = m_currentActionRef;
+            m_currentAction = newAction;
+            m_currentActionRef = newRef;
+
+            m_player->loadAction(newAction, currentDisplaySize());
+
+            if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
+                m_player->setSpeedMultiplier(newRef.animationSpeed);
+            }
+
+            if (oldRef.loop != newRef.loop || oldRef.repeat != newRef.repeat) {
+                m_player->updatePlaybackOptions(newRef.loop, newRef.repeat);
+            }
+
+            MoveAxis oldMoveAxis = oldRef.moveAxis;
+
+            if (newRef.moveEnabled && newRef.movementSpeed > 0) {
+                m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
+                m_moveAxis = newRef.moveAxis;
+
+                if (oldMoveAxis != newRef.moveAxis) {
+                    updateMoveDirection();
+                }
+
+                if (!m_moveEnabled && m_petRunning) {
+                    m_moveEnabled = true;
+                    m_moveRemainderX = 0.0;
+                    m_moveRemainderY = 0.0;
+                    startMovement();
+                }
+            } else {
+                stopMovement();
+            }
+        } else {
+            stopMovement();
+            m_player->stop();
+            m_currentAction = PetAction();
+            m_currentActionRef = PetActionRef();
+            m_currentActionId.clear();
+
+            if (m_petRunning) {
+                if (hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
+                    playIdleAction();
+                } else {
+                    showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+                }
+            }
+        }
+    } else if (m_actions.isEmpty()) {
+        stopMovement();
+        m_player->stop();
+        m_currentAction = PetAction();
+        m_currentActionRef = PetActionRef();
+        m_currentActionId.clear();
+
+        showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+    } else if (m_currentActionId.isEmpty() && m_petRunning) {
+        if (hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
+            playIdleAction();
+        } else {
+            showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
         }
     }
 }

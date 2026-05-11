@@ -584,6 +584,11 @@ void ImportActionDialog::handleSelectedFolder(const QString &folderPath)
                     item.fps = m_fpsSpinBox->value();
                     m_importItems.append(item);
                 }
+
+                if (m_importItems.isEmpty()) {
+                    qWarning() << "actionlibrary.json exists but all entries are invalid, falling back to scanning subdirectories";
+                    usedActionLibrary = false;
+                }
             }
         }
 
@@ -609,6 +614,10 @@ void ImportActionDialog::handleSelectedFolder(const QString &folderPath)
                 item.fps = m_fpsSpinBox->value();
                 m_importItems.append(item);
             }
+        }
+
+        if (m_importItems.isEmpty()) {
+            m_importMode = ImportActionMode::Invalid;
         }
 
         m_frameCountLabel->setText("-");

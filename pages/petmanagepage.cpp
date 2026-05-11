@@ -47,6 +47,16 @@ void PetManagePage::connectSignals()
     connect(m_importPetButton, &QPushButton::clicked, this, &PetManagePage::onImportPet);
 
     connect(m_startButton, &QPushButton::clicked, this, [this]() {
+        if (usablePetActionCount() <= 0) {
+            loadPetInfo();
+            return;
+        }
+
+        if (availablePetActionCount() <= 0) {
+            loadPetInfo();
+            return;
+        }
+
         setRunningStatus(true);
         emit startPetRequested();
     });
@@ -310,6 +320,62 @@ int PetManagePage::usablePetActionCount() const
     return count;
 }
 
+int PetManagePage::availablePetActionCount() const
+{
+    QHash<QString, bool> availabilityCache;
+
+    int count = 0;
+
+    for (const PetActionRef &ref : m_playlist.idleActions()) {
+        if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+            ++count;
+        }
+    }
+    for (const PetActionRef &ref : m_playlist.randomActions()) {
+        if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+            ++count;
+        }
+    }
+    for (const PetActionRef &ref : m_playlist.timedActions()) {
+        if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+            ++count;
+        }
+    }
+    for (const QString &emotion : m_playlist.allEmotionActions().keys()) {
+        for (const PetActionRef &ref : m_playlist.emotionActions(emotion)) {
+            if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+                ++count;
+            }
+        }
+    }
+
+    return count;
+}
+
+bool PetManagePage::isActionResourceAvailable(const QString &actionId, QHash<QString, bool> &cache) const
+{
+    if (cache.contains(actionId)) {
+        return cache.value(actionId);
+    }
+
+    ActionLibraryIndexService::ensureLibrary();
+
+    auto entry = ActionLibraryIndexService::findAction(actionId);
+    if (!entry.has_value()) {
+        cache.insert(actionId, false);
+        return false;
+    }
+
+    QString dirName = entry->dir.isEmpty() ? entry->id : entry->dir;
+    QString actionDirPath = QDir(PetPaths::actionsDirectory()).filePath(dirName);
+
+    PetAction action = PetConfigManager::loadGlobalActionFromDirectory(entry->id, actionDirPath);
+
+    bool available = action.isValid() && action.frameCount > 0 && !action.frameFiles.isEmpty();
+    cache.insert(actionId, available);
+    return available;
+}
+
 int PetManagePage::globalActionResourceCount() const
 {
     ActionLibraryIndexService::ensureLibrary();
@@ -439,12 +505,21 @@ void PetManagePage::updateInfoDisplay()
                                     .arg(m_petInfo.displaySize.height()));
 
     int petActionCount = usablePetActionCount();
+    int availableCount = availablePetActionCount();
     int globalCount = globalActionResourceCount();
 
-    m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
+    if (petActionCount > 0 && availableCount == 0) {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1（可用 0）").arg(petActionCount));
+    } else if (petActionCount > availableCount) {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1（可用 %2）").arg(petActionCount).arg(availableCount));
+    } else {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
+    }
     m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalCount));
 
-    if (globalCount == 0) {
+    if (petActionCount > 0 && availableCount == 0) {
+        m_statusLabel->setText(tr("运行状态: 动作资源缺失，请重新导入动作库"));
+    } else if (globalCount == 0) {
         m_statusLabel->setText(tr("运行状态: 动作库为空，请前往动作设置新增动作"));
     } else if (petActionCount == 0) {
         m_statusLabel->setText(tr("运行状态: 当前宠物无可用动作，请前往动作设置添加动作"));
@@ -490,6 +565,7 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
                                     .arg(info.displaySize.height()));
 
     int petActionCount = 0;
+    int availableCount = 0;
     int globalCount = globalActionResourceCount();
 
     if (playlistLoaded) {
@@ -500,12 +576,44 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
         for (const QString &emotion : playlist.allEmotionActions().keys()) {
             petActionCount += playlist.emotionActions(emotion).size();
         }
+
+        QHash<QString, bool> availabilityCache;
+        for (const PetActionRef &ref : playlist.idleActions()) {
+            if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+                ++availableCount;
+            }
+        }
+        for (const PetActionRef &ref : playlist.randomActions()) {
+            if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+                ++availableCount;
+            }
+        }
+        for (const PetActionRef &ref : playlist.timedActions()) {
+            if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+                ++availableCount;
+            }
+        }
+        for (const QString &emotion : playlist.allEmotionActions().keys()) {
+            for (const PetActionRef &ref : playlist.emotionActions(emotion)) {
+                if (isActionResourceAvailable(ref.actionId, availabilityCache)) {
+                    ++availableCount;
+                }
+            }
+        }
     }
 
-    m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
+    if (petActionCount > 0 && availableCount == 0) {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1（可用 0）").arg(petActionCount));
+    } else if (petActionCount > availableCount) {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1（可用 %2）").arg(petActionCount).arg(availableCount));
+    } else {
+        m_petActionCountLabel->setText(tr("当前宠物动作数: %1").arg(petActionCount));
+    }
     m_globalActionCountLabel->setText(tr("全局动作库数量: %1").arg(globalCount));
 
-    if (globalCount == 0) {
+    if (petActionCount > 0 && availableCount == 0) {
+        m_statusLabel->setText(tr("运行状态: 动作资源缺失，请重新导入动作库"));
+    } else if (globalCount == 0) {
         m_statusLabel->setText(tr("运行状态: 动作库为空，请前往动作设置新增动作"));
     } else if (petActionCount == 0) {
         m_statusLabel->setText(tr("运行状态: 当前宠物无可用动作，请前往动作设置添加动作"));
@@ -517,9 +625,10 @@ void PetManagePage::updatePreviewForPet(const QString &petId)
 void PetManagePage::updateButtonStates()
 {
     int petActionCount = usablePetActionCount();
+    int availableCount = availablePetActionCount();
 
-    m_startButton->setEnabled(petActionCount > 0);
-    m_pauseButton->setEnabled(petActionCount > 0);
+    m_startButton->setEnabled(petActionCount > 0 && availableCount > 0);
+    m_pauseButton->setEnabled(petActionCount > 0 && availableCount > 0);
     m_reloadButton->setEnabled(true);
 }
 

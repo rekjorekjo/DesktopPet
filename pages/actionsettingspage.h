@@ -56,6 +56,7 @@ private:
     QString formatActionDisplay(const PetActionRef &ref) const;
     QString getActionName(const QString &actionId) const;
     QString displayNameForRef(const PetActionRef &ref) const;
+    bool isActionResourceAvailable(const QString &actionId) const;
     QString currentLibraryActionId() const;
     PetAction findLibraryActionById(const QString &actionId) const;
     bool addActionIdToCurrentCategory(const QString &actionId);

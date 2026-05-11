@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
                      &pet, &PetWidget::reloadPet);
 
     QObject::connect(&settings, &SettingsWindow::actionConfigApplied,
-                     &pet, &PetWidget::reloadPlaylistPreservePlayback);
+                     &pet, &PetWidget::reloadActionsAndPlaylistPreservePlayback);
 
     QObject::connect(&settings, &SettingsWindow::petOpacityChanged,
                      &pet, &PetWidget::setPetOpacity);

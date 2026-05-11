@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -18,6 +19,16 @@ QString ActionLibraryIndexService::libraryFilePath()
 
 bool ActionLibraryIndexService::ensureLibrary()
 {
+    QString actionsDirPath = PetPaths::actionsDirectory();
+    QDir actionsDir(actionsDirPath);
+
+    if (!actionsDir.exists()) {
+        if (!actionsDir.mkpath(".")) {
+            qWarning() << "Failed to create actions directory:" << actionsDirPath;
+            return false;
+        }
+    }
+
     QString libraryPath = libraryFilePath();
 
     if (QFile::exists(libraryPath)) {
@@ -31,6 +42,7 @@ bool ActionLibraryIndexService::ensureLibrary()
 
 QList<ActionLibraryEntry> ActionLibraryIndexService::loadEntries()
 {
+    ensureLibrary();
     return loadEntriesFromFile(libraryFilePath());
 }
 
@@ -76,6 +88,14 @@ QList<ActionLibraryEntry> ActionLibraryIndexService::loadEntriesFromFile(const Q
 bool ActionLibraryIndexService::saveEntries(const QList<ActionLibraryEntry> &entries)
 {
     QString libraryPath = libraryFilePath();
+
+    QDir dir(QFileInfo(libraryPath).absolutePath());
+    if (!dir.exists()) {
+        if (!dir.mkpath(".")) {
+            qWarning() << "Failed to create actionlibrary parent directory:" << dir.absolutePath();
+            return false;
+        }
+    }
 
     QJsonArray actionsArray;
     for (const ActionLibraryEntry &entry : entries) {

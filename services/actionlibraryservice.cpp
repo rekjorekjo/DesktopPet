@@ -3,6 +3,7 @@
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "services/actionlibraryindexservice.h"
+#include "services/petlibraryindexservice.h"
 
 #include <QDebug>
 #include <QDir>
@@ -63,38 +64,38 @@ ActionLibraryOperationResult ActionLibraryService::removeAction(
         return result;
     }
 
-    QDir petsRoot(PetPaths::petsDirectory());
-    if (petsRoot.exists()) {
-        const QStringList petFolders = petsRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-        for (const QString &petId : petFolders) {
-            const QString playlistPath = petsRoot.filePath(petId + "/playlist.json");
-            if (!QFile::exists(playlistPath)) {
-                continue;
-            }
+    QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
+    for (const PetLibraryEntry &entry : petEntries) {
+        QString petId = entry.id;
+        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
+        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
 
-            PetPlaylist playlist;
-            if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
-                qWarning() << "Failed to load playlist while removing global action:"
-                           << playlistPath << "actionId:" << actionId;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            const int removedCount = playlist.removeActionReferences(actionId);
-            if (removedCount <= 0) {
-                continue;
-            }
-
-            if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
-                qWarning() << "Failed to save playlist while removing global action:"
-                           << playlistPath << "actionId:" << actionId;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            result.removedReferenceCount += removedCount;
-            ++result.cleanedPetCount;
+        if (!QFile::exists(playlistPath)) {
+            continue;
         }
+
+        PetPlaylist playlist;
+        if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
+            qWarning() << "Failed to load playlist while removing global action:"
+                       << playlistPath << "actionId:" << actionId;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        const int removedCount = playlist.removeActionReferences(actionId);
+        if (removedCount <= 0) {
+            continue;
+        }
+
+        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+            qWarning() << "Failed to save playlist while removing global action:"
+                       << playlistPath << "actionId:" << actionId;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        result.removedReferenceCount += removedCount;
+        ++result.cleanedPetCount;
     }
 
     result.success = true;
@@ -181,38 +182,38 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
 
     ActionLibraryIndexService::removeActionEntry(actionId);
 
-    QDir petsRoot(PetPaths::petsDirectory());
-    if (petsRoot.exists()) {
-        const QStringList petFolders = petsRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-        for (const QString &petId : petFolders) {
-            const QString playlistPath = petsRoot.filePath(petId + "/playlist.json");
-            if (!QFile::exists(playlistPath)) {
-                continue;
-            }
+    QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
+    for (const PetLibraryEntry &entry : petEntries) {
+        QString petId = entry.id;
+        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
+        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
 
-            PetPlaylist playlist;
-            if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
-                qWarning() << "Failed to load playlist while deleting global action:"
-                           << playlistPath << "actionId:" << actionId;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            const int removedCount = playlist.removeActionReferences(actionId);
-            if (removedCount <= 0) {
-                continue;
-            }
-
-            if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
-                qWarning() << "Failed to save playlist while deleting global action:"
-                           << playlistPath << "actionId:" << actionId;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            result.removedReferenceCount += removedCount;
-            ++result.cleanedPetCount;
+        if (!QFile::exists(playlistPath)) {
+            continue;
         }
+
+        PetPlaylist playlist;
+        if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
+            qWarning() << "Failed to load playlist while deleting global action:"
+                       << playlistPath << "actionId:" << actionId;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        const int removedCount = playlist.removeActionReferences(actionId);
+        if (removedCount <= 0) {
+            continue;
+        }
+
+        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+            qWarning() << "Failed to save playlist while deleting global action:"
+                       << playlistPath << "actionId:" << actionId;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        result.removedReferenceCount += removedCount;
+        ++result.cleanedPetCount;
     }
 
     result.success = true;
@@ -389,38 +390,38 @@ ActionLibraryOperationResult ActionLibraryService::renameActionId(
         ActionLibraryIndexService::addOrUpdateAction(newEntry);
     }
 
-    QDir petsRoot(PetPaths::petsDirectory());
-    if (petsRoot.exists()) {
-        const QStringList petFolders = petsRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-        for (const QString &petId : petFolders) {
-            const QString playlistPath = petsRoot.filePath(petId + "/playlist.json");
-            if (!QFile::exists(playlistPath)) {
-                continue;
-            }
+    QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
+    for (const PetLibraryEntry &entry : petEntries) {
+        QString petId = entry.id;
+        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
+        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
 
-            PetPlaylist playlist;
-            if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
-                qWarning() << "Failed to load playlist while renaming global action:"
-                           << playlistPath << "oldActionId:" << trimmedOld;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            const int replacedCount = playlist.replaceActionReferences(trimmedOld, trimmedNew);
-            if (replacedCount <= 0) {
-                continue;
-            }
-
-            if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
-                qWarning() << "Failed to save playlist while renaming global action:"
-                           << playlistPath << "oldActionId:" << trimmedOld;
-                ++result.failedPlaylistCount;
-                continue;
-            }
-
-            result.replacedReferenceCount += replacedCount;
-            ++result.cleanedPetCount;
+        if (!QFile::exists(playlistPath)) {
+            continue;
         }
+
+        PetPlaylist playlist;
+        if (!PetConfigManager::loadPlaylistFromJson(playlistPath, playlist)) {
+            qWarning() << "Failed to load playlist while renaming global action:"
+                       << playlistPath << "oldActionId:" << trimmedOld;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        const int replacedCount = playlist.replaceActionReferences(trimmedOld, trimmedNew);
+        if (replacedCount <= 0) {
+            continue;
+        }
+
+        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
+            qWarning() << "Failed to save playlist while renaming global action:"
+                       << playlistPath << "oldActionId:" << trimmedOld;
+            ++result.failedPlaylistCount;
+            continue;
+        }
+
+        result.replacedReferenceCount += replacedCount;
+        ++result.cleanedPetCount;
     }
 
     result.success = true;
