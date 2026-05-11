@@ -14,6 +14,21 @@
 
 struct PetAction;
 
+enum class ImportActionMode
+{
+    Invalid,
+    SingleAction,
+    ActionLibrary
+};
+
+struct ImportActionItem
+{
+    QString actionId;
+    QString sourceDir;
+    QString displayName;
+    int fps = 12;
+};
+
 class SoftDialogTitleBar;
 
 class ImportActionDialog : public QDialog
@@ -22,6 +37,9 @@ class ImportActionDialog : public QDialog
 
 public:
     explicit ImportActionDialog(const QString &petDirPath, QWidget *parent = nullptr);
+
+    ImportActionMode importMode() const;
+    QList<ImportActionItem> importItems() const;
 
     QString actionId() const;
     QString actionFolderPath() const;
@@ -58,8 +76,18 @@ private:
     void updateExtraConfigVisibility();
     QString suggestActionIdFromFolder(const QString &folderPath) const;
 
+    void handleSelectedFolder(const QString &folderPath);
+    bool isValidActionDirectory(const QString &folderPath);
+    bool hasValidFrameFiles(const QString &folderPath);
+    ImportActionMode detectImportMode(const QString &folderPath);
+    void updateUiForMode();
+    void updateStatusText();
+
     QString m_petDirPath;
     QString m_lastAutoSuggestedId;
+
+    ImportActionMode m_importMode = ImportActionMode::Invalid;
+    QList<ImportActionItem> m_importItems;
 
     SoftDialogTitleBar *m_titleBar;
     QLineEdit *m_idEdit;
@@ -67,6 +95,7 @@ private:
     QPushButton *m_browseButton;
     QSpinBox *m_fpsSpinBox;
     QLabel *m_frameCountLabel;
+    QLabel *m_statusLabel;
 
     QComboBox *m_categoryComboBox;
     QLabel *m_timedTriggerModeLabel;

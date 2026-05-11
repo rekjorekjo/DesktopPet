@@ -77,6 +77,7 @@ private:
 
     void startImportFolderTask(const ActionImportWorker::ImportFolderTask &task, QPointer<ImportActionDialog> dialog = nullptr);
     void startImportGifTask(const ActionImportWorker::ImportGifTask &task, QPointer<NewActionDialog> dialog = nullptr);
+    void startImportBatchTask(const ActionImportWorker::ImportBatchTask &task, QPointer<ImportActionDialog> dialog = nullptr);
 
 private slots:
     void onActionLibraryContextMenu(const QPoint &pos);

@@ -1,6 +1,7 @@
 #include "importactiondialog.h"
 
 #include "core/petconfigmanager.h"
+#include "services/actionlibraryindexservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
@@ -27,6 +28,7 @@ ImportActionDialog::ImportActionDialog(const QString &petDirPath, QWidget *paren
     , m_browseButton(nullptr)
     , m_fpsSpinBox(nullptr)
     , m_frameCountLabel(nullptr)
+    , m_statusLabel(nullptr)
     , m_categoryComboBox(nullptr)
     , m_timedTriggerModeLabel(nullptr)
     , m_timedTriggerModeComboBox(nullptr)
@@ -42,6 +44,22 @@ ImportActionDialog::ImportActionDialog(const QString &petDirPath, QWidget *paren
     setupUi();
     connectSignals();
     updateExtraConfigVisibility();
+    updateUiForMode();
+}
+
+ImportActionMode ImportActionDialog::importMode() const
+{
+    return m_importMode;
+}
+
+QList<ImportActionItem> ImportActionDialog::importItems() const
+{
+    QList<ImportActionItem> items = m_importItems;
+    int currentFps = m_fpsSpinBox->value();
+    for (ImportActionItem &item : items) {
+        item.fps = currentFps;
+    }
+    return items;
 }
 
 QString ImportActionDialog::actionId() const
@@ -99,13 +117,17 @@ void ImportActionDialog::clearForm()
     m_folderEdit->clear();
     m_fpsSpinBox->setValue(12);
     m_frameCountLabel->clear();
+    m_statusLabel->clear();
     m_categoryComboBox->setCurrentIndex(0);
     m_timedTriggerModeComboBox->setCurrentIndex(0);
     m_timedIntervalSpinBox->setValue(300);
     m_triggerTimeEdit->setTime(QTime(0, 0));
     m_emotionComboBox->setCurrentIndex(0);
     m_lastAutoSuggestedId.clear();
+    m_importMode = ImportActionMode::Invalid;
+    m_importItems.clear();
     updateExtraConfigVisibility();
+    updateUiForMode();
 }
 
 void ImportActionDialog::setupUi()
@@ -153,6 +175,18 @@ void ImportActionDialog::setupUi()
     folderLayout->addWidget(m_folderEdit);
     folderLayout->addWidget(m_browseButton);
     contentLayout->addLayout(folderLayout);
+
+    QHBoxLayout *statusLayout = new QHBoxLayout();
+    QLabel *statusTitle = new QLabel(tr("状态:"), formCard);
+    statusTitle->setStyleSheet(QString("color: %1;").arg(p.textPrimary));
+    statusTitle->setFixedWidth(80);
+    m_statusLabel = new QLabel("-", formCard);
+    m_statusLabel->setStyleSheet(QString("color: %1;").arg(p.textSecondary));
+    m_statusLabel->setWordWrap(true);
+    statusLayout->addWidget(statusTitle);
+    statusLayout->addWidget(m_statusLabel);
+    statusLayout->addStretch();
+    contentLayout->addLayout(statusLayout);
 
     QHBoxLayout *idLayout = new QHBoxLayout();
     QLabel *idLabel = new QLabel(tr("动作 ID:"), formCard);
@@ -344,29 +378,7 @@ void ImportActionDialog::onBrowseFolder()
         return;
     }
 
-    QDir selectedDir(selectedFolder);
-    if (!selectedDir.exists()) {
-        SoftMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
-        return;
-    }
-
-    int frameCount = scanFrameCount(selectedFolder);
-    if (frameCount == 0) {
-        SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
-        return;
-    }
-
-    m_folderEdit->setText(selectedFolder);
-    m_frameCountLabel->setText(QString::number(frameCount));
-
-    QString suggestedId = suggestActionIdFromFolder(selectedFolder);
-    if (!suggestedId.isEmpty()) {
-        QString currentId = m_idEdit->text().trimmed();
-        if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
-            m_idEdit->setText(suggestedId);
-            m_lastAutoSuggestedId = suggestedId;
-        }
-    }
+    handleSelectedFolder(selectedFolder);
 }
 
 void ImportActionDialog::onConfirm()
@@ -387,15 +399,22 @@ void ImportActionDialog::focusActionId()
 
 bool ImportActionDialog::validateInput()
 {
-    QString id = actionId();
-    if (id.isEmpty()) {
-        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
+    if (m_importMode == ImportActionMode::Invalid) {
+        SoftMessageBox::warning(this, tr("提示"), tr("未检测到有效动作或动作库。"));
         return false;
     }
 
-    if (!validateActionId(id)) {
-        SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
-        return false;
+    if (m_importMode == ImportActionMode::SingleAction) {
+        QString id = actionId();
+        if (id.isEmpty()) {
+            SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 不能为空。"));
+            return false;
+        }
+
+        if (!validateActionId(id)) {
+            SoftMessageBox::warning(this, tr("提示"), tr("动作 ID 只能包含字母、数字、下划线和短横线。"));
+            return false;
+        }
     }
 
     QString folder = actionFolderPath();
@@ -406,12 +425,6 @@ bool ImportActionDialog::validateInput()
 
     if (!QDir(folder).exists()) {
         SoftMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
-        return false;
-    }
-
-    int frameCount = scanFrameCount(folder);
-    if (frameCount == 0) {
-        SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有找到有效的图片帧 (png/jpg/jpeg/webp)。"));
         return false;
     }
 
@@ -461,6 +474,194 @@ QString ImportActionDialog::suggestActionIdFromFolder(const QString &folderPath)
     return suggestedId;
 }
 
+bool ImportActionDialog::hasValidFrameFiles(const QString &folderPath)
+{
+    return scanFrameCount(folderPath) > 0;
+}
+
+bool ImportActionDialog::isValidActionDirectory(const QString &folderPath)
+{
+    if (hasValidFrameFiles(folderPath)) {
+        return true;
+    }
+
+    QString actionJsonPath = QDir(folderPath).filePath("action.json");
+    if (QFile::exists(actionJsonPath)) {
+        return true;
+    }
+
+    return false;
+}
+
+ImportActionMode ImportActionDialog::detectImportMode(const QString &folderPath)
+{
+    QDir dir(folderPath);
+    if (!dir.exists()) {
+        return ImportActionMode::Invalid;
+    }
+
+    if (isValidActionDirectory(folderPath)) {
+        return ImportActionMode::SingleAction;
+    }
+
+    QString actionLibraryPath = dir.filePath("actionlibrary.json");
+    if (QFile::exists(actionLibraryPath)) {
+        return ImportActionMode::ActionLibrary;
+    }
+
+    QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    int validActionCount = 0;
+
+    for (const QString &subDir : subDirs) {
+        QString subDirPath = dir.filePath(subDir);
+        if (isValidActionDirectory(subDirPath)) {
+            ++validActionCount;
+        }
+    }
+
+    if (validActionCount > 0) {
+        return ImportActionMode::ActionLibrary;
+    }
+
+    return ImportActionMode::Invalid;
+}
+
+void ImportActionDialog::handleSelectedFolder(const QString &folderPath)
+{
+    QDir selectedDir(folderPath);
+    if (!selectedDir.exists()) {
+        SoftMessageBox::warning(this, tr("提示"), tr("选择的文件夹不存在。"));
+        return;
+    }
+
+    m_folderEdit->setText(folderPath);
+    m_importItems.clear();
+
+    m_importMode = detectImportMode(folderPath);
+
+    if (m_importMode == ImportActionMode::SingleAction) {
+        int frameCount = scanFrameCount(folderPath);
+        m_frameCountLabel->setText(QString::number(frameCount));
+
+        QString suggestedId = suggestActionIdFromFolder(folderPath);
+        if (!suggestedId.isEmpty()) {
+            QString currentId = m_idEdit->text().trimmed();
+            if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
+                m_idEdit->setText(suggestedId);
+                m_lastAutoSuggestedId = suggestedId;
+            }
+        }
+
+        ImportActionItem item;
+        item.actionId = suggestedId;
+        item.sourceDir = folderPath;
+        item.displayName = suggestedId;
+        item.fps = m_fpsSpinBox->value();
+        m_importItems.append(item);
+    }
+    else if (m_importMode == ImportActionMode::ActionLibrary) {
+        QString actionLibraryPath = selectedDir.filePath("actionlibrary.json");
+        bool usedActionLibrary = false;
+
+        if (QFile::exists(actionLibraryPath)) {
+            QList<ActionLibraryEntry> entries = ActionLibraryIndexService::loadEntriesFromFile(actionLibraryPath);
+
+            if (!entries.isEmpty()) {
+                usedActionLibrary = true;
+
+                for (const ActionLibraryEntry &entry : entries) {
+                    QString dirName = entry.dir.isEmpty() ? entry.id : entry.dir;
+                    QString sourceDir = selectedDir.filePath(dirName);
+
+                    if (!isValidActionDirectory(sourceDir)) {
+                        continue;
+                    }
+
+                    ImportActionItem item;
+                    item.actionId = entry.id;
+                    item.sourceDir = sourceDir;
+                    item.displayName = entry.name.isEmpty() ? entry.id : entry.name;
+                    item.fps = m_fpsSpinBox->value();
+                    m_importItems.append(item);
+                }
+            }
+        }
+
+        if (!usedActionLibrary) {
+            QStringList subDirs = selectedDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString &subDir : subDirs) {
+                QString subDirPath = selectedDir.filePath(subDir);
+
+                if (!isValidActionDirectory(subDirPath)) {
+                    continue;
+                }
+
+                QString suggestedId = suggestActionIdFromFolder(subDirPath);
+                if (suggestedId.isEmpty()) {
+                    continue;
+                }
+
+                ImportActionItem item;
+                item.actionId = suggestedId;
+                item.sourceDir = subDirPath;
+                item.displayName = suggestedId;
+                item.fps = m_fpsSpinBox->value();
+                m_importItems.append(item);
+            }
+        }
+
+        m_frameCountLabel->setText("-");
+    }
+    else {
+        m_frameCountLabel->setText("0");
+    }
+
+    updateUiForMode();
+    updateStatusText();
+}
+
+void ImportActionDialog::updateUiForMode()
+{
+    bool isSingleAction = (m_importMode == ImportActionMode::SingleAction);
+    bool isActionLibrary = (m_importMode == ImportActionMode::ActionLibrary);
+    bool isValid = (m_importMode != ImportActionMode::Invalid);
+
+    m_idEdit->setEnabled(isSingleAction);
+    m_fpsSpinBox->setEnabled(isSingleAction);
+
+    if (isActionLibrary) {
+        m_idEdit->clear();
+    }
+
+    m_confirmButton->setEnabled(isValid);
+}
+
+void ImportActionDialog::updateStatusText()
+{
+    switch (m_importMode) {
+        case ImportActionMode::SingleAction: {
+            QString id = m_idEdit->text().trimmed();
+            if (id.isEmpty() && !m_importItems.isEmpty()) {
+                id = m_importItems.first().actionId;
+            }
+            int frameCount = 0;
+            if (!m_importItems.isEmpty()) {
+                frameCount = scanFrameCount(m_importItems.first().sourceDir);
+            }
+            m_statusLabel->setText(tr("检测到单个动作：%1，帧数：%2").arg(id).arg(frameCount));
+            break;
+        }
+        case ImportActionMode::ActionLibrary:
+            m_statusLabel->setText(tr("检测到动作库：%1 个动作").arg(m_importItems.size()));
+            break;
+        case ImportActionMode::Invalid:
+        default:
+            m_statusLabel->setText(tr("未检测到有效动作或动作库"));
+            break;
+    }
+}
+
 void ImportActionDialog::dragEnterEvent(QDragEnterEvent *event)
 {
     if (event->mimeData()->hasUrls()) {
@@ -498,35 +699,7 @@ void ImportActionDialog::dropEvent(QDropEvent *event)
             continue;
         }
 
-        int frameCount = scanFrameCount(folderPath);
-        if (frameCount == 0) {
-            m_folderEdit->setText(folderPath);
-            m_frameCountLabel->setText("0");
-            QString suggestedId = suggestActionIdFromFolder(folderPath);
-            if (!suggestedId.isEmpty()) {
-                QString currentId = m_idEdit->text().trimmed();
-                if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
-                    m_idEdit->setText(suggestedId);
-                    m_lastAutoSuggestedId = suggestedId;
-                }
-            }
-            SoftMessageBox::warning(this, tr("提示"), tr("文件夹中没有有效的图片帧。"));
-            event->acceptProposedAction();
-            return;
-        }
-
-        m_folderEdit->setText(folderPath);
-        m_frameCountLabel->setText(QString::number(frameCount));
-
-        QString suggestedId = suggestActionIdFromFolder(folderPath);
-        if (!suggestedId.isEmpty()) {
-            QString currentId = m_idEdit->text().trimmed();
-            if (currentId.isEmpty() || currentId == m_lastAutoSuggestedId) {
-                m_idEdit->setText(suggestedId);
-                m_lastAutoSuggestedId = suggestedId;
-            }
-        }
-
+        handleSelectedFolder(folderPath);
         event->acceptProposedAction();
         return;
     }
