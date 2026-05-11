@@ -216,6 +216,10 @@ void PetWidget::clearStatusMessage()
     m_displayLabel->setStyleSheet("");
 }
 
+// 准备显示标签以显示图像
+//
+// 状态提示使用 QLabel 文本模式。
+// 播放动画前必须切回 pixmap 模式，否则可能显示残留文字或空白。
 void PetWidget::prepareDisplayLabelForPixmap()
 {
     m_displayLabel->clear();
@@ -388,6 +392,10 @@ bool PetWidget::playActionByRef(const PetActionRef &ref)
     return playAction(action, ref);
 }
 
+// 播放空闲动作
+//
+// 先尝试当前宠物 playlist，再 fallback 到全局动作库。
+// 返回 false 表示没有任何动作成功播放。
 bool PetWidget::playIdleAction()
 {
     if (!m_petRunning) {
@@ -429,6 +437,11 @@ bool PetWidget::playIdleAction()
     return false;
 }
 
+// 启动宠物
+//
+// 不能在动作真正播放成功前进入 running。
+// playIdleAction 返回 bool，是为了避免假运行中 / 透明空白。
+// PetManagePage 状态通过 petStarted / petStartFailed 回传更新。
 void PetWidget::startPet()
 {
     if (m_petRunning) {
@@ -584,6 +597,11 @@ void PetWidget::reloadPlaylistPreservePlayback()
     }
 }
 
+// 重新加载动作库和播放列表，同时保持当前播放状态
+//
+// 保存并应用后必须同时刷新 actionlibrary 和 playlist。
+// 只刷新 playlist 会导致 player 看不到新导入的动作。
+// 从空资源状态恢复时可能需要完整 reloadPet。
 void PetWidget::reloadActionsAndPlaylistPreservePlayback()
 {
     bool recoveryFromEmptyState = m_currentActionId.isEmpty() && !m_petRunning;

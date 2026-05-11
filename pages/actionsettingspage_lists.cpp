@@ -85,6 +85,10 @@ QString ActionSettingsPage::displayNameForRef(const PetActionRef &ref) const
     return getActionName(ref.actionId);
 }
 
+// 格式化动作显示文本
+//
+// 资源缺失时只标记 [资源缺失]，不自动删除 playlist 项。
+// 避免用户误删资源后丢失配置。
 QString ActionSettingsPage::formatActionDisplay(const PetActionRef &ref) const
 {
     QString name = displayNameForRef(ref);

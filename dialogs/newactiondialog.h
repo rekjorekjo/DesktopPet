@@ -14,6 +14,12 @@
 
 class SoftDialogTitleBar;
 
+// 新建动作对话框，用于从 GIF 文件创建新动作
+//
+// submitRequested 信号说明：
+// - 确认按钮不直接 accept，而是发出 submitRequested
+// - 业务失败时保持弹窗打开，用户可以修改输入后再次提交
+// - 成功后由调用方 accept
 class NewActionDialog : public QDialog
 {
     Q_OBJECT
@@ -35,6 +41,7 @@ public:
     void focusActionId();
 
 signals:
+    // 提交请求信号，由调用方处理业务逻辑后决定是否 accept
     void submitRequested();
 
 protected:

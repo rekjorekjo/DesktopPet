@@ -226,6 +226,9 @@ void SettingsWindow::connectSignals()
             });
 }
 
+// 宠物管理页的运行状态必须来自 PetWidget 的真实启动结果，
+// 不能在点击"开始"时乐观设置为运行中。
+// 这样可以避免播放失败时 UI 仍显示"运行中"。
 void SettingsWindow::onPetStarted()
 {
     if (m_petManagePage) {

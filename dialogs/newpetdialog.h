@@ -8,6 +8,12 @@ class QLineEdit;
 class QSpinBox;
 class SoftDialogTitleBar;
 
+// 新建宠物对话框
+//
+// submitRequested 信号说明：
+// - 确认按钮不直接 accept，而是发出 submitRequested
+// - 业务失败时保持弹窗打开，用户可以修改输入后再次提交
+// - 成功后由调用方 accept
 class NewPetDialog : public QDialog
 {
     Q_OBJECT
@@ -29,6 +35,7 @@ public:
     void focusPetId();
 
 signals:
+    // 提交请求信号，由调用方处理业务逻辑后决定是否 accept
     void submitRequested();
 
 private slots:

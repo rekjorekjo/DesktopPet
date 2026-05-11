@@ -46,6 +46,8 @@ void PetManagePage::connectSignals()
     connect(m_createPetButton, &QPushButton::clicked, this, &PetManagePage::onCreatePet);
     connect(m_importPetButton, &QPushButton::clicked, this, &PetManagePage::onImportPet);
 
+    // 开始按钮：不提前 setRunningStatus(true)
+    // 等 PetWidget 发 petStarted 后再显示运行中
     connect(m_startButton, &QPushButton::clicked, this, [this]() {
         if (usablePetActionCount() <= 0) {
             loadPetInfo();
@@ -318,6 +320,10 @@ int PetManagePage::usablePetActionCount() const
     return count;
 }
 
+// 计算可用动作数量
+//
+// 可用动作数不是 actionlibrary entry 数，必须实际加载动作目录和帧文件。
+// 同一个 actionId 出现多次时，每条播放项都计数。
 int PetManagePage::availablePetActionCount() const
 {
     QHash<QString, bool> availabilityCache;
@@ -463,6 +469,14 @@ void PetManagePage::refreshPetList()
     }
 }
 
+// 更新信息显示
+//
+// 状态优先级：
+// 1. 配置缺失
+// 2. 动作资源缺失
+// 3. 动作库为空
+// 4. 当前宠物无动作
+// 5. 正常已加载
 void PetManagePage::updateInfoDisplay()
 {
     if (isCurrentPetConfigMissing()) {

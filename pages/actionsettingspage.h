@@ -27,6 +27,24 @@ struct ActionImportResult;
 class NewActionDialog;
 class ImportActionDialog;
 
+// 动作配置页，管理全局动作库和当前宠物 playlist
+//
+// 职责：
+// - 管理全局动作库（左侧列表），支持新建、导入、移除、删除动作
+// - 管理当前宠物的播放列表（右侧分类标签页），支持添加、移除、排序播放项
+// - 配置播放项参数（循环、速度、移动等）
+// - 保存配置到 playlist.json
+//
+// 重要语义：
+// - 左侧是全局动作库，所有宠物共享
+// - 右侧是当前宠物的播放列表，每个宠物独立
+// - playlist 是播放项列表，不是 actionId 集合
+// - 同一个 actionId 可以多次出现在 playlist 中
+// - 资源缺失时只标记 [资源缺失]，不自动删除播放项
+//
+// 保存并应用：
+// - 必须同时刷新 actionlibrary 和 playlist
+// - 否则 player 可能仍然使用旧动作缓存
 class ActionSettingsPage : public QWidget
 {
     Q_OBJECT
@@ -53,6 +71,9 @@ private:
     void refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions);
     void loadGlobalActionLibrary();
 
+    // 格式化动作显示文本
+    // 资源缺失时只标记 [资源缺失]，不自动删除 playlist 项
+    // 避免用户误删资源后丢失配置
     QString formatActionDisplay(const PetActionRef &ref) const;
     QString getActionName(const QString &actionId) const;
     QString displayNameForRef(const PetActionRef &ref) const;
@@ -156,10 +177,17 @@ private:
     QLabel *m_triggerTimeLabel;
     QTimeEdit *m_triggerTimeEdit;
 
+    // 全局动作库缓存，从 actionlibrary.json 加载
     QList<PetAction> m_actionLibrary;
     PetBasicInfo m_petInfo;
+
+    // 当前宠物的播放列表，从 playlist.json 加载
     PetPlaylist m_playlist;
+
+    // 加载状态标志
     bool m_loadedSuccessfully;
+
+    // 防止列表更新时触发重复信号
     bool m_updatingCategoryList = false;
     QThread *m_importThread = nullptr;
 };

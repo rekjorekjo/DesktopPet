@@ -11,6 +11,9 @@
 #include <QJsonObject>
 #include <QSaveFile>
 
+// petlibrary.json 是宠物 ID 是否存在的唯一依据。
+// 目录存在但 library 无 entry 时，ID 可复用。
+// 移除宠物只删 entry，不删目录。
 QString PetLibraryIndexService::libraryFilePath()
 {
     return PetPaths::rootDirectory() + "/petlibrary.json";
@@ -193,6 +196,10 @@ bool PetLibraryIndexService::addOrUpdatePet(const PetLibraryEntry &entry)
     return saveEntries(entries);
 }
 
+// 从 petlibrary.json 中移除宠物
+//
+// 移除宠物只删 library entry，不删目录。
+// 要删除目录需调用 deletePetEntryAndDirectory()。
 bool PetLibraryIndexService::removePetEntry(const QString &petId)
 {
     if (petId.isEmpty()) {

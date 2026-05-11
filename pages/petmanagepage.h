@@ -15,6 +15,16 @@ class QFrame;
 class QListWidget;
 class QListWidgetItem;
 
+// 宠物管理页，展示宠物库、当前宠物状态、动作资源可用性
+//
+// 职责：
+// - 显示宠物库列表，支持创建、导入、切换、禁用、删除宠物
+// - 显示当前宠物的配置信息和运行状态
+// - 显示动作资源可用性，区分"配置的动作数"和"实际可用动作数"
+// - 响应 PetWidget 的状态信号更新 UI
+//
+// 状态显示优先级：
+// 1. 配置缺失 > 2. 动作资源缺失 > 3. 动作库为空 > 4. 正常状态
 class PetManagePage : public QWidget
 {
     Q_OBJECT
@@ -26,8 +36,14 @@ public:
 public slots:
     void refreshTheme();
     void reloadPetInfo();
+
+    // 响应宠物启动成功信号
     void onPetStarted();
+
+    // 响应宠物暂停信号
     void onPetPaused();
+
+    // 响应宠物启动失败信号
     void onPetStartFailed(const QString &message);
 
 signals:
@@ -49,6 +65,10 @@ private:
     QString firstEnabledPetId() const;
 
     int usablePetActionCount() const;
+
+    // 计算可用动作数量
+    // "可用动作数"必须检查真实动作资源，不能只看 actionlibrary entry
+    // 遍历 playlist 中的所有动作引用，检查每个动作是否真的可加载和播放
     int availablePetActionCount() const;
     int globalActionResourceCount() const;
     bool isActionResourceAvailable(const QString &actionId, QHash<QString, bool> &cache) const;
@@ -91,8 +111,14 @@ private:
     QPushButton *m_reloadButton;
 
     PetBasicInfo m_petInfo;
+
+    // 全局动作库缓存
     QList<PetAction> m_actions;
+
+    // 当前宠物的播放列表
     PetPlaylist m_playlist;
+
+    // 加载状态标志
     bool m_loadSuccess;
 };
 

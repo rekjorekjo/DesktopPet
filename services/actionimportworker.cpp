@@ -75,6 +75,11 @@ void ActionImportWorker::processImportGif()
     emit finished(result);
 }
 
+// 批量导入动作
+//
+// 批量导入要用 workingPlaylist 累计状态。
+// 否则每个动作都基于旧 playlist 写入，会导致只剩最后一个动作。
+// 每次成功导入后重新加载 playlist，确保下一个动作能看到最新状态。
 void ActionImportWorker::processImportBatch()
 {
     ActionImportResult finalResult;

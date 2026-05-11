@@ -17,6 +17,11 @@ QString ActionLibraryIndexService::libraryFilePath()
     return PetPaths::actionsDirectory() + "/actionlibrary.json";
 }
 
+// 确保动作库目录和索引文件存在
+//
+// 如果 pets/actions 目录不存在则创建，
+// 如果 actionlibrary.json 不存在则创建空索引文件。
+// 这是动作库正常工作的前提条件。
 bool ActionLibraryIndexService::ensureLibrary()
 {
     QString actionsDirPath = PetPaths::actionsDirectory();
@@ -85,6 +90,11 @@ QList<ActionLibraryEntry> ActionLibraryIndexService::loadEntriesFromFile(const Q
     return entries;
 }
 
+// 保存动作库索引到文件
+//
+// 使用 QSaveFile 而非 QFile，确保写入原子性：
+// - 写入过程中断不会损坏原文件
+// - 只有写入成功才会替换原文件
 bool ActionLibraryIndexService::saveEntries(const QList<ActionLibraryEntry> &entries)
 {
     QString libraryPath = libraryFilePath();
@@ -196,6 +206,11 @@ bool ActionLibraryIndexService::removeActionEntry(const QString &actionId)
     return saveEntries(entries);
 }
 
+// 删除动作条目及其目录
+//
+// 优先使用 entry.dir 而非 actionId 作为目录名，
+// 因为 entry.dir 记录的是实际存储路径，可能与 actionId 不同。
+// 删除前会验证目录在 actions 根目录内，防止误删外部路径。
 bool ActionLibraryIndexService::deleteActionEntryAndDirectory(const QString &actionId)
 {
     if (actionId.isEmpty()) {

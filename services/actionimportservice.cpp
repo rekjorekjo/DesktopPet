@@ -28,6 +28,12 @@ bool isValidActionId(const QString &actionId)
     return re.match(actionId).hasMatch();
 }
 
+// 重置动作目录以准备导入
+//
+// actionlibrary.json 才是动作 ID 是否存在的依据。
+// 旧目录可能是"移除动作"后保留的资源，重新导入同 ID 时可以复用旧目录。
+// 但清理目录前必须确认目标目录在 actions 根目录内部，
+// 绝不能误删 actions 根目录或外部路径。
 bool resetActionDirectoryForImport(const QString &actionId, QString *errorMessage)
 {
     if (!isValidActionId(actionId)) {
@@ -157,6 +163,11 @@ ActionImportResult ActionImportService::registerGlobalActionToPet(
     return result;
 }
 
+// 将本地动作目录注册到当前宠物
+//
+// 必须先验证源目录和帧文件，再清理目标目录。
+// 否则用户选错源目录时，会误删"移除动作"后保留的旧资源。
+// actionlibrary 中已有 ID 时，不能清理目录。
 ActionImportResult ActionImportService::registerExistingAction(
     const QString &petDir,
     const PetBasicInfo &petInfo,
@@ -261,6 +272,10 @@ ActionImportResult ActionImportService::registerExistingAction(
     return result;
 }
 
+// 从 GIF 文件导入动作
+//
+// GIF 文件路径基础校验必须早于目标目录清理。
+// 只有确认可以开始导入时才重置目标目录。
 ActionImportResult ActionImportService::importGifAction(
     const QString &petDir,
     const PetBasicInfo &petInfo,
@@ -350,6 +365,10 @@ ActionImportResult ActionImportService::importGifAction(
     return result;
 }
 
+// 将动作添加到播放列表的指定分类
+//
+// playlist 是播放项列表，同一个 actionId 可以重复加入。
+// 通过 displayName 生成 2 / 3 后缀来避免完全重复显示。
 ActionImportResult ActionImportService::addToCategory(
     const QString &petDir,
     PetPlaylist &playlist,

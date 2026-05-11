@@ -39,6 +39,10 @@ void ActionSettingsPage::onNewAction()
     dialog->open();
 }
 
+// 打开动作导入对话框
+//
+// ImportActionDialog 同一个入口支持单动作和动作库。
+// submitRequested 失败时不关闭窗口，用户可以修改后重试。
 void ActionSettingsPage::onImportAction()
 {
     QString petDir = PetPaths::currentPetDirectory();
