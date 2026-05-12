@@ -47,6 +47,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_chatWidget(nullptr)
     , m_chatVisible(false)
     , m_autoMovementPausedByChat(false)
+    , m_nextSequence(0)
 {
     setupUi();
 
@@ -396,6 +397,11 @@ bool PetWidget::playActionByRef(const PetActionRef &ref)
 //
 // 先尝试当前宠物 playlist，再 fallback 到全局动作库。
 // 返回 false 表示没有任何动作成功播放。
+//
+// 重要：idle 作为默认背景动作播放时，使用运行时副本并强制 loop=false。
+// 原因：如果 idle 无限 loop，onActionFinished() 永远不会触发，
+// 运行时队列中的 random/timed/emotion 动作将永远无法被消费。
+// 此修改不改变 playlist.json，只影响运行时播放副本。
 bool PetWidget::playIdleAction()
 {
     if (!m_petRunning) {
@@ -410,8 +416,16 @@ bool PetWidget::playIdleAction()
         int tried = 0;
 
         while (tried < idleRefs.size()) {
-            const PetActionRef &ref = idleRefs.at(startIndex);
-            if (playActionByRef(ref)) {
+            const PetActionRef &originalRef = idleRefs.at(startIndex);
+
+            // 创建运行时副本，强制 loop=false 保证每轮自然结束
+            PetActionRef runtimeRef = originalRef;
+            runtimeRef.loop = false;
+            if (runtimeRef.repeat <= 0) {
+                runtimeRef.repeat = 1;
+            }
+
+            if (playActionByRef(runtimeRef)) {
                 m_idleActionIndex = (startIndex + 1) % idleRefs.size();
                 return true;
             }
@@ -531,6 +545,8 @@ void PetWidget::reloadPet()
     m_moveAxis = MoveAxis::Random;
     m_moveRemainderX = 0.0;
     m_moveRemainderY = 0.0;
+    m_runtimeQueue.clear();
+    m_nextSequence = 0;
 
     loadPet(PetPaths::currentPetDirectory());
 }
@@ -549,6 +565,8 @@ void PetWidget::reloadPlaylistPreservePlayback()
     }
 
     m_playlist = newPlaylist;
+    m_runtimeQueue.clear();
+    m_nextSequence = 0;
 
     if (!m_currentActionId.isEmpty()) {
         PetActionRef newRef;
@@ -591,7 +609,7 @@ void PetWidget::reloadPlaylistPreservePlayback()
             m_currentActionId.clear();
 
             if (m_petRunning) {
-                playIdleAction();
+                playNextRuntimeActionOrIdle();
             }
         }
     }
@@ -620,6 +638,9 @@ void PetWidget::reloadActionsAndPlaylistPreservePlayback()
         m_playlist = newPlaylist;
     }
 
+    m_runtimeQueue.clear();
+    m_nextSequence = 0;
+
     if (recoveryFromEmptyState && hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
         reloadPet();
         return;
@@ -629,56 +650,123 @@ void PetWidget::reloadActionsAndPlaylistPreservePlayback()
         PetAction newAction = findActionById(m_currentActionId);
         PetActionRef newRef;
 
+        // 记录 reload 前的播放状态，loadAction 会重置这些状态
+        bool wasRunning = m_petRunning;
+        bool wasPaused = m_player->isPaused();
+
         if (newAction.isValid() && m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
             PetActionRef oldRef = m_currentActionRef;
             m_currentAction = newAction;
             m_currentActionRef = newRef;
 
-            m_player->loadAction(newAction, currentDisplaySize());
+            bool loadOk = m_player->loadAction(newAction, currentDisplaySize());
 
-            if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
-                m_player->setSpeedMultiplier(newRef.animationSpeed);
-            }
+            if (!loadOk) {
+                // 当前动作资源加载失败，不能继续假运行
+                stopMovement();
+                m_player->stop();
+                m_currentAction = PetAction();
+                m_currentActionRef = PetActionRef();
+                m_currentActionId.clear();
 
-            if (oldRef.loop != newRef.loop || oldRef.repeat != newRef.repeat) {
-                m_player->updatePlaybackOptions(newRef.loop, newRef.repeat);
-            }
-
-            MoveAxis oldMoveAxis = oldRef.moveAxis;
-
-            if (newRef.moveEnabled && newRef.movementSpeed > 0) {
-                m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
-                m_moveAxis = newRef.moveAxis;
-
-                if (oldMoveAxis != newRef.moveAxis) {
-                    updateMoveDirection();
-                }
-
-                if (!m_moveEnabled && m_petRunning) {
-                    m_moveEnabled = true;
-                    m_moveRemainderX = 0.0;
-                    m_moveRemainderY = 0.0;
-                    startMovement();
+                if (wasRunning) {
+                    // 尝试从队列或 idle fallback
+                    playNextRuntimeActionOrIdle();
                 }
             } else {
-                stopMovement();
+                // loadAction 成功，恢复播放参数
+
+                if (wasRunning) {
+                    if (m_currentMode == PetPlayMode::Idle) {
+                        // Idle 模式：用运行时副本规则重启当前 idle 动作，不切换到下一个 idle
+                        // 避免 playNextRuntimeActionOrIdle -> playIdleAction 推进 m_idleActionIndex 导致画面闪烁
+                        PetActionRef runtimeRef = newRef;
+                        runtimeRef.loop = false;
+                        if (runtimeRef.repeat <= 0) {
+                            runtimeRef.repeat = 1;
+                        }
+
+                        m_currentAction = newAction;
+                        m_currentActionRef = runtimeRef;
+
+                        m_player->setSpeedMultiplier(runtimeRef.animationSpeed);
+                        m_player->play(runtimeRef.loop, runtimeRef.repeat);
+
+                        if (wasPaused) {
+                            m_player->pause();
+                        }
+
+                        // 恢复移动状态
+                        if (runtimeRef.moveEnabled && runtimeRef.movementSpeed > 0) {
+                            m_moveVelocity = AppSettings::baseMoveSpeed() * runtimeRef.movementSpeed;
+                            m_moveAxis = runtimeRef.moveAxis;
+
+                            if (oldRef.moveAxis != runtimeRef.moveAxis) {
+                                updateMoveDirection();
+                            }
+
+                            if (!m_moveEnabled) {
+                                m_moveEnabled = true;
+                                m_moveRemainderX = 0.0;
+                                m_moveRemainderY = 0.0;
+                                startMovement();
+                            }
+                        } else {
+                            stopMovement();
+                        }
+
+                        return;
+                    } else {
+                        // 非 Idle 模式（Random/Timed/Emotion）：用用户配置的 loop/repeat 恢复播放
+                        m_player->setSpeedMultiplier(newRef.animationSpeed);
+                        m_player->play(newRef.loop, newRef.repeat);
+
+                        if (wasPaused) {
+                            m_player->pause();
+                        }
+                    }
+                } else {
+                    // 非运行状态，只更新参数不播放
+                    if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
+                        m_player->setSpeedMultiplier(newRef.animationSpeed);
+                    }
+                }
+
+                // 恢复移动状态（仅非 Idle 模式会走到这里）
+                if (newRef.moveEnabled && newRef.movementSpeed > 0) {
+                    m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
+                    m_moveAxis = newRef.moveAxis;
+
+                    if (oldRef.moveAxis != newRef.moveAxis) {
+                        updateMoveDirection();
+                    }
+
+                    if (!m_moveEnabled && wasRunning) {
+                        m_moveEnabled = true;
+                        m_moveRemainderX = 0.0;
+                        m_moveRemainderY = 0.0;
+                        startMovement();
+                    }
+                } else {
+                    stopMovement();
+                }
             }
         } else {
+            // 当前动作在新 playlist 中不存在或动作库中已删除
             stopMovement();
             m_player->stop();
             m_currentAction = PetAction();
             m_currentActionRef = PetActionRef();
             m_currentActionId.clear();
 
-            if (m_petRunning) {
-                if (hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
-                    playIdleAction();
-                } else {
-                    showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
-                }
+            if (wasRunning) {
+                playNextRuntimeActionOrIdle();
             }
         }
     } else if (m_actions.isEmpty()) {
+        m_petRunning = false;
+        m_randomTimer->stop();
+        m_timedCheckTimer->stop();
         stopMovement();
         m_player->stop();
         m_currentAction = PetAction();
@@ -686,11 +774,26 @@ void PetWidget::reloadActionsAndPlaylistPreservePlayback()
         m_currentActionId.clear();
 
         showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+        emit petPaused();
     } else if (m_currentActionId.isEmpty() && m_petRunning) {
         if (hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
-            playIdleAction();
+            if (!playIdleAction()) {
+                m_petRunning = false;
+                m_randomTimer->stop();
+                m_timedCheckTimer->stop();
+                stopMovement();
+                m_player->stop();
+                showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+                emit petPaused();
+            }
         } else {
+            m_petRunning = false;
+            m_randomTimer->stop();
+            m_timedCheckTimer->stop();
+            stopMovement();
+            m_player->stop();
             showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+            emit petPaused();
         }
     } else if (m_currentActionId.isEmpty() && !m_petRunning) {
         if (!hasAnyUsableEnabledAction()) {
@@ -786,9 +889,7 @@ void PetWidget::playEmotion(const QString &emotion)
     int index = QRandomGenerator::global()->bounded(emotionRefs.size());
     PetActionRef ref = emotionRefs.at(index);
 
-    if (playActionByRef(ref)) {
-        m_currentMode = PetPlayMode::Emotion;
-    }
+    enqueueAction(ref, QueuedActionType::Emotion, "emotion " + emotion);
 }
 
 PetAction PetWidget::findActionById(const QString &actionId) const
@@ -893,13 +994,20 @@ void PetWidget::onActionFinished()
         return;
     }
 
-    playIdleAction();
+    playNextRuntimeActionOrIdle();
 }
 
 void PetWidget::triggerRandomAction()
 {
-    if (!m_petRunning || m_currentMode != PetPlayMode::Idle) {
+    if (!m_petRunning) {
         return;
+    }
+
+    // 防止 random 堆积：如果队列中已有 random 项则跳过
+    for (const QueuedAction &item : m_runtimeQueue) {
+        if (item.type == QueuedActionType::Random) {
+            return;
+        }
     }
 
     QList<PetActionRef> randomRefs = m_playlist.randomActions();
@@ -910,16 +1018,12 @@ void PetWidget::triggerRandomAction()
     int index = QRandomGenerator::global()->bounded(randomRefs.size());
     PetActionRef ref = randomRefs.at(index);
 
-    if (playActionByRef(ref)) {
-        m_currentMode = PetPlayMode::Random;
-    } else {
-        m_currentMode = PetPlayMode::Idle;
-    }
+    enqueueAction(ref, QueuedActionType::Random, "random timer");
 }
 
 void PetWidget::checkTimedActions()
 {
-    if (!m_petRunning || m_currentMode != PetPlayMode::Idle) {
+    if (!m_petRunning) {
         return;
     }
 
@@ -942,14 +1046,13 @@ void PetWidget::checkTimedActions()
             }
 
             if (currentTime.hour() == targetTime.hour() && currentTime.minute() == targetTime.minute()) {
-                QString key = QString("%1|%2").arg(ref.actionId, ref.triggerTime);
+                // key 包含 displayName 以区分同一 actionId 的不同播放项
+                QString key = QString("%1|%2|%3").arg(ref.actionId, ref.displayName, ref.triggerTime);
 
                 if (!m_clockTimedLastTriggeredDate.contains(key) || m_clockTimedLastTriggeredDate[key] != today) {
-                    if (playActionByRef(ref)) {
-                        m_currentMode = PetPlayMode::Timed;
-                        m_clockTimedLastTriggeredDate[key] = today;
-                        return;
-                    }
+                    m_clockTimedLastTriggeredDate[key] = today;
+                    enqueueAction(ref, QueuedActionType::TimedClock, "timed clock " + ref.triggerTime);
+                    return;
                 }
             }
         } else {
@@ -966,13 +1069,23 @@ void PetWidget::checkTimedActions()
             qint64 elapsedSeconds = lastTrigger.secsTo(now);
 
             if (elapsedSeconds >= ref.intervalSeconds) {
-                if (playActionByRef(ref)) {
-                    m_currentMode = PetPlayMode::Timed;
-                    m_lastTimedTriggerTimes[i] = now;
-                    return;
-                } else {
-                    m_lastTimedTriggerTimes[i] = now;
+                m_lastTimedTriggerTimes[i] = now;
+
+                // 去重：队列中已有相同 type + actionId + displayName 的 TimedInterval 则跳过
+                bool alreadyQueued = false;
+                for (const QueuedAction &item : m_runtimeQueue) {
+                    if (item.type == QueuedActionType::TimedInterval
+                        && item.ref.actionId == ref.actionId
+                        && item.ref.displayName == ref.displayName) {
+                        alreadyQueued = true;
+                        break;
+                    }
                 }
+
+                if (!alreadyQueued) {
+                    enqueueAction(ref, QueuedActionType::TimedInterval, "timed interval");
+                }
+                return;
             }
         }
     }
@@ -1241,4 +1354,102 @@ void PetWidget::resumeAutoMovementAfterChat()
         m_moveElapsedTimer.restart();
         m_moveTimer->start(16);
     }
+}
+
+// 将动作加入运行时队列
+// 优先级：Emotion(0) > TimedClock(1) > TimedInterval(2) > Random(3)
+void PetWidget::enqueueAction(const PetActionRef &ref, QueuedActionType type, const QString &reason)
+{
+    QueuedAction item;
+    item.ref = ref;
+    item.type = type;
+    item.reason = reason;
+    item.sequence = m_nextSequence++;
+
+    switch (type) {
+    case QueuedActionType::Emotion:
+        item.priority = 0;
+        break;
+    case QueuedActionType::TimedClock:
+        item.priority = 1;
+        break;
+    case QueuedActionType::TimedInterval:
+        item.priority = 2;
+        break;
+    case QueuedActionType::Random:
+        item.priority = 3;
+        break;
+    }
+
+    // 按优先级插入，同优先级追加到末尾（FIFO）
+    int insertPos = m_runtimeQueue.size();
+    for (int i = 0; i < m_runtimeQueue.size(); ++i) {
+        if (m_runtimeQueue[i].priority > item.priority) {
+            insertPos = i;
+            break;
+        }
+    }
+    m_runtimeQueue.insert(insertPos, item);
+
+    qDebug() << "Enqueued action:" << ref.actionId << "type:" << static_cast<int>(type)
+             << "priority:" << item.priority << "reason:" << reason
+             << "queue size:" << m_runtimeQueue.size();
+}
+
+// 从运行时队列取出最高优先级的动作并播放
+// 跳过加载失败的项，返回 true 表示成功播放
+bool PetWidget::playNextFromQueue()
+{
+    while (!m_runtimeQueue.isEmpty()) {
+        QueuedAction item = m_runtimeQueue.takeFirst();
+
+        if (playActionByRef(item.ref)) {
+            switch (item.type) {
+            case QueuedActionType::Emotion:
+                m_currentMode = PetPlayMode::Emotion;
+                break;
+            case QueuedActionType::TimedClock:
+            case QueuedActionType::TimedInterval:
+                m_currentMode = PetPlayMode::Timed;
+                break;
+            case QueuedActionType::Random:
+                m_currentMode = PetPlayMode::Random;
+                break;
+            }
+            return true;
+        }
+
+        // 播放失败，跳过该项继续尝试下一个
+        qWarning() << "Failed to play queued action:" << item.ref.actionId
+                    << "reason:" << item.reason << ", skipping";
+    }
+
+    return false;
+}
+
+// 统一的调度入口：先尝试队列，队列为空则播放 idle
+void PetWidget::playNextRuntimeActionOrIdle()
+{
+    if (!m_petRunning) {
+        return;
+    }
+
+    // 先尝试从队列中取动作
+    if (playNextFromQueue()) {
+        return;
+    }
+
+    // 队列为空，播放 idle
+    if (playIdleAction()) {
+        return;
+    }
+
+    // idle 也播放失败，进入明确的停止状态，避免 UI 假运行中
+    m_petRunning = false;
+    m_randomTimer->stop();
+    m_timedCheckTimer->stop();
+    stopMovement();
+    m_player->stop();
+    showStatusMessage(tr("暂无可用动作"), tr("请前往设置 > 动作设置新增动作"));
+    emit petPaused();
 }

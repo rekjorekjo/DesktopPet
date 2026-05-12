@@ -26,6 +26,27 @@ enum class PetPlayMode
     Emotion
 };
 
+// 运行时队列动作类型
+enum class QueuedActionType
+{
+    Random,
+    TimedInterval,
+    TimedClock,
+    Emotion
+};
+
+// 运行时队列动作项
+struct QueuedAction
+{
+    PetActionRef ref;
+    QueuedActionType type;
+    int priority;       // 数值越小优先级越高
+    qint64 sequence;    // 同优先级按 FIFO
+    QString reason;     // 触发原因描述
+
+    QueuedAction() : priority(0), sequence(0) {}
+};
+
 // 宠物加载状态枚举
 enum class PetLoadStatus
 {
@@ -212,6 +233,21 @@ private:
     // 聊天时自动移动暂停标志
     // 聊天窗口显示时暂停自动移动，隐藏后恢复
     bool m_autoMovementPausedByChat;
+
+    // 运行时动作队列，存储待播放的 random/timed/emotion 动作
+    // 不写入 playlist.json，只存在于内存中
+    QList<QueuedAction> m_runtimeQueue;
+    qint64 m_nextSequence;
+
+    // 将动作加入运行时队列
+    void enqueueAction(const PetActionRef &ref, QueuedActionType type, const QString &reason);
+
+    // 从运行时队列取出最高优先级的动作并播放
+    // 返回 true 表示成功播放了队列中的动作
+    bool playNextFromQueue();
+
+    // 统一的调度入口：先尝试队列，队列为空则播放 idle
+    void playNextRuntimeActionOrIdle();
 };
 
 #endif // PETWIDGET_H
