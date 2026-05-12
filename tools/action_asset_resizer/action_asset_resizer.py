@@ -3,6 +3,8 @@ DesktopPet Action Asset Resizer
 
 独立工具：读取 pet.json 获取 displaySize，批量缩放动作目录中的图片帧。
 与 DesktopPet 主程序解耦，不修改任何 C++ 代码或配置文件。
+
+打包后为 DesktopPet-resize.exe，通过 build_resize_exe.bat 构建。
 """
 
 import json
@@ -13,7 +15,7 @@ import time
 from pathlib import Path
 
 from PIL import Image
-from PySide6.QtCore import Qt, QMimeData, QUrl
+from PySide6.QtCore import Qt, QMimeData, QUrl, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QFont
 from PySide6.QtWidgets import (
     QApplication,
@@ -45,7 +47,9 @@ BTN_START_WIDTH = 160
 
 
 class DropLineEdit(QLineEdit):
-    """支持拖拽路径的 QLineEdit"""
+    """支持拖拽路径的 QLineEdit，通过 pathDropped 信号通知外部。"""
+
+    pathDropped = Signal(str)
 
     def __init__(self, placeholder: str = "", parent=None):
         super().__init__(parent)
@@ -56,12 +60,19 @@ class DropLineEdit(QLineEdit):
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
+        else:
+            event.ignore()
 
     def dropEvent(self, event: QDropEvent):
         urls = event.mimeData().urls()
         if urls:
             path = urls[0].toLocalFile()
             self.setText(path)
+            self.pathDropped.emit(path)
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+        # 不调用 super().dropEvent()，避免 QLineEdit 默认的文本插入行为
 
 
 def make_select_button(text: str) -> QPushButton:
@@ -108,7 +119,7 @@ class MainWindow(QMainWindow):
         pet_group = make_group_box("pet.json")
         pet_layout = QHBoxLayout(pet_group)
         pet_layout.setContentsMargins(10, 8, 10, 8)
-        self.pet_path_edit = DropLineEdit("拖拽或选择 pet.json ...")
+        self.pet_path_edit = DropLineEdit("拖入或选择 pet.json ...")
         pet_btn = make_select_button("选择...")
         pet_btn.clicked.connect(self.choose_pet_json)
         pet_layout.addWidget(self.pet_path_edit, 1)
@@ -147,7 +158,7 @@ class MainWindow(QMainWindow):
         action_group = make_group_box("动作目录")
         action_layout = QHBoxLayout(action_group)
         action_layout.setContentsMargins(10, 8, 10, 8)
-        self.action_dir_edit = DropLineEdit("拖拽或选择动作目录 ...")
+        self.action_dir_edit = DropLineEdit("拖入或选择动作目录 ...")
         action_btn = make_select_button("选择...")
         action_btn.clicked.connect(self.choose_action_dir)
         action_layout.addWidget(self.action_dir_edit, 1)
@@ -167,7 +178,7 @@ class MainWindow(QMainWindow):
 
         backup_row = QHBoxLayout()
         backup_row.setSpacing(8)
-        self.backup_dir_edit = DropLineEdit("自动生成，也可自定义 ...")
+        self.backup_dir_edit = DropLineEdit("拖入或选择备份目录（可自定义） ...")
         self.backup_btn = make_select_button("选择...")
         self.backup_btn.clicked.connect(self.choose_backup_dir)
         backup_row.addWidget(self.backup_dir_edit, 1)
@@ -232,9 +243,18 @@ class MainWindow(QMainWindow):
         )
         layout.addWidget(self.log_area, 1)
 
+        # Windows 拖拽提示：如果程序以管理员身份运行而资源管理器不是，
+        # 系统会禁止跨权限窗口拖拽，这不是代码问题。
+        self.log("提示：可直接拖拽 pet.json 或文件夹到对应输入框。")
+        self.log("如拖拽无效，请确认程序与资源管理器权限一致（同为普通用户或同为管理员）。")
+        self.log("")
+
         # --- 信号连接 ---
         self.pet_path_edit.textChanged.connect(self.on_pet_path_changed)
         self.action_dir_edit.textChanged.connect(self.on_action_dir_changed)
+        self.pet_path_edit.pathDropped.connect(self.on_pet_json_dropped)
+        self.action_dir_edit.pathDropped.connect(self.on_action_dir_dropped)
+        self.backup_dir_edit.pathDropped.connect(self.on_backup_dir_dropped)
 
     # ---------- 文件选择 ----------
 
@@ -253,13 +273,14 @@ class MainWindow(QMainWindow):
         if path:
             self.backup_dir_edit.setText(path)
 
-    # ---------- 拖拽 ----------
+    # ---------- 拖拽（MainWindow 整体兜底） ----------
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
 
     def dropEvent(self, event: QDropEvent):
+        """MainWindow 兜底：如果拖到空白区域，按文件类型分发。"""
         urls = event.mimeData().urls()
         if not urls:
             return
@@ -268,6 +289,23 @@ class MainWindow(QMainWindow):
             self.pet_path_edit.setText(path)
         elif os.path.isdir(path):
             self.action_dir_edit.setText(path)
+
+    # ---------- 拖拽输入框验证 ----------
+
+    def on_pet_json_dropped(self, path: str):
+        """pet.json 拖拽验证：必须是 .json 文件。"""
+        if not os.path.isfile(path) or not path.lower().endswith(".json"):
+            self.log(f"[拖拽] pet.json 需要 .json 文件，已忽略: {path}")
+
+    def on_action_dir_dropped(self, path: str):
+        """动作目录拖拽验证：必须是目录。"""
+        if not os.path.isdir(path):
+            self.log(f"[拖拽] 动作目录需要文件夹，已忽略: {path}")
+
+    def on_backup_dir_dropped(self, path: str):
+        """备份目录拖拽验证：必须是目录。"""
+        if not os.path.isdir(path):
+            self.log(f"[拖拽] 备份目录需要文件夹，已忽略: {path}")
 
     # ---------- 备份勾选 ----------
 

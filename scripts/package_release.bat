@@ -18,6 +18,13 @@ set "DIST_DIR=%DIST_ROOT%\DesktopPet"
 set "ZIP_NAME=DesktopPet-release.zip"
 set "ZIP_PATH=%DIST_ROOT%\%ZIP_NAME%"
 
+rem resize.exe build failure: set to 1 to abort main packaging on failure
+set "ABORT_ON_RESIZE_FAIL=0"
+
+set "RESIZE_TOOL_DIR=%PROJECT_ROOT%\tools\action_asset_resizer"
+set "RESIZE_EXE=%DIST_ROOT%\DesktopPet-resize.exe"
+set "RESIZE_BUILT=0"
+
 echo ============================================
 echo  DesktopPet Release Package Script
 echo ============================================
@@ -25,7 +32,7 @@ echo.
 echo Project root: %PROJECT_ROOT%
 echo.
 
-echo [1/6] Checking prerequisites...
+echo [1/7] Checking prerequisites...
 
 if not exist "%WINDEPLOYQT%" (
     echo ERROR: windeployqt.exe not found.
@@ -43,7 +50,44 @@ if not exist "%BUILD_EXE%" (
 echo   Release exe: OK
 
 echo.
-echo [2/6] Preparing dist directory...
+echo [2/7] Building resize tool...
+
+if not exist "%RESIZE_TOOL_DIR%\build_resize_exe.bat" goto resize_skip_bat
+
+echo   Calling build_resize_exe.bat ...
+pushd "%RESIZE_TOOL_DIR%"
+call build_resize_exe.bat
+set "BUILD_ERR=!errorlevel!"
+popd
+
+if !BUILD_ERR! neq 0 goto resize_build_failed
+if exist "%RESIZE_EXE%" goto resize_ok
+
+echo [WARN] resize.exe was not built. Please check Python/PyInstaller.
+if "!ABORT_ON_RESIZE_FAIL!"=="1" goto error
+goto resize_done
+
+:resize_skip_bat
+echo [WARN] build_resize_exe.bat not found, skipping resize tool.
+goto resize_done
+
+:resize_build_failed
+echo [WARN] resize.exe build failed (exit code !BUILD_ERR!).
+if "!ABORT_ON_RESIZE_FAIL!"=="1" (
+    echo ABORT_ON_RESIZE_FAIL is set, aborting.
+    goto error
+)
+echo   Skipping resize.exe, continuing with main package.
+goto resize_done
+
+:resize_ok
+set "RESIZE_BUILT=1"
+echo   DesktopPet-resize.exe: OK
+
+:resize_done
+
+echo.
+echo [3/7] Preparing dist directory...
 
 if exist "%DIST_DIR%" (
     echo   Removing old dist folder...
@@ -59,7 +103,7 @@ if not exist "%DIST_ROOT%" mkdir "%DIST_ROOT%"
 mkdir "%DIST_DIR%"
 
 echo.
-echo [3/6] Copying executable...
+echo [4/7] Copying executable...
 
 copy "%BUILD_EXE%" "%DIST_DIR%\%APP_NAME%.exe" >nul
 if errorlevel 1 (
@@ -69,7 +113,7 @@ if errorlevel 1 (
 echo   Copied: %APP_NAME%.exe
 
 echo.
-echo [4/6] Running windeployqt...
+echo [5/7] Running windeployqt...
 
 "%WINDEPLOYQT%" --release --compiler-runtime "%DIST_DIR%\%APP_NAME%.exe"
 if errorlevel 1 (
@@ -79,7 +123,7 @@ if errorlevel 1 (
 echo   Qt dependencies deployed.
 
 echo.
-echo [5/6] Copying resources...
+echo [6/7] Copying resources...
 
 if exist "%PROJECT_ROOT%\resources" (
     echo   Copying resources...
@@ -103,8 +147,21 @@ if exist "%PROJECT_ROOT%\LICENSE" (
     echo   Copied: LICENSE
 )
 
+if "!RESIZE_BUILT!"=="1" goto copy_resize
+goto copy_resources_done
+
+:copy_resize
+copy "%RESIZE_EXE%" "%DIST_DIR%\DesktopPet-resize.exe" >nul
+if errorlevel 1 (
+    echo WARNING: Failed to copy DesktopPet-resize.exe.
+) else (
+    echo   Copied: DesktopPet-resize.exe
+)
+
+:copy_resources_done
+
 echo.
-echo [6/6] Creating ZIP package...
+echo [7/7] Creating ZIP package...
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '%DIST_DIR%\*' -DestinationPath '%ZIP_PATH%' -Force"
 if errorlevel 1 (
@@ -117,8 +174,14 @@ echo ============================================
 echo  Package completed.
 echo ============================================
 echo.
-echo  Output folder: %DIST_DIR%
-echo  Zip package:   %ZIP_PATH%
+echo  Output folder:   %DIST_DIR%
+echo  Main executable: %DIST_DIR%\%APP_NAME%.exe
+if "!RESIZE_BUILT!"=="1" (
+    echo  Resize tool:    %DIST_DIR%\DesktopPet-resize.exe [INCLUDED]
+) else (
+    echo  Resize tool:    [NOT INCLUDED]
+)
+echo  Zip package:     %ZIP_PATH%
 echo.
 
 goto end

@@ -41,3 +41,5 @@ generate_bloom_qt_themes.py
 
 release/
 dist/
+*.spec
+.pyinstaller_build/
