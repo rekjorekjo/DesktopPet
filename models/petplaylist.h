@@ -87,6 +87,7 @@ public:
     int replaceActionReferences(const QString &oldActionId, const QString &newActionId);
 
     bool findFirstActionRef(const QString &actionId, PetActionRef *outRef) const;
+    bool findMatchingActionRef(const QString &actionId, const QString &displayName, PetActionRef *outRef) const;
 
 private:
     bool moveActionUp(QList<PetActionRef> &list, int index);

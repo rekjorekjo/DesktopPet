@@ -570,25 +570,40 @@ void PetWidget::reloadPlaylistPreservePlayback()
 
     if (!m_currentActionId.isEmpty()) {
         PetActionRef newRef;
-        if (m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
+        if (findCurrentActionRefInPlaylist(&newRef)) {
             PetActionRef oldRef = m_currentActionRef;
-            m_currentActionRef = newRef;
 
-            if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
-                m_player->setSpeedMultiplier(newRef.animationSpeed);
+            // Idle 模式下使用运行时副本规则，避免 idle loop=true 导致队列无法消费
+            if (m_currentMode == PetPlayMode::Idle && m_petRunning) {
+                PetActionRef runtimeRef = newRef;
+                runtimeRef.loop = false;
+                if (runtimeRef.repeat <= 0) {
+                    runtimeRef.repeat = 1;
+                }
+                m_currentActionRef = runtimeRef;
+
+                if (!qFuzzyCompare(oldRef.animationSpeed, runtimeRef.animationSpeed)) {
+                    m_player->setSpeedMultiplier(runtimeRef.animationSpeed);
+                }
+                m_player->updatePlaybackOptions(runtimeRef.loop, runtimeRef.repeat);
+            } else {
+                m_currentActionRef = newRef;
+
+                if (!qFuzzyCompare(oldRef.animationSpeed, newRef.animationSpeed)) {
+                    m_player->setSpeedMultiplier(newRef.animationSpeed);
+                }
+                if (oldRef.loop != newRef.loop || oldRef.repeat != newRef.repeat) {
+                    m_player->updatePlaybackOptions(newRef.loop, newRef.repeat);
+                }
             }
 
-            if (oldRef.loop != newRef.loop || oldRef.repeat != newRef.repeat) {
-                m_player->updatePlaybackOptions(newRef.loop, newRef.repeat);
-            }
+            // 恢复移动状态（使用 m_currentActionRef 中已确定的参数）
+            const PetActionRef &activeRef = m_currentActionRef;
+            if (activeRef.moveEnabled && activeRef.movementSpeed > 0) {
+                m_moveVelocity = AppSettings::baseMoveSpeed() * activeRef.movementSpeed;
+                m_moveAxis = activeRef.moveAxis;
 
-            MoveAxis oldMoveAxis = oldRef.moveAxis;
-
-            if (newRef.moveEnabled && newRef.movementSpeed > 0) {
-                m_moveVelocity = AppSettings::baseMoveSpeed() * newRef.movementSpeed;
-                m_moveAxis = newRef.moveAxis;
-
-                if (oldMoveAxis != newRef.moveAxis) {
+                if (oldRef.moveAxis != activeRef.moveAxis) {
                     updateMoveDirection();
                 }
 
@@ -654,7 +669,7 @@ void PetWidget::reloadActionsAndPlaylistPreservePlayback()
         bool wasRunning = m_petRunning;
         bool wasPaused = m_player->isPaused();
 
-        if (newAction.isValid() && m_playlist.findFirstActionRef(m_currentActionId, &newRef)) {
+        if (newAction.isValid() && findCurrentActionRefInPlaylist(&newRef)) {
             PetActionRef oldRef = m_currentActionRef;
             m_currentAction = newAction;
             m_currentActionRef = newRef;
@@ -842,10 +857,28 @@ void PetWidget::setPetScaleFactor(double scale)
     m_displayLabel->setFixedSize(displaySize);
 
     if (m_currentAction.isValid() && m_currentActionRef.isValid()) {
-        m_player->loadAction(m_currentAction, displaySize);
-        if (m_player->isPaused()) {
-            m_player->resume();
-            m_player->pause();
+        bool wasRunning = m_petRunning;
+        bool wasPaused = m_player->isPaused();
+
+        bool loadOk = m_player->loadAction(m_currentAction, displaySize);
+
+        if (loadOk) {
+            if (wasRunning) {
+                m_player->setSpeedMultiplier(m_currentActionRef.animationSpeed);
+                m_player->play(m_currentActionRef.loop, m_currentActionRef.repeat);
+                if (wasPaused) {
+                    m_player->pause();
+                }
+            }
+        } else {
+            stopMovement();
+            m_player->stop();
+            m_currentAction = PetAction();
+            m_currentActionRef = PetActionRef();
+            m_currentActionId.clear();
+            if (wasRunning) {
+                playNextRuntimeActionOrIdle();
+            }
         }
     }
 }
@@ -900,6 +933,15 @@ PetAction PetWidget::findActionById(const QString &actionId) const
         }
     }
     return PetAction();
+}
+
+// 优先按 actionId + displayName 匹配当前播放项，找不到再 fallback 到只按 actionId
+bool PetWidget::findCurrentActionRefInPlaylist(PetActionRef *outRef) const
+{
+    if (m_currentActionId.isEmpty()) {
+        return false;
+    }
+    return m_playlist.findMatchingActionRef(m_currentActionId, m_currentActionRef.displayName, outRef);
 }
 
 void PetWidget::mousePressEvent(QMouseEvent *event)
@@ -1379,6 +1421,18 @@ void PetWidget::enqueueAction(const PetActionRef &ref, QueuedActionType type, co
     case QueuedActionType::Random:
         item.priority = 3;
         break;
+    }
+
+    // 队列长度限制：避免极端情况下队列无限增长
+    if (m_runtimeQueue.size() >= MaxRuntimeQueueSize) {
+        if (item.priority == 0) {
+            // Emotion 优先级最高，驱逐队尾最低优先级项腾出空间
+            m_runtimeQueue.removeLast();
+        } else {
+            qWarning() << "Runtime queue full (" << MaxRuntimeQueueSize
+                       << "), dropping:" << ref.actionId << "type:" << static_cast<int>(type);
+            return;
+        }
     }
 
     // 按优先级插入，同优先级追加到末尾（FIFO）

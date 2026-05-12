@@ -383,6 +383,45 @@ bool PetPlaylist::findFirstActionRef(const QString &actionId, PetActionRef *outR
     return false;
 }
 
+// 优先按 actionId + displayName 精确匹配，找不到则 fallback 到只按 actionId 匹配
+bool PetPlaylist::findMatchingActionRef(const QString &actionId, const QString &displayName, PetActionRef *outRef) const
+{
+    if (!outRef) {
+        return false;
+    }
+
+    // 第一轮：精确匹配 actionId + displayName
+    for (const PetActionRef &ref : m_idleActions) {
+        if (ref.actionId == actionId && ref.displayName == displayName) {
+            *outRef = ref;
+            return true;
+        }
+    }
+    for (const PetActionRef &ref : m_randomActions) {
+        if (ref.actionId == actionId && ref.displayName == displayName) {
+            *outRef = ref;
+            return true;
+        }
+    }
+    for (const PetActionRef &ref : m_timedActions) {
+        if (ref.actionId == actionId && ref.displayName == displayName) {
+            *outRef = ref;
+            return true;
+        }
+    }
+    for (const QList<PetActionRef> &list : m_emotionActions) {
+        for (const PetActionRef &ref : list) {
+            if (ref.actionId == actionId && ref.displayName == displayName) {
+                *outRef = ref;
+                return true;
+            }
+        }
+    }
+
+    // 第二轮：fallback 到只按 actionId 匹配
+    return findFirstActionRef(actionId, outRef);
+}
+
 int PetPlaylist::replaceActionReferences(const QString &oldActionId, const QString &newActionId)
 {
     int count = 0;

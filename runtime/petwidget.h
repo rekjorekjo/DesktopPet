@@ -146,6 +146,7 @@ private:
     void setupUi();
     QSize currentDisplaySize() const;
     PetAction findActionById(const QString &actionId) const;
+    bool findCurrentActionRefInPlaylist(PetActionRef *outRef) const;
     void loadGlobalActionLibrary();
     bool playAction(const PetAction &action, const PetActionRef &ref);
     bool playActionByRef(const PetActionRef &ref);
@@ -236,6 +237,8 @@ private:
 
     // 运行时动作队列，存储待播放的 random/timed/emotion 动作
     // 不写入 playlist.json，只存在于内存中
+    static constexpr int MaxRuntimeQueueSize = 20;
+
     QList<QueuedAction> m_runtimeQueue;
     qint64 m_nextSequence;
 
