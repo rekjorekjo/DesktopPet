@@ -43,7 +43,7 @@ private:
     bool backupActionDir(const QString &sourceDir, const QString &backupDir);
     ResizeResult resizeImage(const QString &inputPath, int targetWidth, int targetHeight, bool keepAspectRatio);
     QString inferBackupDir(const QString &actionDir) const;
-    void updateBackupDirPlaceholder();
+    void autoFillBackupDir();
     void log(const QString &message);
 
     // UI elements

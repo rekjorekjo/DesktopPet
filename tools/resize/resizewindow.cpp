@@ -141,7 +141,7 @@ void ResizeWindow::dropEvent(QDropEvent *event)
                 m_actionId = fileInfo.fileName();
                 log("动作目录: " + path);
                 log("ActionId: " + m_actionId);
-                updateBackupDirPlaceholder();
+                autoFillBackupDir();
             }
         }
     }
@@ -164,7 +164,7 @@ void ResizeWindow::onSelectActionDir()
         m_actionId = QFileInfo(path).fileName();
         log("动作目录: " + path);
         log("ActionId: " + m_actionId);
-        updateBackupDirPlaceholder();
+        autoFillBackupDir();
     }
 }
 
@@ -286,7 +286,7 @@ QString ResizeWindow::inferBackupDir(const QString &actionDir) const
     }
 }
 
-void ResizeWindow::updateBackupDirPlaceholder()
+void ResizeWindow::autoFillBackupDir()
 {
     QString actionDir = m_actionDirPathEdit->text();
     if (actionDir.isEmpty() || !QDir(actionDir).exists()) {
