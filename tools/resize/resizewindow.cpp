@@ -738,6 +738,7 @@ QString ResizeWindow::buildStyleSheet(const ResizeToolTheme &t) const
         QCheckBox::indicator:checked {
             background-color: %16;
             border: 2px solid %16;
+            image: url(:/icons/checkmark_white.svg);
         }
         QCheckBox:disabled {
             color: %4;
@@ -762,7 +763,7 @@ QString ResizeWindow::buildStyleSheet(const ResizeToolTheme &t) const
         }
         QRadioButton::indicator:checked {
             background-color: %16;
-            border: 2px solid %16;
+            border: 5px solid %11;
         }
 
         /* QTextEdit (log) */

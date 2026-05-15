@@ -1,9 +1,9 @@
 #include "apiconfigpage.h"
 
 #include "core/appsettings.h"
+#include "dialogs/apiconfigdialog.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
-#include "widgets/softinputdialog.h"
 
 #include <QFont>
 #include <QHBoxLayout>
@@ -15,21 +15,12 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_contentWidget(nullptr)
     , m_titleLabel(nullptr)
     , m_statusCard(nullptr)
-    , m_editorCard(nullptr)
     , m_profilesCard(nullptr)
-    , m_editorCardTitle(nullptr)
     , m_profilesCardTitle(nullptr)
-    , m_apiKeyLabel(nullptr)
-    , m_baseUrlLabel(nullptr)
-    , m_modelLabel(nullptr)
-    , m_apiKeyEdit(nullptr)
-    , m_baseUrlEdit(nullptr)
-    , m_modelEdit(nullptr)
-    , m_saveApiConfigButton(nullptr)
+    , m_currentApiProfileLabel(nullptr)
     , m_apiProfileList(nullptr)
     , m_addApiProfileButton(nullptr)
-    , m_removeApiProfileButton(nullptr)
-    , m_currentApiProfileLabel(nullptr)
+    , m_emptyLabel(nullptr)
 {
     setAttribute(Qt::WA_StyledBackground, false);
     setAutoFillBackground(false);
@@ -95,69 +86,15 @@ void ApiConfigPage::setupUi()
 
     contentLayout->addWidget(m_statusCard);
 
-    m_editorCard = new SoftCardWidget(m_contentWidget);
-    m_editorCard->setObjectName("editorCard");
-    m_editorCard->setBackgroundOpacity(40);
-    QVBoxLayout *editorLayout = new QVBoxLayout(m_editorCard);
-    editorLayout->setContentsMargins(24, 24, 24, 24);
-    editorLayout->setSpacing(16);
-
-    m_editorCardTitle = new QLabel(tr("编辑配置"), m_editorCard);
-    QFont editorTitleFont = m_editorCardTitle->font();
-    editorTitleFont.setPointSize(12);
-    editorTitleFont.setBold(true);
-    m_editorCardTitle->setFont(editorTitleFont);
-    m_editorCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(p.subtitleText));
-    editorLayout->addWidget(m_editorCardTitle);
-
-    m_apiKeyLabel = new QLabel(tr("API Key:"), m_editorCard);
-    m_apiKeyLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(p.textSecondary));
-    editorLayout->addWidget(m_apiKeyLabel);
-
-    m_apiKeyEdit = new QLineEdit(m_editorCard);
-    m_apiKeyEdit->setEchoMode(QLineEdit::Password);
-    m_apiKeyEdit->setPlaceholderText(tr("请输入 API Key"));
-    m_apiKeyEdit->setMinimumHeight(36);
-    m_apiKeyEdit->setStyleSheet(theme.lineEditStyleSheet());
-    editorLayout->addWidget(m_apiKeyEdit);
-
-    m_baseUrlLabel = new QLabel(tr("Base URL:"), m_editorCard);
-    m_baseUrlLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(p.textSecondary));
-    editorLayout->addWidget(m_baseUrlLabel);
-
-    m_baseUrlEdit = new QLineEdit(m_editorCard);
-    m_baseUrlEdit->setPlaceholderText(tr("请输入 Base URL"));
-    m_baseUrlEdit->setMinimumHeight(36);
-    m_baseUrlEdit->setStyleSheet(theme.lineEditStyleSheet());
-    editorLayout->addWidget(m_baseUrlEdit);
-
-    m_modelLabel = new QLabel(tr("Model:"), m_editorCard);
-    m_modelLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                  .arg(p.textSecondary));
-    editorLayout->addWidget(m_modelLabel);
-
-    m_modelEdit = new QLineEdit(m_editorCard);
-    m_modelEdit->setPlaceholderText(tr("请输入模型名称"));
-    m_modelEdit->setMinimumHeight(36);
-    m_modelEdit->setStyleSheet(theme.lineEditStyleSheet());
-    editorLayout->addWidget(m_modelEdit);
-
-    m_saveApiConfigButton = new QPushButton(tr("保存配置"), m_editorCard);
-    m_saveApiConfigButton->setMinimumHeight(36);
-    m_saveApiConfigButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
-    editorLayout->addWidget(m_saveApiConfigButton);
-
-    contentLayout->addWidget(m_editorCard);
-
     m_profilesCard = new SoftCardWidget(m_contentWidget);
     m_profilesCard->setObjectName("profilesCard");
     m_profilesCard->setBackgroundOpacity(40);
     QVBoxLayout *profilesLayout = new QVBoxLayout(m_profilesCard);
     profilesLayout->setContentsMargins(24, 24, 24, 24);
     profilesLayout->setSpacing(16);
+
+    QHBoxLayout *profilesHeaderLayout = new QHBoxLayout();
+    profilesHeaderLayout->setSpacing(12);
 
     m_profilesCardTitle = new QLabel(tr("配置库"), m_profilesCard);
     QFont profilesTitleFont = m_profilesCardTitle->font();
@@ -166,29 +103,28 @@ void ApiConfigPage::setupUi()
     m_profilesCardTitle->setFont(profilesTitleFont);
     m_profilesCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                      .arg(p.subtitleText));
-    profilesLayout->addWidget(m_profilesCardTitle);
+    profilesHeaderLayout->addWidget(m_profilesCardTitle);
+    profilesHeaderLayout->addStretch();
+
+    m_addApiProfileButton = new QPushButton(tr("新增配置"), m_profilesCard);
+    m_addApiProfileButton->setMinimumHeight(32);
+    m_addApiProfileButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    profilesHeaderLayout->addWidget(m_addApiProfileButton);
+
+    profilesLayout->addLayout(profilesHeaderLayout);
 
     m_apiProfileList = new QListWidget(m_profilesCard);
     m_apiProfileList->setMinimumHeight(160);
     m_apiProfileList->setStyleSheet(theme.listWidgetStyleSheet());
     profilesLayout->addWidget(m_apiProfileList, 1);
 
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
+    m_emptyLabel = new QLabel(tr("暂无配置，点击右上角「新增配置」添加"), m_profilesCard);
+    m_emptyLabel->setAlignment(Qt::AlignCenter);
+    m_emptyLabel->setStyleSheet(QString(
+        "color: %1; font-size: 13px; background: transparent; border: none; padding: 40px 0;"
+    ).arg(p.textSecondary));
+    profilesLayout->addWidget(m_emptyLabel);
 
-    m_addApiProfileButton = new QPushButton(tr("新增配置"), m_profilesCard);
-    m_addApiProfileButton->setMinimumHeight(36);
-    m_addApiProfileButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
-
-    m_removeApiProfileButton = new QPushButton(tr("删除配置"), m_profilesCard);
-    m_removeApiProfileButton->setMinimumHeight(36);
-    m_removeApiProfileButton->setStyleSheet(theme.dangerButtonStyleSheet());
-
-    buttonLayout->addWidget(m_addApiProfileButton);
-    buttonLayout->addWidget(m_removeApiProfileButton);
-    buttonLayout->addStretch();
-
-    profilesLayout->addLayout(buttonLayout);
     contentLayout->addWidget(m_profilesCard, 1);
 
     m_scrollArea->setWidget(m_contentWidget);
@@ -198,14 +134,13 @@ void ApiConfigPage::setupUi()
 void ApiConfigPage::connectSignals()
 {
     connect(m_addApiProfileButton, &QPushButton::clicked, this, &ApiConfigPage::onAddApiProfile);
-    connect(m_removeApiProfileButton, &QPushButton::clicked, this, &ApiConfigPage::onRemoveApiProfile);
     connect(m_apiProfileList, &QListWidget::currentRowChanged, this, &ApiConfigPage::onApiProfileSelectionChanged);
-    connect(m_saveApiConfigButton, &QPushButton::clicked, this, &ApiConfigPage::onSaveApiConfigClicked);
 }
 
 void ApiConfigPage::refreshTheme()
 {
     applyTheme();
+    refreshProfileList();
 }
 
 void ApiConfigPage::applyTheme()
@@ -219,113 +154,211 @@ void ApiConfigPage::applyTheme()
 
     m_currentApiProfileLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                                 .arg(p.accent));
-    m_editorCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                       .arg(p.subtitleText));
     m_profilesCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.subtitleText));
 
-    m_apiKeyLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(p.textSecondary));
-    m_baseUrlLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                    .arg(p.textSecondary));
-    m_modelLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                  .arg(p.textSecondary));
-
-    m_apiKeyEdit->setStyleSheet(theme.lineEditStyleSheet());
-    m_baseUrlEdit->setStyleSheet(theme.lineEditStyleSheet());
-    m_modelEdit->setStyleSheet(theme.lineEditStyleSheet());
-    m_saveApiConfigButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_addApiProfileButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
-    m_removeApiProfileButton->setStyleSheet(theme.dangerButtonStyleSheet());
     m_apiProfileList->setStyleSheet(theme.listWidgetStyleSheet());
+
+    m_emptyLabel->setStyleSheet(QString(
+        "color: %1; font-size: 13px; background: transparent; border: none; padding: 40px 0;"
+    ).arg(p.textSecondary));
 }
 
-void ApiConfigPage::clearApiEditor()
+void ApiConfigPage::updateEmptyState()
 {
-    m_apiKeyEdit->clear();
-    m_baseUrlEdit->clear();
-    m_modelEdit->clear();
+    bool empty = m_apiConfigs.isEmpty();
+    m_emptyLabel->setVisible(empty);
+    m_apiProfileList->setVisible(!empty);
 }
 
-void ApiConfigPage::loadApiConfigToEditor(const QString &profileName)
+void ApiConfigPage::updateCurrentProfileDisplay()
 {
-    if (!m_apiConfigs.contains(profileName)) {
-        clearApiEditor();
-        m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
+    if (m_currentApiProfile.isEmpty() || !m_apiConfigs.contains(m_currentApiProfile)) {
         m_currentApiProfile.clear();
+        m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
         AppSettings::setCurrentApiConfigName("");
-        return;
+    } else {
+        m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(m_currentApiProfile));
+        AppSettings::setCurrentApiConfigName(m_currentApiProfile);
     }
+}
+
+void ApiConfigPage::refreshProfileList()
+{
+    m_apiProfileList->clear();
+
+    for (auto it = m_apiConfigs.constBegin(); it != m_apiConfigs.constEnd(); ++it) {
+        const QString &name = it.key();
+
+        QListWidgetItem *item = new QListWidgetItem(m_apiProfileList);
+        item->setText(name);
+        item->setSizeHint(QSize(0, 64));
+        m_apiProfileList->setItemWidget(item, createProfileRowWidget(name));
+    }
+
+    updateEmptyState();
+}
+
+QWidget *ApiConfigPage::createProfileRowWidget(const QString &profileName)
+{
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
 
     const ApiConfig &config = m_apiConfigs[profileName];
-    m_apiKeyEdit->setText(config.apiKey);
-    m_baseUrlEdit->setText(config.baseUrl);
-    m_modelEdit->setText(config.model);
+    bool isCurrent = (profileName == m_currentApiProfile);
 
-    m_currentApiProfile = profileName;
-    m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(profileName));
-    AppSettings::setCurrentApiConfigName(profileName);
-}
+    QWidget *rowWidget = new QWidget();
+    rowWidget->setObjectName("profileRowWidget");
+    QVBoxLayout *rowLayout = new QVBoxLayout(rowWidget);
+    rowLayout->setContentsMargins(12, 6, 8, 6);
+    rowLayout->setSpacing(4);
 
-void ApiConfigPage::saveCurrentApiConfig()
-{
-    if (m_currentApiProfile.isEmpty()) {
-        SoftMessageBox::warning(this, tr("提示"), tr("请先新增或选择一个配置。"));
-        return;
+    // Top row: name + current marker + buttons
+    QHBoxLayout *topLayout = new QHBoxLayout();
+    topLayout->setSpacing(8);
+
+    QLabel *nameLabel = new QLabel(profileName, rowWidget);
+    nameLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 13px; font-weight: bold;")
+                                 .arg(p.textPrimary));
+    topLayout->addWidget(nameLabel, 1);
+
+    if (isCurrent) {
+        QLabel *currentLabel = new QLabel(tr("当前"), rowWidget);
+        currentLabel->setStyleSheet(QString(
+            "color: %1; background: %2; border: none; font-size: 11px; font-weight: bold;"
+            "padding: 2px 8px; border-radius: 4px;"
+        ).arg(p.buttonPrimaryText, p.accent));
+        topLayout->addWidget(currentLabel);
     }
 
-    ApiConfig config;
-    config.apiKey = m_apiKeyEdit->text();
-    config.baseUrl = m_baseUrlEdit->text();
-    config.model = m_modelEdit->text();
+    QPushButton *editBtn = new QPushButton(tr("编辑"), rowWidget);
+    editBtn->setStyleSheet(theme.softSecondaryButtonStyleSheet(4, 20));
+    editBtn->setFixedSize(52, 28);
+    connect(editBtn, &QPushButton::clicked, this, [this, rowWidget]() {
+        for (int i = 0; i < m_apiProfileList->count(); ++i) {
+            if (m_apiProfileList->itemWidget(m_apiProfileList->item(i)) == rowWidget) {
+                onEditApiProfile(i);
+                return;
+            }
+        }
+    });
+    topLayout->addWidget(editBtn);
 
-    m_apiConfigs[m_currentApiProfile] = config;
+    QPushButton *delBtn = new QPushButton(tr("删除"), rowWidget);
+    delBtn->setStyleSheet(theme.dangerButtonStyleSheet());
+    delBtn->setFixedSize(52, 28);
+    connect(delBtn, &QPushButton::clicked, this, [this, rowWidget]() {
+        for (int i = 0; i < m_apiProfileList->count(); ++i) {
+            if (m_apiProfileList->itemWidget(m_apiProfileList->item(i)) == rowWidget) {
+                onRemoveApiProfile(i);
+                return;
+            }
+        }
+    });
+    topLayout->addWidget(delBtn);
+
+    rowLayout->addLayout(topLayout);
+
+    // Bottom row: baseUrl + model
+    QHBoxLayout *bottomLayout = new QHBoxLayout();
+    bottomLayout->setSpacing(12);
+
+    QString urlText = config.baseUrl.isEmpty() ? tr("(未设置 Base URL)") : config.baseUrl;
+    QLabel *urlLabel = new QLabel(urlText, rowWidget);
+    urlLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 11px;")
+                                .arg(p.textSecondary));
+    urlLabel->setMaximumWidth(260);
+    urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    bottomLayout->addWidget(urlLabel, 1);
+
+    QString modelText = config.model.isEmpty() ? tr("(未设置 Model)") : config.model;
+    QLabel *modelLabel = new QLabel(modelText, rowWidget);
+    modelLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 11px;")
+                                  .arg(p.textSecondary));
+    bottomLayout->addWidget(modelLabel, 1);
+
+    rowLayout->addLayout(bottomLayout);
+
+    return rowWidget;
 }
 
 void ApiConfigPage::onAddApiProfile()
 {
-    bool ok = false;
-    QString profileName = SoftInputDialog::getText(this,
-                                                tr("新增配置"),
-                                                tr("请输入配置名称："),
-                                                QString(),
-                                                &ok);
+    QString profileName;
+    ApiConfig config;
 
-    if (!ok || profileName.trimmed().isEmpty()) {
+    bool ok = ApiConfigDialog::getNewProfile(this,
+                                             m_apiConfigs.keys(),
+                                             &profileName,
+                                             &config);
+    if (!ok) {
         return;
     }
 
-    profileName = profileName.trimmed();
+    m_apiConfigs[profileName] = config;
+    m_currentApiProfile = profileName;
 
-    if (m_apiConfigs.contains(profileName)) {
-        SoftMessageBox::warning(this, tr("提示"), tr("配置名称已存在。"));
-        return;
+    refreshProfileList();
+    updateCurrentProfileDisplay();
+
+    for (int i = 0; i < m_apiProfileList->count(); ++i) {
+        if (m_apiProfileList->item(i)->text() == profileName) {
+            m_apiProfileList->setCurrentRow(i);
+            break;
+        }
     }
-
-    m_apiConfigs[profileName] = ApiConfig{};
-    m_apiProfileList->addItem(profileName);
-    m_apiProfileList->setCurrentRow(m_apiProfileList->count() - 1);
 }
 
-void ApiConfigPage::onRemoveApiProfile()
+void ApiConfigPage::onEditApiProfile(int row)
 {
-    QListWidgetItem *currentItem = m_apiProfileList->currentItem();
-    if (!currentItem) {
-        SoftMessageBox::information(this, tr("提示"), tr("请先选择一个配置。"));
-        return;
-    }
+    QListWidgetItem *item = m_apiProfileList->item(row);
+    if (!item) return;
 
-    QString profileName = currentItem->text();
-    delete m_apiProfileList->takeItem(m_apiProfileList->row(currentItem));
+    QString profileName = item->text();
+    if (!m_apiConfigs.contains(profileName)) return;
+
+    ApiConfig config;
+    bool ok = ApiConfigDialog::editProfile(this, profileName, m_apiConfigs.value(profileName), &config);
+    if (!ok) return;
+
+    m_apiConfigs[profileName] = config;
+    refreshProfileList();
+}
+
+void ApiConfigPage::onRemoveApiProfile(int row)
+{
+    QListWidgetItem *item = m_apiProfileList->item(row);
+    if (!item) return;
+
+    QString profileName = item->text();
+
+    bool yes = SoftMessageBox::question(this,
+                                        tr("确认删除"),
+                                        tr("确定要删除配置「%1」吗？").arg(profileName))
+               == SoftMessageBox::Yes;
+    if (!yes) return;
+
     m_apiConfigs.remove(profileName);
 
-    if (m_apiProfileList->count() > 0) {
-        m_apiProfileList->setCurrentRow(0);
-    } else {
-        clearApiEditor();
-        m_currentApiProfile.clear();
-        m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
-        AppSettings::setCurrentApiConfigName("");
+    if (m_currentApiProfile == profileName) {
+        if (!m_apiConfigs.isEmpty()) {
+            m_currentApiProfile = m_apiConfigs.constBegin().key();
+        } else {
+            m_currentApiProfile.clear();
+        }
+    }
+
+    refreshProfileList();
+    updateCurrentProfileDisplay();
+
+    if (!m_currentApiProfile.isEmpty()) {
+        for (int i = 0; i < m_apiProfileList->count(); ++i) {
+            if (m_apiProfileList->item(i)->text() == m_currentApiProfile) {
+                m_apiProfileList->setCurrentRow(i);
+                break;
+            }
+        }
     }
 }
 
@@ -333,20 +366,15 @@ void ApiConfigPage::onApiProfileSelectionChanged()
 {
     QListWidgetItem *currentItem = m_apiProfileList->currentItem();
     if (!currentItem) {
-        clearApiEditor();
-        m_currentApiProfile.clear();
-        m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
-        AppSettings::setCurrentApiConfigName("");
         return;
     }
 
-    loadApiConfigToEditor(currentItem->text());
-}
-
-void ApiConfigPage::onSaveApiConfigClicked()
-{
-    saveCurrentApiConfig();
-    if (!m_currentApiProfile.isEmpty()) {
-        SoftMessageBox::information(this, tr("提示"), tr("配置已保存：%1").arg(m_currentApiProfile));
+    QString profileName = currentItem->text();
+    if (!m_apiConfigs.contains(profileName)) {
+        return;
     }
+
+    m_currentApiProfile = profileName;
+    updateCurrentProfileDisplay();
+    refreshProfileList();
 }

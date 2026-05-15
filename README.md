@@ -118,7 +118,7 @@ DesktopPet/
 ├── pages/                # 设置窗口中的各个页面
 ├── resources/            # 图标、主题、资源文件
 ├── runtime/              # 桌宠运行窗口、动画播放器、托盘管理
-├── scripts/              # 打包脚本
+├── tools/                # 工具（打包脚本、resize 工具等）
 ├── services/             # 宠物库、动作库、导入、日志等业务服务
 ├── theme/                # 主题管理
 ├── ui/                   # 设置主窗口
@@ -253,7 +253,7 @@ cmake --build build --config Release
 项目提供 Windows 打包脚本：
 
 ```
-scripts/package_release.bat
+tools/packaging/package_release.bat
 ```
 
 使用前请确认脚本中的 Qt 路径和 Release exe 路径正确。

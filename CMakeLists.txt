@@ -17,6 +17,7 @@ qt_add_executable(DesktopPet
     core/petpaths.cpp
     core/petpaths.h
     models/actioncategory.h
+    models/apiconfig.h
     models/petaction.cpp
     models/petaction.h
     models/petplaylist.cpp
@@ -70,6 +71,8 @@ qt_add_executable(DesktopPet
     dialogs/newpetdialog.h
     dialogs/importpetdialog.cpp
     dialogs/importpetdialog.h
+    dialogs/apiconfigdialog.cpp
+    dialogs/apiconfigdialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
     pages/logpage.cpp
@@ -163,6 +166,13 @@ qt_add_executable(DesktopPet-resize
     tools/resize/main.cpp
     tools/resize/resizewindow.cpp
     tools/resize/resizewindow.h
+)
+
+qt_add_resources(DesktopPet-resize "resize_icons"
+    PREFIX "/"
+    BASE resources
+    FILES
+        resources/icons/checkmark_white.svg
 )
 
 target_include_directories(DesktopPet-resize
