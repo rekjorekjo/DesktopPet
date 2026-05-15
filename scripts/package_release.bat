@@ -21,8 +21,8 @@ set "ZIP_PATH=%DIST_ROOT%\%ZIP_NAME%"
 rem resize.exe build failure: set to 1 to abort main packaging on failure
 set "ABORT_ON_RESIZE_FAIL=0"
 
-set "RESIZE_TOOL_DIR=%PROJECT_ROOT%\tools\action_asset_resizer"
-set "RESIZE_EXE=%DIST_ROOT%\DesktopPet-resize.exe"
+set "BUILD_RESIZE_EXE=%PROJECT_ROOT%\build\Desktop_Qt_6_11_0_MSVC2022_64bit-Release\DesktopPet-resize.exe"
+set "RESIZE_EXE=%DIST_DIR%\DesktopPet-resize.exe"
 set "RESIZE_BUILT=0"
 
 echo ============================================
@@ -50,41 +50,20 @@ if not exist "%BUILD_EXE%" (
 echo   Release exe: OK
 
 echo.
-echo [2/7] Building resize tool...
+echo [2/7] Checking resize tool...
 
-if not exist "%RESIZE_TOOL_DIR%\build_resize_exe.bat" goto resize_skip_bat
-
-echo   Calling build_resize_exe.bat ...
-pushd "%RESIZE_TOOL_DIR%"
-call build_resize_exe.bat
-set "BUILD_ERR=!errorlevel!"
-popd
-
-if !BUILD_ERR! neq 0 goto resize_build_failed
-if exist "%RESIZE_EXE%" goto resize_ok
-
-echo [WARN] resize.exe was not built. Please check Python/PyInstaller.
-if "!ABORT_ON_RESIZE_FAIL!"=="1" goto error
-goto resize_done
-
-:resize_skip_bat
-echo [WARN] build_resize_exe.bat not found, skipping resize tool.
-goto resize_done
-
-:resize_build_failed
-echo [WARN] resize.exe build failed (exit code !BUILD_ERR!).
-if "!ABORT_ON_RESIZE_FAIL!"=="1" (
-    echo ABORT_ON_RESIZE_FAIL is set, aborting.
-    goto error
+if exist "%BUILD_RESIZE_EXE%" (
+    set "RESIZE_BUILT=1"
+    echo   DesktopPet-resize.exe: OK
+) else (
+    echo [WARN] DesktopPet-resize.exe not found at: %BUILD_RESIZE_EXE%
+    echo   Please build Release in Qt Creator first (DesktopPet-resize target).
+    if "!ABORT_ON_RESIZE_FAIL!"=="1" (
+        echo   ABORT_ON_RESIZE_FAIL is set, aborting.
+        goto error
+    )
+    echo   Skipping resize tool, continuing with main package.
 )
-echo   Skipping resize.exe, continuing with main package.
-goto resize_done
-
-:resize_ok
-set "RESIZE_BUILT=1"
-echo   DesktopPet-resize.exe: OK
-
-:resize_done
 
 echo.
 echo [3/7] Preparing dist directory...
@@ -147,18 +126,14 @@ if exist "%PROJECT_ROOT%\LICENSE" (
     echo   Copied: LICENSE
 )
 
-if "!RESIZE_BUILT!"=="1" goto copy_resize
-goto copy_resources_done
-
-:copy_resize
-copy "%RESIZE_EXE%" "%DIST_DIR%\DesktopPet-resize.exe" >nul
-if errorlevel 1 (
-    echo WARNING: Failed to copy DesktopPet-resize.exe.
-) else (
-    echo   Copied: DesktopPet-resize.exe
+if "!RESIZE_BUILT!"=="1" (
+    copy "%BUILD_RESIZE_EXE%" "%RESIZE_EXE%" >nul
+    if errorlevel 1 (
+        echo WARNING: Failed to copy DesktopPet-resize.exe.
+    ) else (
+        echo   Copied: DesktopPet-resize.exe
+    )
 )
-
-:copy_resources_done
 
 echo.
 echo [7/7] Creating ZIP package...

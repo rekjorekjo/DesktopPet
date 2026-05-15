@@ -156,3 +156,28 @@ qt_generate_deploy_app_script(
 )
 
 install(SCRIPT ${deploy_script})
+
+# DesktopPet-resize tool
+qt_add_executable(DesktopPet-resize
+    WIN32
+    tools/resize/main.cpp
+    tools/resize/resizewindow.cpp
+    tools/resize/resizewindow.h
+)
+
+target_include_directories(DesktopPet-resize
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/tools/resize
+)
+
+target_link_libraries(DesktopPet-resize
+    PRIVATE
+        Qt6::Core
+        Qt6::Widgets
+)
+
+install(TARGETS DesktopPet-resize
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
