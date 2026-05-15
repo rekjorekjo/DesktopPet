@@ -10,11 +10,31 @@
 #include <QTextEdit>
 #include <QLabel>
 #include <QGroupBox>
+#include <QColor>
 
 enum class ResizeResult {
     Success,
     Skipped,
     Failed
+};
+
+struct ResizeToolTheme {
+    QColor windowBg;
+    QColor panelBg;
+    QColor text;
+    QColor mutedText;
+    QColor border;
+    QColor accent;
+    QColor accentHover;
+    QColor accentPressed;
+    QColor buttonBg;
+    QColor buttonText;
+    QColor inputBg;
+    QColor inputBorder;
+    QColor inputFocusBorder;
+    QColor logBg;
+    QColor checkboxBorder;
+    QColor checkboxCheckedBg;
 };
 
 class ResizeWindow : public QMainWindow
@@ -46,6 +66,11 @@ private:
     void autoFillBackupDir();
     void log(const QString &message);
 
+    // Theme
+    ResizeToolTheme loadAppTheme() const;
+    void applyAppStyle();
+    QString buildStyleSheet(const ResizeToolTheme &theme) const;
+
     // UI elements
     QLineEdit *m_petJsonPathEdit;
     QLineEdit *m_actionDirPathEdit;
@@ -63,6 +88,7 @@ private:
     int m_targetWidth;
     int m_targetHeight;
     QString m_actionId;
+    bool m_backupDirUserCustom;
 };
 
 #endif // RESIZEWINDOW_H

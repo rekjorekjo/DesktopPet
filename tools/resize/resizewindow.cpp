@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QFile>
 #include <QDir>
 #include <QFileInfo>
@@ -18,14 +19,19 @@
 #include <QDateTime>
 #include <QApplication>
 #include <QUrl>
+#include <QSettings>
+#include <QDebug>
+#include <QFont>
 
 ResizeWindow::ResizeWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_targetWidth(0)
     , m_targetHeight(0)
+    , m_backupDirUserCustom(false)
 {
     setupUi();
     setAcceptDrops(true);
+    applyAppStyle();
 }
 
 void ResizeWindow::setupUi()
@@ -173,6 +179,7 @@ void ResizeWindow::onSelectBackupDir()
     QString path = QFileDialog::getExistingDirectory(this, "选择备份目录");
     if (!path.isEmpty()) {
         m_backupDirPathEdit->setText(path);
+        m_backupDirUserCustom = true;
     }
 }
 
@@ -293,8 +300,8 @@ void ResizeWindow::autoFillBackupDir()
         return;
     }
 
-    // Only update if backup dir is empty
-    if (m_backupDirPathEdit->text().isEmpty()) {
+    // Only auto-fill if user hasn't manually selected a backup directory
+    if (!m_backupDirUserCustom) {
         QString inferred = inferBackupDir(actionDir);
         m_backupDirPathEdit->setText(inferred);
         log("默认备份目录: " + inferred);
@@ -495,4 +502,326 @@ void ResizeWindow::log(const QString &message)
 {
     m_logTextEdit->append(message);
     QApplication::processEvents();
+}
+
+ResizeToolTheme ResizeWindow::loadAppTheme() const
+{
+    ResizeToolTheme theme;
+
+    // Default light theme
+    theme.windowBg = QColor("#F7F7FA");
+    theme.panelBg = QColor("#FFFFFF");
+    theme.text = QColor("#202124");
+    theme.mutedText = QColor("#5F6368");
+    theme.border = QColor("#DADCE0");
+    theme.accent = QColor("#7A6FF0");
+    theme.accentHover = QColor("#6B60E0");
+    theme.accentPressed = QColor("#5C52D0");
+    theme.buttonBg = QColor("#7A6FF0");
+    theme.buttonText = QColor("#FFFFFF");
+    theme.inputBg = QColor("#FFFFFF");
+    theme.inputBorder = QColor("#DADCE0");
+    theme.inputFocusBorder = QColor("#7A6FF0");
+    theme.logBg = QColor("#FAFAFC");
+    theme.checkboxBorder = QColor("#DADCE0");
+    theme.checkboxCheckedBg = QColor("#7A6FF0");
+
+    // Try to read theme from QSettings and themes.json
+    QSettings settings("DesktopPet", "DesktopPet");
+    int themeIndex = settings.value("ui/themeIndex", 0).toInt();
+
+    // Try to find themes.json in various locations
+    QStringList searchPaths;
+    searchPaths << QCoreApplication::applicationDirPath() + "/resources/themes/themes.json"
+                << QCoreApplication::applicationDirPath() + "/../resources/themes/themes.json"
+                << QCoreApplication::applicationDirPath() + "/../../resources/themes/themes.json";
+
+    for (const QString &path : searchPaths) {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            continue;
+        }
+
+        QByteArray data = file.readAll();
+        file.close();
+
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        if (doc.isNull() || !doc.isObject()) {
+            continue;
+        }
+
+        QJsonObject root = doc.object();
+        QJsonArray themes = root["themes"].toArray();
+
+        if (themeIndex < 0 || themeIndex >= themes.size()) {
+            qWarning() << "ResizeWindow: theme index out of range, using default";
+            break;
+        }
+
+        QJsonObject themeObj = themes[themeIndex].toObject();
+        QString id = themeObj["id"].toString();
+
+        // Map theme colors
+        theme.windowBg = QColor(themeObj["pageBackground"].toString("#F7F7FA"));
+        theme.panelBg = QColor(themeObj["cardBackground"].toString("#FFFFFF"));
+        theme.text = QColor(themeObj["textPrimary"].toString("#202124"));
+        theme.mutedText = QColor(themeObj["textSecondary"].toString("#5F6368"));
+        theme.border = QColor(themeObj["border"].toString("#DADCE0"));
+
+        // Accent color
+        if (themeObj.contains("accent")) {
+            theme.accent = QColor(themeObj["accent"].toString());
+        } else {
+            theme.accent = QColor(themeObj["buttonPrimary"].toString("#7A6FF0"));
+        }
+        if (themeObj.contains("accentHover")) {
+            theme.accentHover = QColor(themeObj["accentHover"].toString());
+        } else {
+            theme.accentHover = QColor(themeObj["buttonHover"].toString("#6B60E0"));
+        }
+        if (themeObj.contains("accentPressed")) {
+            theme.accentPressed = QColor(themeObj["accentPressed"].toString());
+        } else {
+            theme.accentPressed = QColor(themeObj["buttonPressed"].toString("#5C52D0"));
+        }
+
+        theme.buttonBg = theme.accent;
+        theme.buttonText = QColor(themeObj["buttonPrimaryText"].toString("#FFFFFF"));
+        theme.inputBg = QColor(themeObj["inputBackground"].toString("#FFFFFF"));
+        theme.inputBorder = QColor(themeObj["inputBorder"].toString(themeObj["border"].toString("#DADCE0")));
+        theme.inputFocusBorder = QColor(themeObj["inputFocusBorder"].toString(theme.accent.name()));
+        theme.checkboxBorder = QColor(themeObj["checkboxBorder"].toString(themeObj["border"].toString("#DADCE0")));
+        theme.checkboxCheckedBg = QColor(themeObj["checkboxCheckedBg"].toString(theme.accent.name()));
+
+        // Determine log background based on theme brightness
+        double luma = 0.2126 * theme.windowBg.red() + 0.7152 * theme.windowBg.green() + 0.0722 * theme.windowBg.blue();
+        if (luma < 128) {
+            // Dark theme
+            theme.logBg = theme.windowBg.lighter(110);
+        } else {
+            // Light theme
+            theme.logBg = theme.windowBg.darker(102);
+        }
+
+        qDebug() << "ResizeWindow: loaded theme" << id << "from" << path;
+        return theme;
+    }
+
+    qWarning() << "ResizeWindow: could not load theme, using default light";
+    return theme;
+}
+
+void ResizeWindow::applyAppStyle()
+{
+    ResizeToolTheme theme = loadAppTheme();
+    setStyleSheet(buildStyleSheet(theme));
+
+    // Set font
+    QFont font("Microsoft YaHei", 10);
+    font.setStyleStrategy(QFont::PreferAntialias);
+    QApplication::setFont(font);
+}
+
+QString ResizeWindow::buildStyleSheet(const ResizeToolTheme &t) const
+{
+    return QString(R"(
+        /* Global */
+        QMainWindow, QWidget {
+            background-color: %1;
+            color: %2;
+        }
+
+        /* QLabel */
+        QLabel {
+            color: %2;
+            background: transparent;
+        }
+
+        /* QGroupBox */
+        QGroupBox {
+            background-color: %3;
+            border: 1px solid %5;
+            border-radius: 8px;
+            margin-top: 12px;
+            padding-top: 16px;
+            font-weight: bold;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding: 2px 8px;
+            color: %2;
+        }
+
+        /* QLineEdit */
+        QLineEdit {
+            background-color: %11;
+            color: %2;
+            border: 1px solid %12;
+            border-radius: 6px;
+            padding: 6px 10px;
+            selection-background-color: %6;
+        }
+        QLineEdit:hover {
+            border-color: %4;
+        }
+        QLineEdit:focus {
+            border-color: %13;
+        }
+        QLineEdit:disabled {
+            background-color: %1;
+            color: %4;
+        }
+
+        /* QSpinBox */
+        QSpinBox {
+            background-color: %11;
+            color: %2;
+            border: 1px solid %12;
+            border-radius: 6px;
+            padding: 6px 10px;
+            padding-right: 30px;
+        }
+        QSpinBox:hover {
+            border-color: %4;
+        }
+        QSpinBox:focus {
+            border-color: %13;
+        }
+        QSpinBox::up-button, QSpinBox::down-button {
+            subcontrol-origin: border;
+            width: 24px;
+            border: none;
+            background-color: %6;
+        }
+        QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+            background-color: %7;
+        }
+
+        /* QPushButton */
+        QPushButton {
+            background-color: %9;
+            color: %10;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: %7;
+        }
+        QPushButton:pressed {
+            background-color: %8;
+        }
+        QPushButton:disabled {
+            background-color: %5;
+            color: %4;
+        }
+
+        /* QCheckBox */
+        QCheckBox {
+            color: %2;
+            spacing: 8px;
+        }
+        QCheckBox::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+        QCheckBox::indicator:unchecked {
+            background-color: %11;
+            border: 2px solid %15;
+        }
+        QCheckBox::indicator:unchecked:hover {
+            border-color: %6;
+        }
+        QCheckBox::indicator:checked {
+            background-color: %16;
+            border: 2px solid %16;
+        }
+        QCheckBox:disabled {
+            color: %4;
+        }
+
+        /* QRadioButton */
+        QRadioButton {
+            color: %2;
+            spacing: 8px;
+        }
+        QRadioButton::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 9px;
+        }
+        QRadioButton::indicator:unchecked {
+            background-color: %11;
+            border: 2px solid %15;
+        }
+        QRadioButton::indicator:unchecked:hover {
+            border-color: %6;
+        }
+        QRadioButton::indicator:checked {
+            background-color: %16;
+            border: 2px solid %16;
+        }
+
+        /* QTextEdit (log) */
+        QTextEdit {
+            background-color: %14;
+            color: %2;
+            border: 1px solid %5;
+            border-radius: 6px;
+            padding: 8px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 10pt;
+        }
+
+        /* ScrollBar */
+        QScrollBar:vertical {
+            width: 10px;
+            background: transparent;
+        }
+        QScrollBar::handle:vertical {
+            background: %5;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        QScrollBar::handle:vertical:hover {
+            background: %4;
+        }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+        QScrollBar:horizontal {
+            height: 10px;
+            background: transparent;
+        }
+        QScrollBar::handle:horizontal {
+            background: %5;
+            border-radius: 5px;
+            min-width: 20px;
+        }
+        QScrollBar::handle:horizontal:hover {
+            background: %4;
+        }
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+            width: 0px;
+        }
+    )")
+    .arg(t.windowBg.name())           // %1
+    .arg(t.text.name())               // %2
+    .arg(t.panelBg.name())            // %3
+    .arg(t.mutedText.name())          // %4
+    .arg(t.border.name())             // %5
+    .arg(t.accent.name())             // %6
+    .arg(t.accentHover.name())        // %7
+    .arg(t.accentPressed.name())      // %8
+    .arg(t.buttonBg.name())           // %9
+    .arg(t.buttonText.name())         // %10
+    .arg(t.inputBg.name())            // %11
+    .arg(t.inputBorder.name())        // %12
+    .arg(t.inputFocusBorder.name())   // %13
+    .arg(t.logBg.name())              // %14
+    .arg(t.checkboxBorder.name())     // %15
+    .arg(t.checkboxCheckedBg.name()); // %16
 }
