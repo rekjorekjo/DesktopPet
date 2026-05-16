@@ -18,6 +18,9 @@ qt_add_executable(DesktopPet
     core/petpaths.h
     models/actioncategory.h
     models/apiconfig.h
+    models/apiconfig.cpp
+    models/apiproviderpreset.h
+    models/apiproviderpreset.cpp
     models/petaction.cpp
     models/petaction.h
     models/petplaylist.cpp

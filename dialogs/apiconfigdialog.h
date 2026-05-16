@@ -7,6 +7,8 @@
 
 #include "models/apiconfig.h"
 
+class QComboBox;
+class QPlainTextEdit;
 class QLineEdit;
 class QLabel;
 class QPushButton;
@@ -37,24 +39,34 @@ signals:
 private slots:
     void onSubmit();
     void onReject();
+    void onProviderChanged(int index);
 
 private:
     void setupUi();
+    void loadProviderTemplate(int presetIndex);
+    bool isCurrentTemplateModifiedFromPreset() const;
 
     SoftDialogTitleBar *m_titleBar;
+
     QLabel *m_nameLabel;
     QLineEdit *m_nameEdit;
-    QLabel *m_apiKeyLabel;
-    QLineEdit *m_apiKeyEdit;
-    QLabel *m_baseUrlLabel;
-    QLineEdit *m_baseUrlEdit;
-    QLabel *m_modelLabel;
-    QLineEdit *m_modelEdit;
+
+    QLabel *m_providerLabel;
+    QComboBox *m_providerCombo;
+
+    QLabel *m_formatLabel;
+    QComboBox *m_formatCombo;
+
+    QLabel *m_templateLabel;
+    QPlainTextEdit *m_templateEdit;
+
     QPushButton *m_okButton;
     QPushButton *m_cancelButton;
 
     QStringList m_existingNames;
     bool m_validateProfileName;
+    int m_lastProviderIndex;
+    bool m_updatingProviderCombo;
 };
 
 #endif // APICONFIGDIALOG_H
