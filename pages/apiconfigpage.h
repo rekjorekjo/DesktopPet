@@ -8,8 +8,12 @@
 #include <QScrollArea>
 #include <QWidget>
 
+#include <QPointer>
+
 #include "models/apiconfig.h"
 #include "widgets/softcardwidget.h"
+
+class ApiConfigDialog;
 
 class ApiConfigPage : public QWidget
 {
@@ -31,12 +35,14 @@ private:
     void refreshProfileList();
     QWidget *createProfileRowWidget(const QString &profileName);
     void updateCurrentProfileDisplay();
+    QIcon tintedIcon(const QString &path, const QColor &color) const;
 
 private slots:
     void onAddApiProfile();
     void onEditApiProfile(int row);
     void onRemoveApiProfile(int row);
     void onApiProfileSelectionChanged();
+    void onDialogSubmitted(const QString &profileName, const ApiConfig &config);
 
 private:
     QScrollArea *m_scrollArea;
@@ -53,6 +59,9 @@ private:
 
     QMap<QString, ApiConfig> m_apiConfigs;
     QString m_currentApiProfile;
+
+    QPointer<ApiConfigDialog> m_configDialog;
+    QString m_editingProfileName;
 };
 
 #endif // APICONFIGPAGE_H

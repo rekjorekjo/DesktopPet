@@ -116,6 +116,8 @@ qt_add_resources(DesktopPet "app_resources"
         resources/icons/app_icon.ico
         resources/icons/app_icon.png
         resources/icons/checkmark_white.svg
+        resources/icons/edit.svg
+        resources/icons/trash.svg
         resources/icons/combo_down_white.svg
         resources/icons/spin_up_white.svg
         resources/icons/spin_down_white.svg

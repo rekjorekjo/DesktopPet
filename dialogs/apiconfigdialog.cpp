@@ -24,7 +24,6 @@ ApiConfigDialog::ApiConfigDialog(QWidget *parent)
     , m_modelEdit(nullptr)
     , m_okButton(nullptr)
     , m_cancelButton(nullptr)
-    , m_accepted(false)
     , m_validateProfileName(false)
 {
     setupUi();
@@ -89,46 +88,7 @@ void ApiConfigDialog::setValidateProfileName(bool validate)
     m_validateProfileName = validate;
 }
 
-bool ApiConfigDialog::getNewProfile(QWidget *parent,
-                                    const QStringList &existingNames,
-                                    QString *outName,
-                                    ApiConfig *outConfig)
-{
-    ApiConfigDialog dialog(parent);
-    dialog.setTitle(QObject::tr("新增配置"));
-    dialog.setNameEditable(true);
-    dialog.setExistingNames(existingNames);
-    dialog.setValidateProfileName(true);
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return false;
-    }
-
-    if (outName) *outName = dialog.profileName();
-    if (outConfig) *outConfig = dialog.apiConfig();
-    return true;
-}
-
-bool ApiConfigDialog::editProfile(QWidget *parent,
-                                  const QString &profileName,
-                                  const ApiConfig &initialConfig,
-                                  ApiConfig *outConfig)
-{
-    ApiConfigDialog dialog(parent);
-    dialog.setTitle(QObject::tr("编辑配置 - %1").arg(profileName));
-    dialog.setProfileName(profileName);
-    dialog.setNameEditable(false);
-    dialog.setApiConfig(initialConfig);
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return false;
-    }
-
-    if (outConfig) *outConfig = dialog.apiConfig();
-    return true;
-}
-
-void ApiConfigDialog::onAccept()
+void ApiConfigDialog::onSubmit()
 {
     if (m_validateProfileName) {
         QString name = profileName();
@@ -146,13 +106,11 @@ void ApiConfigDialog::onAccept()
         }
     }
 
-    m_accepted = true;
-    accept();
+    emit submitted(profileName(), apiConfig());
 }
 
 void ApiConfigDialog::onReject()
 {
-    m_accepted = false;
     reject();
 }
 
@@ -162,6 +120,7 @@ void ApiConfigDialog::setupUi()
     ThemePalette p = theme.currentPalette();
 
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_DeleteOnClose, true);
     setAttribute(Qt::WA_StyledBackground, true);
     setAutoFillBackground(false);
     setStyleSheet(theme.dialogStyleSheet());
@@ -247,14 +206,14 @@ void ApiConfigDialog::setupUi()
     m_okButton->setStyleSheet(theme.softButtonStyleSheet(6, 48));
     m_okButton->setFixedWidth(80);
     m_okButton->setDefault(true);
-    connect(m_okButton, &QPushButton::clicked, this, &ApiConfigDialog::onAccept);
+    connect(m_okButton, &QPushButton::clicked, this, &ApiConfigDialog::onSubmit);
     buttonLayout->addWidget(m_okButton);
 
     cardLayout->addLayout(buttonLayout);
     mainLayout->addWidget(cardWidget);
 
-    connect(m_nameEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onAccept);
-    connect(m_apiKeyEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onAccept);
-    connect(m_baseUrlEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onAccept);
-    connect(m_modelEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onAccept);
+    connect(m_nameEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onSubmit);
+    connect(m_apiKeyEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onSubmit);
+    connect(m_baseUrlEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onSubmit);
+    connect(m_modelEdit, &QLineEdit::returnPressed, this, &ApiConfigDialog::onSubmit);
 }

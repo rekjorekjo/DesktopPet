@@ -7,6 +7,8 @@
 
 #include <QFont>
 #include <QHBoxLayout>
+#include <QPainter>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 
 ApiConfigPage::ApiConfigPage(QWidget *parent)
@@ -21,6 +23,7 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_apiProfileList(nullptr)
     , m_addApiProfileButton(nullptr)
     , m_emptyLabel(nullptr)
+    , m_configDialog(nullptr)
 {
     setAttribute(Qt::WA_StyledBackground, false);
     setAutoFillBackground(false);
@@ -184,17 +187,48 @@ void ApiConfigPage::updateCurrentProfileDisplay()
     }
 }
 
+QIcon ApiConfigPage::tintedIcon(const QString &path, const QColor &color) const
+{
+    const int sz = 20;
+    QIcon base(path);
+    QPixmap src = base.pixmap(QSize(sz, sz));
+    if (src.isNull()) return QIcon();
+
+    QPixmap tinted(sz, sz);
+    tinted.fill(Qt::transparent);
+
+    QPainter painter(&tinted);
+    painter.drawPixmap(0, 0, src);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(tinted.rect(), color);
+    painter.end();
+
+    return QIcon(tinted);
+}
+
 void ApiConfigPage::refreshProfileList()
 {
+    QSignalBlocker blocker(m_apiProfileList);
     m_apiProfileList->clear();
 
-    for (auto it = m_apiConfigs.constBegin(); it != m_apiConfigs.constEnd(); ++it) {
+    int targetRow = -1;
+    int row = 0;
+    for (auto it = m_apiConfigs.constBegin(); it != m_apiConfigs.constEnd(); ++it, ++row) {
         const QString &name = it.key();
 
         QListWidgetItem *item = new QListWidgetItem(m_apiProfileList);
-        item->setText(name);
-        item->setSizeHint(QSize(0, 64));
+        item->setText(QString());
+        item->setData(Qt::UserRole, name);
+        item->setSizeHint(QSize(0, 56));
         m_apiProfileList->setItemWidget(item, createProfileRowWidget(name));
+
+        if (name == m_currentApiProfile) {
+            targetRow = row;
+        }
+    }
+
+    if (targetRow >= 0) {
+        m_apiProfileList->setCurrentRow(targetRow);
     }
 
     updateEmptyState();
@@ -202,39 +236,65 @@ void ApiConfigPage::refreshProfileList()
 
 QWidget *ApiConfigPage::createProfileRowWidget(const QString &profileName)
 {
-    ThemeManager &theme = ThemeManager::instance();
-    ThemePalette p = theme.currentPalette();
-
+    ThemePalette p = ThemeManager::instance().currentPalette();
     const ApiConfig &config = m_apiConfigs[profileName];
-    bool isCurrent = (profileName == m_currentApiProfile);
 
     QWidget *rowWidget = new QWidget();
     rowWidget->setObjectName("profileRowWidget");
-    QVBoxLayout *rowLayout = new QVBoxLayout(rowWidget);
-    rowLayout->setContentsMargins(12, 6, 8, 6);
-    rowLayout->setSpacing(4);
 
-    // Top row: name + current marker + buttons
-    QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->setSpacing(8);
+    QHBoxLayout *layout = new QHBoxLayout(rowWidget);
+    layout->setContentsMargins(12, 0, 8, 0);
+    layout->setSpacing(12);
 
+    // Name
     QLabel *nameLabel = new QLabel(profileName, rowWidget);
-    nameLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 13px; font-weight: bold;")
-                                 .arg(p.textPrimary));
-    topLayout->addWidget(nameLabel, 1);
+    nameLabel->setMinimumWidth(120);
+    nameLabel->setStyleSheet(QString(
+        "color: %1; background: transparent; border: none; font-size: 14px; font-weight: bold;"
+    ).arg(p.textPrimary));
+    layout->addWidget(nameLabel);
 
-    if (isCurrent) {
-        QLabel *currentLabel = new QLabel(tr("当前"), rowWidget);
-        currentLabel->setStyleSheet(QString(
-            "color: %1; background: %2; border: none; font-size: 11px; font-weight: bold;"
-            "padding: 2px 8px; border-radius: 4px;"
-        ).arg(p.buttonPrimaryText, p.accent));
-        topLayout->addWidget(currentLabel);
-    }
+    // Model
+    QString modelText = config.model.isEmpty() ? QString() : config.model;
+    QLabel *modelLabel = new QLabel(modelText, rowWidget);
+    modelLabel->setStyleSheet(QString(
+        "color: %1; background: transparent; border: none; font-size: 12px;"
+    ).arg(p.textSecondary));
+    layout->addWidget(modelLabel, 1);
 
-    QPushButton *editBtn = new QPushButton(tr("编辑"), rowWidget);
-    editBtn->setStyleSheet(theme.softSecondaryButtonStyleSheet(4, 20));
-    editBtn->setFixedSize(52, 28);
+    // Icon buttons
+    auto makeIconButton = [&](const QIcon &icon, const QString &tooltip,
+                              const QString &hoverBg) -> QPushButton * {
+        QPushButton *btn = new QPushButton(rowWidget);
+        btn->setToolTip(tooltip);
+        btn->setFixedSize(36, 36);
+        btn->setIconSize(QSize(20, 20));
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setIcon(icon);
+        btn->setStyleSheet(QString(
+            "QPushButton {"
+            "  background: transparent;"
+            "  border: none;"
+            "  border-radius: 6px;"
+            "  padding: 0px;"
+            "}"
+            "QPushButton:hover {"
+            "  background-color: %1;"
+            "}"
+            "QPushButton:pressed {"
+            "  background-color: %2;"
+            "}"
+        ).arg(hoverBg, p.accentPressed));
+        return btn;
+    };
+
+    QString hoverBg = p.listHoverBg.isEmpty() ? p.secondaryHover : p.listHoverBg;
+    QString dangerHover = p.dangerHover.isEmpty() ? hoverBg : p.dangerHover;
+
+    QIcon editIcon = tintedIcon(":/icons/edit.svg", QColor(p.iconPrimary));
+    QIcon trashIcon = tintedIcon(":/icons/trash.svg", QColor(p.dangerText));
+
+    QPushButton *editBtn = makeIconButton(editIcon, tr("编辑"), hoverBg);
     connect(editBtn, &QPushButton::clicked, this, [this, rowWidget]() {
         for (int i = 0; i < m_apiProfileList->count(); ++i) {
             if (m_apiProfileList->itemWidget(m_apiProfileList->item(i)) == rowWidget) {
@@ -243,11 +303,9 @@ QWidget *ApiConfigPage::createProfileRowWidget(const QString &profileName)
             }
         }
     });
-    topLayout->addWidget(editBtn);
+    layout->addWidget(editBtn);
 
-    QPushButton *delBtn = new QPushButton(tr("删除"), rowWidget);
-    delBtn->setStyleSheet(theme.dangerButtonStyleSheet());
-    delBtn->setFixedSize(52, 28);
+    QPushButton *delBtn = makeIconButton(trashIcon, tr("删除"), dangerHover);
     connect(delBtn, &QPushButton::clicked, this, [this, rowWidget]() {
         for (int i = 0; i < m_apiProfileList->count(); ++i) {
             if (m_apiProfileList->itemWidget(m_apiProfileList->item(i)) == rowWidget) {
@@ -256,58 +314,37 @@ QWidget *ApiConfigPage::createProfileRowWidget(const QString &profileName)
             }
         }
     });
-    topLayout->addWidget(delBtn);
-
-    rowLayout->addLayout(topLayout);
-
-    // Bottom row: baseUrl + model
-    QHBoxLayout *bottomLayout = new QHBoxLayout();
-    bottomLayout->setSpacing(12);
-
-    QString urlText = config.baseUrl.isEmpty() ? tr("(未设置 Base URL)") : config.baseUrl;
-    QLabel *urlLabel = new QLabel(urlText, rowWidget);
-    urlLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 11px;")
-                                .arg(p.textSecondary));
-    urlLabel->setMaximumWidth(260);
-    urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    bottomLayout->addWidget(urlLabel, 1);
-
-    QString modelText = config.model.isEmpty() ? tr("(未设置 Model)") : config.model;
-    QLabel *modelLabel = new QLabel(modelText, rowWidget);
-    modelLabel->setStyleSheet(QString("color: %1; background: transparent; border: none; font-size: 11px;")
-                                  .arg(p.textSecondary));
-    bottomLayout->addWidget(modelLabel, 1);
-
-    rowLayout->addLayout(bottomLayout);
+    layout->addWidget(delBtn);
 
     return rowWidget;
 }
 
 void ApiConfigPage::onAddApiProfile()
 {
-    QString profileName;
-    ApiConfig config;
-
-    bool ok = ApiConfigDialog::getNewProfile(this,
-                                             m_apiConfigs.keys(),
-                                             &profileName,
-                                             &config);
-    if (!ok) {
+    if (m_configDialog) {
+        m_configDialog->raise();
+        m_configDialog->activateWindow();
         return;
     }
 
-    m_apiConfigs[profileName] = config;
-    m_currentApiProfile = profileName;
+    auto *dialog = new ApiConfigDialog(this);
+    dialog->setTitle(tr("新增配置"));
+    dialog->setNameEditable(true);
+    dialog->setExistingNames(m_apiConfigs.keys());
+    dialog->setValidateProfileName(true);
 
-    refreshProfileList();
-    updateCurrentProfileDisplay();
+    m_editingProfileName.clear();
+    m_configDialog = dialog;
 
-    for (int i = 0; i < m_apiProfileList->count(); ++i) {
-        if (m_apiProfileList->item(i)->text() == profileName) {
-            m_apiProfileList->setCurrentRow(i);
-            break;
-        }
-    }
+    connect(dialog, &ApiConfigDialog::submitted,
+            this, &ApiConfigPage::onDialogSubmitted);
+    connect(dialog, &QObject::destroyed, this, [this]() {
+        m_configDialog = nullptr;
+    });
+
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 void ApiConfigPage::onEditApiProfile(int row)
@@ -315,15 +352,55 @@ void ApiConfigPage::onEditApiProfile(int row)
     QListWidgetItem *item = m_apiProfileList->item(row);
     if (!item) return;
 
-    QString profileName = item->text();
+    QString profileName = item->data(Qt::UserRole).toString();
     if (!m_apiConfigs.contains(profileName)) return;
 
-    ApiConfig config;
-    bool ok = ApiConfigDialog::editProfile(this, profileName, m_apiConfigs.value(profileName), &config);
-    if (!ok) return;
+    if (m_configDialog) {
+        m_configDialog->raise();
+        m_configDialog->activateWindow();
+        return;
+    }
 
-    m_apiConfigs[profileName] = config;
+    auto *dialog = new ApiConfigDialog(this);
+    dialog->setTitle(tr("编辑配置 - %1").arg(profileName));
+    dialog->setProfileName(profileName);
+    dialog->setNameEditable(false);
+    dialog->setApiConfig(m_apiConfigs.value(profileName));
+
+    m_editingProfileName = profileName;
+    m_configDialog = dialog;
+
+    connect(dialog, &ApiConfigDialog::submitted,
+            this, &ApiConfigPage::onDialogSubmitted);
+    connect(dialog, &QObject::destroyed, this, [this]() {
+        m_configDialog = nullptr;
+    });
+
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
+
+void ApiConfigPage::onDialogSubmitted(const QString &profileName, const ApiConfig &config)
+{
+    if (!m_configDialog) return;
+
+    bool isEdit = !m_editingProfileName.isEmpty();
+    QString savedName = isEdit ? m_editingProfileName : profileName;
+
+    if (isEdit) {
+        m_apiConfigs[m_editingProfileName] = config;
+    } else {
+        m_apiConfigs[profileName] = config;
+        m_currentApiProfile = profileName;
+    }
+
+    m_configDialog->accept();
+    m_configDialog = nullptr;
+    m_editingProfileName.clear();
+
     refreshProfileList();
+    updateCurrentProfileDisplay();
 }
 
 void ApiConfigPage::onRemoveApiProfile(int row)
@@ -331,7 +408,7 @@ void ApiConfigPage::onRemoveApiProfile(int row)
     QListWidgetItem *item = m_apiProfileList->item(row);
     if (!item) return;
 
-    QString profileName = item->text();
+    QString profileName = item->data(Qt::UserRole).toString();
 
     bool yes = SoftMessageBox::question(this,
                                         tr("确认删除"),
@@ -351,15 +428,6 @@ void ApiConfigPage::onRemoveApiProfile(int row)
 
     refreshProfileList();
     updateCurrentProfileDisplay();
-
-    if (!m_currentApiProfile.isEmpty()) {
-        for (int i = 0; i < m_apiProfileList->count(); ++i) {
-            if (m_apiProfileList->item(i)->text() == m_currentApiProfile) {
-                m_apiProfileList->setCurrentRow(i);
-                break;
-            }
-        }
-    }
 }
 
 void ApiConfigPage::onApiProfileSelectionChanged()
@@ -369,7 +437,7 @@ void ApiConfigPage::onApiProfileSelectionChanged()
         return;
     }
 
-    QString profileName = currentItem->text();
+    QString profileName = currentItem->data(Qt::UserRole).toString();
     if (!m_apiConfigs.contains(profileName)) {
         return;
     }

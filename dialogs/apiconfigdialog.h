@@ -31,20 +31,11 @@ public:
     void setExistingNames(const QStringList &names);
     void setValidateProfileName(bool validate);
 
-    // New profile: name editable, validated in-dialog
-    static bool getNewProfile(QWidget *parent,
-                              const QStringList &existingNames,
-                              QString *outName,
-                              ApiConfig *outConfig);
-
-    // Edit profile: name read-only, pre-filled with initialConfig
-    static bool editProfile(QWidget *parent,
-                            const QString &profileName,
-                            const ApiConfig &initialConfig,
-                            ApiConfig *outConfig);
+signals:
+    void submitted(const QString &profileName, const ApiConfig &config);
 
 private slots:
-    void onAccept();
+    void onSubmit();
     void onReject();
 
 private:
@@ -61,7 +52,6 @@ private:
     QLineEdit *m_modelEdit;
     QPushButton *m_okButton;
     QPushButton *m_cancelButton;
-    bool m_accepted;
 
     QStringList m_existingNames;
     bool m_validateProfileName;
