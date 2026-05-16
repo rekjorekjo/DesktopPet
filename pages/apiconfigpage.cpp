@@ -3,6 +3,7 @@
 #include "core/appsettings.h"
 #include "dialogs/apiconfigdialog.h"
 #include "services/apiprofileservice.h"
+#include "services/chatsettingsservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
 
@@ -25,6 +26,11 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_addApiProfileButton(nullptr)
     , m_emptyLabel(nullptr)
     , m_configDialog(nullptr)
+    , m_chatSettingsCard(nullptr)
+    , m_chatSettingsTitleLabel(nullptr)
+    , m_systemPromptEdit(nullptr)
+    , m_resetPromptButton(nullptr)
+    , m_savePromptButton(nullptr)
 {
     setAttribute(Qt::WA_StyledBackground, false);
     setAutoFillBackground(false);
@@ -41,6 +47,10 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
 
     refreshProfileList();
     updateCurrentProfileDisplay();
+
+    // Load chat settings
+    ChatSettingsService::instance().load();
+    loadChatSettingsToUi();
 }
 
 ApiConfigPage::~ApiConfigPage() {}
@@ -70,7 +80,7 @@ void ApiConfigPage::setupUi()
     QHBoxLayout *headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(24);
 
-    m_titleLabel = new QLabel(tr("API配置"), m_contentWidget);
+    m_titleLabel = new QLabel(tr("聊天设置"), m_contentWidget);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -89,7 +99,7 @@ void ApiConfigPage::setupUi()
     statusLayout->setContentsMargins(24, 20, 24, 20);
     statusLayout->setSpacing(10);
 
-    m_currentApiProfileLabel = new QLabel(tr("当前配置：未选择"), m_statusCard);
+    m_currentApiProfileLabel = new QLabel(tr("当前API配置：未选择"), m_statusCard);
     QFont statusTitleFont = m_currentApiProfileLabel->font();
     statusTitleFont.setPointSize(12);
     statusTitleFont.setBold(true);
@@ -142,6 +152,8 @@ void ApiConfigPage::setupUi()
 
     contentLayout->addWidget(m_profilesCard, 1);
 
+    setupChatSettingsSection(contentLayout);
+
     m_scrollArea->setWidget(m_contentWidget);
     outerLayout->addWidget(m_scrollArea, 1);
 }
@@ -178,6 +190,44 @@ void ApiConfigPage::applyTheme()
     m_emptyLabel->setStyleSheet(QString(
         "color: %1; font-size: 13px; background: transparent; border: none; padding: 40px 0;"
     ).arg(p.textSecondary));
+
+    // Chat settings section
+    if (m_chatSettingsTitleLabel) {
+        m_chatSettingsTitleLabel->setStyleSheet(QString(
+            "color: %1; border: none; background: transparent;"
+        ).arg(p.subtitleText));
+    }
+    if (m_systemPromptEdit) {
+        QString scrollStyle = theme.scrollBarStyleSheet(false);
+        m_systemPromptEdit->setStyleSheet(QString(
+            "QPlainTextEdit {"
+            "  background-color: %1;"
+            "  color: %2;"
+            "  border: 1px solid %3;"
+            "  border-radius: 8px;"
+            "  padding: 10px;"
+            "  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;"
+            "  selection-background-color: %4;"
+            "}"
+            "QPlainTextEdit:hover {"
+            "  border-color: %5;"
+            "}"
+            "QPlainTextEdit:focus {"
+            "  border-color: %6;"
+            "}"
+        ).arg(p.inputBackground,
+              p.inputText,
+              p.inputBorder,
+              p.selectionBackground,
+              p.inputHoverBorder,
+              p.inputFocusBorder) + scrollStyle);
+    }
+    if (m_resetPromptButton) {
+        m_resetPromptButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    }
+    if (m_savePromptButton) {
+        m_savePromptButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    }
 }
 
 void ApiConfigPage::updateEmptyState()
@@ -192,9 +242,9 @@ void ApiConfigPage::updateCurrentProfileDisplay()
     ApiProfileService &svc = ApiProfileService::instance();
     QString current = svc.currentProfileName();
     if (current.isEmpty()) {
-        m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
+        m_currentApiProfileLabel->setText(tr("当前API配置：未选择"));
     } else {
-        m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(current));
+        m_currentApiProfileLabel->setText(tr("当前API配置：%1").arg(current));
     }
 }
 
@@ -422,7 +472,7 @@ void ApiConfigPage::onDialogSubmitted(const QString &profileName, const ApiConfi
             QString setError;
             if (!svc.setCurrentProfileName(profileName, &setError)) {
                 SoftMessageBox::warning(this, tr("新增配置"),
-                                        tr("配置已保存，但设置当前配置失败：\n%1").arg(setError));
+                                        tr("配置已保存，但设置当前API配置失败：\n%1").arg(setError));
             }
         }
     }
@@ -481,4 +531,124 @@ void ApiConfigPage::onApiProfileSelectionChanged()
 
     updateCurrentProfileDisplay();
     refreshProfileList();
+}
+
+// ── Chat settings section ──────────────────────────────────────────
+
+void ApiConfigPage::setupChatSettingsSection(QVBoxLayout *parentLayout)
+{
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+
+    m_chatSettingsCard = new SoftCardWidget(m_contentWidget);
+    m_chatSettingsCard->setObjectName("chatSettingsCard");
+    m_chatSettingsCard->setBackgroundOpacity(40);
+    QVBoxLayout *cardLayout = new QVBoxLayout(m_chatSettingsCard);
+    cardLayout->setContentsMargins(24, 24, 24, 24);
+    cardLayout->setSpacing(12);
+
+    // Title
+    m_chatSettingsTitleLabel = new QLabel(tr("对话设定"), m_chatSettingsCard);
+    QFont titleFont = m_chatSettingsTitleLabel->font();
+    titleFont.setPointSize(12);
+    titleFont.setBold(true);
+    m_chatSettingsTitleLabel->setFont(titleFont);
+    m_chatSettingsTitleLabel->setStyleSheet(QString(
+        "color: %1; border: none; background: transparent;"
+    ).arg(p.subtitleText));
+    cardLayout->addWidget(m_chatSettingsTitleLabel);
+
+    // System prompt editor
+    m_systemPromptEdit = new QPlainTextEdit(m_chatSettingsCard);
+    m_systemPromptEdit->setMinimumHeight(140);
+    m_systemPromptEdit->setMaximumHeight(240);
+    m_systemPromptEdit->setPlaceholderText(tr("输入系统提示词..."));
+    QString scrollStyle = theme.scrollBarStyleSheet(false);
+    m_systemPromptEdit->setStyleSheet(QString(
+        "QPlainTextEdit {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 8px;"
+        "  padding: 10px;"
+        "  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;"
+        "  selection-background-color: %4;"
+        "}"
+        "QPlainTextEdit:hover {"
+        "  border-color: %5;"
+        "}"
+        "QPlainTextEdit:focus {"
+        "  border-color: %6;"
+        "}"
+    ).arg(p.inputBackground,
+          p.inputText,
+          p.inputBorder,
+          p.selectionBackground,
+          p.inputHoverBorder,
+          p.inputFocusBorder) + scrollStyle);
+    cardLayout->addWidget(m_systemPromptEdit);
+
+    // Buttons
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(12);
+
+    m_resetPromptButton = new QPushButton(tr("恢复默认"), m_chatSettingsCard);
+    m_resetPromptButton->setMinimumHeight(32);
+    m_resetPromptButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    connect(m_resetPromptButton, &QPushButton::clicked,
+            this, &ApiConfigPage::resetSystemPromptToDefault);
+    buttonLayout->addWidget(m_resetPromptButton);
+
+    buttonLayout->addStretch();
+
+    m_savePromptButton = new QPushButton(tr("保存设定"), m_chatSettingsCard);
+    m_savePromptButton->setMinimumHeight(32);
+    m_savePromptButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    connect(m_savePromptButton, &QPushButton::clicked,
+            this, &ApiConfigPage::saveChatSettingsFromUi);
+    buttonLayout->addWidget(m_savePromptButton);
+
+    cardLayout->addLayout(buttonLayout);
+
+    parentLayout->addWidget(m_chatSettingsCard);
+}
+
+void ApiConfigPage::loadChatSettingsToUi()
+{
+    if (m_systemPromptEdit) {
+        m_systemPromptEdit->setPlainText(ChatSettingsService::instance().systemPrompt());
+    }
+}
+
+void ApiConfigPage::saveChatSettingsFromUi()
+{
+    QString prompt = m_systemPromptEdit->toPlainText().trimmed();
+    if (prompt.isEmpty()) {
+        prompt = ChatSettingsService::defaultSystemPrompt();
+        m_systemPromptEdit->setPlainText(prompt);
+        SoftMessageBox::information(this,
+                                    tr("保存设定"),
+                                    tr("系统提示词为空，已恢复默认。"));
+    }
+
+    ChatSettingsService::instance().setSystemPrompt(prompt);
+
+    QString error;
+    if (!ChatSettingsService::instance().save(&error)) {
+        SoftMessageBox::warning(this,
+                                tr("保存设定"),
+                                tr("保存失败：\n%1").arg(error));
+        return;
+    }
+
+    SoftMessageBox::information(this,
+                                tr("保存设定"),
+                                tr("对话设定已保存。"));
+}
+
+void ApiConfigPage::resetSystemPromptToDefault()
+{
+    if (m_systemPromptEdit) {
+        m_systemPromptEdit->setPlainText(ChatSettingsService::defaultSystemPrompt());
+    }
 }

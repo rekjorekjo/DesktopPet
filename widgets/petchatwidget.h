@@ -46,6 +46,7 @@ private:
     void showEmptyState();
     void hideEmptyState();
     void setWaitingState(bool waiting);
+    QString currentSystemPrompt() const;
 
 private slots:
     void onRequestFinished(const QString &requestId, const QString &content);

@@ -143,7 +143,7 @@ void SettingsWindow::setupSidebar()
     m_sidebar->setFocusPolicy(Qt::NoFocus);
     m_sidebar->addItem(tr("宠物管理"));
     m_sidebar->addItem(tr("动作设置"));
-    m_sidebar->addItem(tr("API配置"));
+    m_sidebar->addItem(tr("聊天设置"));
     m_sidebar->addItem(tr("日志"));
     m_sidebar->addItem(tr("个性化"));
     m_sidebar->addItem(tr("关于"));

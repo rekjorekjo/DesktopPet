@@ -5,8 +5,10 @@
 #include "ui/settingswindow.h"
 #include "services/actionimportservice.h"
 #include "services/apiprofileservice.h"
+#include "services/chatsettingsservice.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QIcon>
 
 int main(int argc, char *argv[])
@@ -22,6 +24,11 @@ int main(int argc, char *argv[])
     PetPaths::ensureDefaultStructure();
 
     ApiProfileService::instance().load();
+
+    QString chatSettingsError;
+    if (!ChatSettingsService::instance().load(&chatSettingsError)) {
+        qWarning() << "Failed to load chat settings:" << chatSettingsError;
+    }
 
     PetWidget pet;
     SettingsWindow settings;

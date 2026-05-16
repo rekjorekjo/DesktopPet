@@ -1,6 +1,7 @@
 #include "petchatwidget.h"
 
 #include "services/apiprofileservice.h"
+#include "services/chatsettingsservice.h"
 #include "theme/thememanager.h"
 #include "widgets/emptystatewidget.h"
 
@@ -9,9 +10,6 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QVBoxLayout>
-
-static const QString kSystemPrompt =
-    QStringLiteral("你是 DesktopPet 的桌面宠物助手。请用简洁、自然、友好的中文回复用户。");
 
 PetChatWidget::PetChatWidget(QWidget *parent)
     : QWidget(parent)
@@ -279,6 +277,15 @@ void PetChatWidget::clearMessages()
     showEmptyState();
 }
 
+QString PetChatWidget::currentSystemPrompt() const
+{
+    QString prompt = ChatSettingsService::instance().systemPrompt().trimmed();
+    if (prompt.isEmpty()) {
+        prompt = ChatSettingsService::defaultSystemPrompt();
+    }
+    return prompt;
+}
+
 void PetChatWidget::submitMessage()
 {
     QString content = m_inputEdit->toPlainText().trimmed();
@@ -320,28 +327,40 @@ void PetChatWidget::submitMessage()
     appendUserMessage(content);
     m_inputEdit->clear();
 
+    // Get current system prompt
+    const QString systemPrompt = currentSystemPrompt();
+
+    // Ensure system message is first in context
+    if (m_messages.isEmpty()) {
+        ChatCompletionService::Message sysMsg;
+        sysMsg.role = "system";
+        sysMsg.content = systemPrompt;
+        m_messages.append(sysMsg);
+    } else if (m_messages.first().role == "system") {
+        m_messages[0].content = systemPrompt;
+    }
+
     // Add user message to context
     ChatCompletionService::Message userMsg;
     userMsg.role = "user";
     userMsg.content = content;
     m_messages.append(userMsg);
 
-    // Trim context to keep last 12 messages + system prompt
-    while (m_messages.size() > 12) {
-        m_messages.removeFirst();
+    // Trim context: keep system message + last 12 normal messages
+    if (m_messages.size() > 13) {
+        QList<ChatCompletionService::Message> trimmed;
+        trimmed.append(m_messages.first()); // system message
+        // Keep last 12 normal messages
+        int start = m_messages.size() - 12;
+        for (int i = start; i < m_messages.size(); ++i) {
+            trimmed.append(m_messages.at(i));
+        }
+        m_messages = trimmed;
     }
-
-    // Build full message list with system prompt
-    QList<ChatCompletionService::Message> requestMessages;
-    ChatCompletionService::Message sysMsg;
-    sysMsg.role = "system";
-    sysMsg.content = kSystemPrompt;
-    requestMessages.append(sysMsg);
-    requestMessages.append(m_messages);
 
     m_requestPending = true;
     setWaitingState(true);
-    m_pendingRequestId = m_chatService->sendChatCompletion(config, requestMessages);
+    m_pendingRequestId = m_chatService->sendChatCompletion(config, m_messages);
 
     emit messageSubmitted(content);
 }

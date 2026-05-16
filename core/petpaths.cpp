@@ -90,6 +90,11 @@ QString PetPaths::apiProfilesFilePath()
     return configDir() + "/api_profiles.json";
 }
 
+QString PetPaths::chatSettingsFilePath()
+{
+    return configDir() + "/chat_settings.json";
+}
+
 bool PetPaths::ensureDefaultStructure()
 {
     QDir rootDir(rootDirectory());

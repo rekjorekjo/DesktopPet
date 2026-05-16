@@ -3,6 +3,7 @@
 
 #include <QLabel>
 #include <QListWidget>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QWidget>
@@ -13,6 +14,7 @@
 #include "widgets/softcardwidget.h"
 
 class ApiConfigDialog;
+class QVBoxLayout;
 
 class ApiConfigPage : public QWidget
 {
@@ -36,6 +38,11 @@ private:
     void updateCurrentProfileDisplay();
     QIcon tintedIcon(const QString &path, const QColor &color) const;
 
+    void setupChatSettingsSection(QVBoxLayout *parentLayout);
+    void loadChatSettingsToUi();
+    void saveChatSettingsFromUi();
+    void resetSystemPromptToDefault();
+
 private slots:
     void onAddApiProfile();
     void onEditApiProfile(int row);
@@ -58,6 +65,12 @@ private:
 
     QPointer<ApiConfigDialog> m_configDialog;
     QString m_editingProfileName;
+
+    SoftCardWidget *m_chatSettingsCard;
+    QLabel *m_chatSettingsTitleLabel;
+    QPlainTextEdit *m_systemPromptEdit;
+    QPushButton *m_resetPromptButton;
+    QPushButton *m_savePromptButton;
 };
 
 #endif // APICONFIGPAGE_H
