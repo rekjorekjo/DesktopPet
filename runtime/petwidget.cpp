@@ -4,6 +4,7 @@
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 #include "services/actionlibraryindexservice.h"
+#include "services/apiprofileservice.h"
 #include "services/petlibraryindexservice.h"
 #include "theme/thememanager.h"
 #include "widgets/petchatwidget.h"
@@ -1315,7 +1316,15 @@ void PetWidget::showChatWidget()
     }
 
     m_chatWidget->setPetName(m_petInfo.name);
-    m_chatWidget->setApiConfigName(AppSettings::currentApiConfigName());
+
+    ApiConfig cfg;
+    ApiProfileService &svc = ApiProfileService::instance();
+    if (svc.currentProfile(&cfg)) {
+        m_chatWidget->setApiInfo(svc.currentProfileName(), cfg.model);
+    } else {
+        m_chatWidget->setApiInfo(QString(), QString());
+    }
+
     m_chatWidget->applyTheme();
 
     updateChatWidgetGeometry();

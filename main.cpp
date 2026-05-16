@@ -4,6 +4,7 @@
 #include "runtime/traymanager.h"
 #include "ui/settingswindow.h"
 #include "services/actionimportservice.h"
+#include "services/apiprofileservice.h"
 
 #include <QApplication>
 #include <QIcon>
@@ -19,6 +20,8 @@ int main(int argc, char *argv[])
     QApplication::setWindowIcon(appIcon);
 
     PetPaths::ensureDefaultStructure();
+
+    ApiProfileService::instance().load();
 
     PetWidget pet;
     SettingsWindow settings;

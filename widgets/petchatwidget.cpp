@@ -1,5 +1,6 @@
 #include "petchatwidget.h"
 
+#include "services/apiprofileservice.h"
 #include "theme/thememanager.h"
 #include "widgets/emptystatewidget.h"
 
@@ -9,6 +10,9 @@
 #include <QPainterPath>
 #include <QVBoxLayout>
 
+static const QString kSystemPrompt =
+    QStringLiteral("你是 DesktopPet 的桌面宠物助手。请用简洁、自然、友好的中文回复用户。");
+
 PetChatWidget::PetChatWidget(QWidget *parent)
     : QWidget(parent)
     , m_messageStack(nullptr)
@@ -16,7 +20,14 @@ PetChatWidget::PetChatWidget(QWidget *parent)
     , m_messageDisplay(nullptr)
     , m_inputEdit(nullptr)
     , m_hasMessages(false)
+    , m_chatService(new ChatCompletionService(this))
+    , m_requestPending(false)
 {
+    connect(m_chatService, &ChatCompletionService::requestFinished,
+            this, &PetChatWidget::onRequestFinished);
+    connect(m_chatService, &ChatCompletionService::requestFailed,
+            this, &PetChatWidget::onRequestFailed);
+
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground, true);
     setAttribute(Qt::WA_ShowWithoutActivating, false);
@@ -246,6 +257,8 @@ void PetChatWidget::appendAiMessage(const QString &content)
 
 void PetChatWidget::appendSystemMessage(const QString &content)
 {
+    hideEmptyState();
+
     QString currentText = m_messageDisplay->toPlainText();
     QString newMessage = tr("\n系统：\n%1\n").arg(content);
     m_messageDisplay->setPlainText(currentText + newMessage);
@@ -259,6 +272,10 @@ void PetChatWidget::clearMessages()
 {
     m_hasMessages = false;
     m_messageDisplay->clear();
+    m_messages.clear();
+    m_pendingRequestId.clear();
+    m_requestPending = false;
+    setWaitingState(false);
     showEmptyState();
 }
 
@@ -269,10 +286,100 @@ void PetChatWidget::submitMessage()
         return;
     }
 
+    if (m_requestPending) {
+        appendSystemMessage(tr("请等待当前回复完成..."));
+        return;
+    }
+
+    // Get current API config
+    ApiConfig config;
+    ApiProfileService &svc = ApiProfileService::instance();
+    if (!svc.currentProfile(&config)) {
+        appendSystemMessage(tr("请先在设置中配置 API。"));
+        return;
+    }
+
+    if (config.apiFormat != ApiFormat::OpenAICompatible) {
+        appendSystemMessage(tr("当前仅支持 OpenAI 兼容格式的 API。"));
+        return;
+    }
+
+    if (config.apiKey.trimmed().isEmpty()) {
+        appendSystemMessage(tr("API 配置不完整：缺少 API_KEY。"));
+        return;
+    }
+    if (config.baseUrl.trimmed().isEmpty()) {
+        appendSystemMessage(tr("API 配置不完整：缺少 BASE_URL。"));
+        return;
+    }
+    if (config.model.trimmed().isEmpty()) {
+        appendSystemMessage(tr("API 配置不完整：缺少 MODEL。"));
+        return;
+    }
+
     appendUserMessage(content);
     m_inputEdit->clear();
 
-    appendSystemMessage(tr("对话回复将在后续版本接入。"));
+    // Add user message to context
+    ChatCompletionService::Message userMsg;
+    userMsg.role = "user";
+    userMsg.content = content;
+    m_messages.append(userMsg);
+
+    // Trim context to keep last 12 messages + system prompt
+    while (m_messages.size() > 12) {
+        m_messages.removeFirst();
+    }
+
+    // Build full message list with system prompt
+    QList<ChatCompletionService::Message> requestMessages;
+    ChatCompletionService::Message sysMsg;
+    sysMsg.role = "system";
+    sysMsg.content = kSystemPrompt;
+    requestMessages.append(sysMsg);
+    requestMessages.append(m_messages);
+
+    m_requestPending = true;
+    setWaitingState(true);
+    m_pendingRequestId = m_chatService->sendChatCompletion(config, requestMessages);
 
     emit messageSubmitted(content);
+}
+
+void PetChatWidget::setWaitingState(bool waiting)
+{
+    m_inputEdit->setEnabled(!waiting);
+    if (waiting) {
+        m_inputEdit->setPlaceholderText(tr("正在等待回复..."));
+    } else {
+        m_inputEdit->setPlaceholderText(tr("输入消息，按 Enter 发送，Shift+Enter 换行..."));
+    }
+}
+
+void PetChatWidget::onRequestFinished(const QString &requestId, const QString &content)
+{
+    if (requestId != m_pendingRequestId) return;
+
+    m_pendingRequestId.clear();
+    m_requestPending = false;
+    setWaitingState(false);
+
+    // Add assistant message to context
+    ChatCompletionService::Message assistantMsg;
+    assistantMsg.role = "assistant";
+    assistantMsg.content = content;
+    m_messages.append(assistantMsg);
+
+    appendAiMessage(content);
+}
+
+void PetChatWidget::onRequestFailed(const QString &requestId, const QString &errorMessage)
+{
+    if (requestId != m_pendingRequestId) return;
+
+    m_pendingRequestId.clear();
+    m_requestPending = false;
+    setWaitingState(false);
+
+    appendSystemMessage(tr("请求失败：%1").arg(errorMessage));
 }

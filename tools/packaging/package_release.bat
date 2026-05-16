@@ -9,7 +9,7 @@ rem ============================================================
 
 rem === Version Configuration ===
 set "APP_NAME=DesktopPet"
-set "APP_VERSION=0.30.2"
+set "APP_VERSION=0.30.3"
 set "RELEASE_DIR_NAME=%APP_NAME%-v%APP_VERSION%-release"
 set "ZIP_NAME=%APP_NAME%-v%APP_VERSION%-release.zip"
 

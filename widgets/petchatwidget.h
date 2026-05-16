@@ -1,6 +1,9 @@
 #ifndef PETCHATWIDGET_H
 #define PETCHATWIDGET_H
 
+#include "services/chatcompletionservice.h"
+
+#include <QList>
 #include <QPlainTextEdit>
 #include <QStackedWidget>
 #include <QWidget>
@@ -42,7 +45,13 @@ private:
     void submitMessage();
     void showEmptyState();
     void hideEmptyState();
+    void setWaitingState(bool waiting);
 
+private slots:
+    void onRequestFinished(const QString &requestId, const QString &content);
+    void onRequestFailed(const QString &requestId, const QString &errorMessage);
+
+private:
     QStackedWidget *m_messageStack;
     EmptyStateWidget *m_emptyState;
     QPlainTextEdit *m_messageDisplay;
@@ -52,6 +61,11 @@ private:
     QString m_apiConfigName;
     QString m_model;
     bool m_hasMessages;
+
+    ChatCompletionService *m_chatService;
+    QList<ChatCompletionService::Message> m_messages;
+    QString m_pendingRequestId;
+    bool m_requestPending;
 };
 
 #endif // PETCHATWIDGET_H
