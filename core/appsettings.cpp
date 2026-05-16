@@ -11,7 +11,7 @@
 QString AppSettings::currentPetId()
 {
     QSettings settings("DesktopPet", "DesktopPet");
-    return settings.value("pet/currentPetId", "default_pet").toString();
+    return settings.value("pet/currentPetId", "").toString();
 }
 
 void AppSettings::setCurrentPetId(const QString &petId)

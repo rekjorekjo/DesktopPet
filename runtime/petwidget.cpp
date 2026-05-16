@@ -238,6 +238,8 @@ bool PetWidget::loadPet(const QString &petDirPath)
 {
     loadGlobalActionLibrary();
 
+    PetLibraryIndexService::ensureValidCurrentPetId();
+
     QString currentPetId = AppSettings::currentPetId();
     QString currentPetDir = PetPaths::petDirectory(currentPetId);
 

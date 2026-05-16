@@ -114,6 +114,8 @@ bool PetPaths::ensureDefaultStructure()
         qWarning() << "Failed to ensure pet library index, but continuing...";
     }
 
+    PetLibraryIndexService::ensureValidCurrentPetId();
+
     if (!ActionLibraryIndexService::ensureLibrary()) {
         qWarning() << "Failed to ensure action library index, but continuing...";
     }

@@ -50,6 +50,10 @@ public:
 
     static QString findFirstEnabledPetId(const QString &excludePetId = QString());
 
+    // 确保 currentPetId 指向 petlibrary.json 中存在的宠物
+    // 如果 currentPetId 为空或无效，自动修正为第一个有效宠物
+    static QString ensureValidCurrentPetId();
+
 private:
     static QList<PetLibraryEntry> scanExistingPets();
 };

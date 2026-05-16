@@ -4,14 +4,14 @@ setlocal enabledelayedexpansion
 rem ============================================================
 rem  DesktopPet Release Package Script
 rem ============================================================
-rem  Output: DesktopPetvX.Y.Zrelease.zip
+rem  Output: DesktopPet-vX.Y.Z-release.zip
 rem ============================================================
 
 rem === Version Configuration ===
 set "APP_NAME=DesktopPet"
-set "APP_VERSION=0.29.9"
-set "RELEASE_DIR_NAME=%APP_NAME%v%APP_VERSION%release"
-set "ZIP_NAME=%APP_NAME%v%APP_VERSION%release.zip"
+set "APP_VERSION=0.29.10"
+set "RELEASE_DIR_NAME=%APP_NAME%-v%APP_VERSION%-release"
+set "ZIP_NAME=%APP_NAME%-v%APP_VERSION%-release.zip"
 
 rem === Path Configuration ===
 set "SCRIPT_DIR=%~dp0"

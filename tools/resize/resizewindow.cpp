@@ -762,8 +762,19 @@ QString ResizeWindow::buildStyleSheet(const ResizeToolTheme &t) const
             border-color: %6;
         }
         QRadioButton::indicator:checked {
-            background-color: %16;
-            border: 5px solid %11;
+            background-color: %6;
+            border: 2px solid %6;
+        }
+        QRadioButton:disabled {
+            color: %4;
+        }
+        QRadioButton::indicator:unchecked:disabled {
+            background-color: %14;
+            border: 2px solid %5;
+        }
+        QRadioButton::indicator:checked:disabled {
+            background-color: %5;
+            border: 2px solid %5;
         }
 
         /* QTextEdit (log) */

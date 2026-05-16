@@ -429,6 +429,8 @@ void PetManagePage::refreshPetList()
 {
     m_petListWidget->clear();
 
+    PetLibraryIndexService::ensureValidCurrentPetId();
+
     QString currentPetId = AppSettings::currentPetId();
 
     PetLibraryIndexService::ensureLibrary();

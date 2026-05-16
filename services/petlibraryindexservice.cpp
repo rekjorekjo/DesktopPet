@@ -1,5 +1,6 @@
 #include "petlibraryindexservice.h"
 
+#include "core/appsettings.h"
 #include "core/petconfigmanager.h"
 #include "core/petpaths.h"
 
@@ -258,6 +259,32 @@ QString PetLibraryIndexService::findFirstEnabledPetId(const QString &excludePetI
         return entry.id;
     }
 
+    return QString();
+}
+
+QString PetLibraryIndexService::ensureValidCurrentPetId()
+{
+    ensureLibrary();
+
+    QString currentPetId = AppSettings::currentPetId();
+
+    QList<PetLibraryEntry> entries = loadEntries();
+
+    if (!currentPetId.isEmpty()) {
+        for (const PetLibraryEntry &entry : entries) {
+            if (entry.id == currentPetId) {
+                return currentPetId;
+            }
+        }
+    }
+
+    if (!entries.isEmpty()) {
+        QString firstId = entries.first().id;
+        AppSettings::setCurrentPetId(firstId);
+        return firstId;
+    }
+
+    AppSettings::setCurrentPetId("");
     return QString();
 }
 
