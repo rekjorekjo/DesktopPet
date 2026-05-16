@@ -22,6 +22,9 @@ public:
 
     static QString resolveActionDirectory(const PetAction &action);
 
+    static QString configDir();
+    static QString apiProfilesFilePath();
+
     static bool ensureDefaultStructure();
 
 private:

@@ -2,6 +2,7 @@
 
 #include "core/appsettings.h"
 #include "dialogs/apiconfigdialog.h"
+#include "services/apiprofileservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
 
@@ -29,6 +30,17 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     setAutoFillBackground(false);
     setupUi();
     connectSignals();
+
+    // Load persisted profiles
+    QString loadError;
+    if (!ApiProfileService::instance().load(&loadError)) {
+        SoftMessageBox::warning(this,
+                                tr("加载配置"),
+                                tr("加载 API 配置失败：\n%1").arg(loadError));
+    }
+
+    refreshProfileList();
+    updateCurrentProfileDisplay();
 }
 
 ApiConfigPage::~ApiConfigPage() {}
@@ -170,20 +182,19 @@ void ApiConfigPage::applyTheme()
 
 void ApiConfigPage::updateEmptyState()
 {
-    bool empty = m_apiConfigs.isEmpty();
+    bool empty = ApiProfileService::instance().isEmpty();
     m_emptyLabel->setVisible(empty);
     m_apiProfileList->setVisible(!empty);
 }
 
 void ApiConfigPage::updateCurrentProfileDisplay()
 {
-    if (m_currentApiProfile.isEmpty() || !m_apiConfigs.contains(m_currentApiProfile)) {
-        m_currentApiProfile.clear();
+    ApiProfileService &svc = ApiProfileService::instance();
+    QString current = svc.currentProfileName();
+    if (current.isEmpty()) {
         m_currentApiProfileLabel->setText(tr("当前配置：未选择"));
-        AppSettings::setCurrentApiConfigName("");
     } else {
-        m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(m_currentApiProfile));
-        AppSettings::setCurrentApiConfigName(m_currentApiProfile);
+        m_currentApiProfileLabel->setText(tr("当前配置：%1").arg(current));
     }
 }
 
@@ -208,23 +219,27 @@ QIcon ApiConfigPage::tintedIcon(const QString &path, const QColor &color) const
 
 void ApiConfigPage::refreshProfileList()
 {
+    ApiProfileService &svc = ApiProfileService::instance();
+
     QSignalBlocker blocker(m_apiProfileList);
     m_apiProfileList->clear();
 
+    const QStringList names = svc.profileNames();
+    QString currentName = svc.currentProfileName();
+
     int targetRow = -1;
     int row = 0;
-    for (auto it = m_apiConfigs.constBegin(); it != m_apiConfigs.constEnd(); ++it, ++row) {
-        const QString &name = it.key();
-
+    for (const QString &name : names) {
         QListWidgetItem *item = new QListWidgetItem(m_apiProfileList);
         item->setText(QString());
         item->setData(Qt::UserRole, name);
         item->setSizeHint(QSize(0, 56));
         m_apiProfileList->setItemWidget(item, createProfileRowWidget(name));
 
-        if (name == m_currentApiProfile) {
+        if (name == currentName) {
             targetRow = row;
         }
+        ++row;
     }
 
     if (targetRow >= 0) {
@@ -237,7 +252,9 @@ void ApiConfigPage::refreshProfileList()
 QWidget *ApiConfigPage::createProfileRowWidget(const QString &profileName)
 {
     ThemePalette p = ThemeManager::instance().currentPalette();
-    const ApiConfig &config = m_apiConfigs[profileName];
+
+    ApiConfig config;
+    ApiProfileService::instance().profile(profileName, &config);
 
     QWidget *rowWidget = new QWidget();
     rowWidget->setObjectName("profileRowWidget");
@@ -330,7 +347,7 @@ void ApiConfigPage::onAddApiProfile()
     auto *dialog = new ApiConfigDialog(this);
     dialog->setTitle(tr("新增配置"));
     dialog->setNameEditable(true);
-    dialog->setExistingNames(m_apiConfigs.keys());
+    dialog->setExistingNames(ApiProfileService::instance().profileNames());
     dialog->setValidateProfileName(true);
 
     m_editingProfileName.clear();
@@ -353,7 +370,9 @@ void ApiConfigPage::onEditApiProfile(int row)
     if (!item) return;
 
     QString profileName = item->data(Qt::UserRole).toString();
-    if (!m_apiConfigs.contains(profileName)) return;
+
+    ApiConfig config;
+    if (!ApiProfileService::instance().profile(profileName, &config)) return;
 
     if (m_configDialog) {
         m_configDialog->raise();
@@ -364,8 +383,13 @@ void ApiConfigPage::onEditApiProfile(int row)
     auto *dialog = new ApiConfigDialog(this);
     dialog->setTitle(tr("编辑配置 - %1").arg(profileName));
     dialog->setProfileName(profileName);
-    dialog->setNameEditable(false);
-    dialog->setApiConfig(m_apiConfigs.value(profileName));
+    dialog->setNameEditable(true);
+    dialog->setApiConfig(config);
+
+    QStringList existingNames = ApiProfileService::instance().profileNames();
+    existingNames.removeAll(profileName);
+    dialog->setExistingNames(existingNames);
+    dialog->setValidateProfileName(true);
 
     m_editingProfileName = profileName;
     m_configDialog = dialog;
@@ -385,14 +409,29 @@ void ApiConfigPage::onDialogSubmitted(const QString &profileName, const ApiConfi
 {
     if (!m_configDialog) return;
 
+    ApiProfileService &svc = ApiProfileService::instance();
     bool isEdit = !m_editingProfileName.isEmpty();
-    QString savedName = isEdit ? m_editingProfileName : profileName;
+    QString error;
 
+    bool ok;
     if (isEdit) {
-        m_apiConfigs[m_editingProfileName] = config;
+        ok = svc.updateProfile(m_editingProfileName, profileName, config, &error);
     } else {
-        m_apiConfigs[profileName] = config;
-        m_currentApiProfile = profileName;
+        ok = svc.addProfile(profileName, config, &error);
+        if (ok) {
+            QString setError;
+            if (!svc.setCurrentProfileName(profileName, &setError)) {
+                SoftMessageBox::warning(this, tr("新增配置"),
+                                        tr("配置已保存，但设置当前配置失败：\n%1").arg(setError));
+            }
+        }
+    }
+
+    if (!ok) {
+        SoftMessageBox::warning(this,
+                                isEdit ? tr("编辑配置") : tr("新增配置"),
+                                error);
+        return;
     }
 
     m_configDialog->accept();
@@ -416,14 +455,10 @@ void ApiConfigPage::onRemoveApiProfile(int row)
                == SoftMessageBox::Yes;
     if (!yes) return;
 
-    m_apiConfigs.remove(profileName);
-
-    if (m_currentApiProfile == profileName) {
-        if (!m_apiConfigs.isEmpty()) {
-            m_currentApiProfile = m_apiConfigs.constBegin().key();
-        } else {
-            m_currentApiProfile.clear();
-        }
+    QString error;
+    if (!ApiProfileService::instance().removeProfile(profileName, &error)) {
+        SoftMessageBox::warning(this, tr("删除配置"), error);
+        return;
     }
 
     refreshProfileList();
@@ -438,11 +473,12 @@ void ApiConfigPage::onApiProfileSelectionChanged()
     }
 
     QString profileName = currentItem->data(Qt::UserRole).toString();
-    if (!m_apiConfigs.contains(profileName)) {
+
+    QString error;
+    if (!ApiProfileService::instance().setCurrentProfileName(profileName, &error)) {
         return;
     }
 
-    m_currentApiProfile = profileName;
     updateCurrentProfileDisplay();
     refreshProfileList();
 }

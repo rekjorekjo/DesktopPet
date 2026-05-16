@@ -3,7 +3,6 @@
 
 #include <QLabel>
 #include <QListWidget>
-#include <QMap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QWidget>
@@ -56,9 +55,6 @@ private:
     QListWidget *m_apiProfileList;
     QPushButton *m_addApiProfileButton;
     QLabel *m_emptyLabel;
-
-    QMap<QString, ApiConfig> m_apiConfigs;
-    QString m_currentApiProfile;
 
     QPointer<ApiConfigDialog> m_configDialog;
     QString m_editingProfileName;

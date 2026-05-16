@@ -80,6 +80,16 @@ QString PetPaths::resolveActionDirectory(const PetAction &action)
     return actionsDirectory() + "/" + action.folderPath;
 }
 
+QString PetPaths::configDir()
+{
+    return rootDirectory() + "/config";
+}
+
+QString PetPaths::apiProfilesFilePath()
+{
+    return configDir() + "/api_profiles.json";
+}
+
 bool PetPaths::ensureDefaultStructure()
 {
     QDir rootDir(rootDirectory());
@@ -102,6 +112,14 @@ bool PetPaths::ensureDefaultStructure()
     if (!petsDir.exists()) {
         if (!petsDir.mkpath(".")) {
             qWarning() << "Failed to create pets directory:" << petsDirectory();
+            return false;
+        }
+    }
+
+    QDir cfgDir(configDir());
+    if (!cfgDir.exists()) {
+        if (!cfgDir.mkpath(".")) {
+            qWarning() << "Failed to create config directory:" << configDir();
             return false;
         }
     }
