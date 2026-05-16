@@ -128,11 +128,9 @@ void EmptyStateWidget::paintEvent(QPaintEvent *event)
     path.addRoundedRect(rect(), borderRadius, borderRadius);
 
     QColor bgColor(p.inputBackground);
-    bgColor.setAlpha(180);
     painter.fillPath(path, bgColor);
 
     QColor borderColor(p.border);
-    borderColor.setAlpha(100);
     QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);

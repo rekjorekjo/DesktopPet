@@ -169,6 +169,7 @@ public:
     QString dangerButtonStyleSheet() const;
     QString lineEditStyleSheet() const;
     QString scrollAreaStyleSheet() const;
+    QString scrollBarStyleSheet(bool transparentTrack = false) const;
     QString pageStyleSheet() const;
     QString titleLabelStyleSheet() const;
     QString comboBoxStyleSheet() const;

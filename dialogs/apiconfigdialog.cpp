@@ -383,7 +383,7 @@ void ApiConfigDialog::setupUi()
           p.inputBorder,
           p.selectionBackground,
           p.inputHoverBorder,
-          p.inputFocusBorder));
+          p.inputFocusBorder) + theme.scrollBarStyleSheet(false));
 
     cardLayout->addWidget(m_templateEdit, 1);
 

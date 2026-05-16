@@ -768,20 +768,62 @@ QString ThemeManager::lineEditStyleSheet() const
           p.inputFocusBorder, p.placeholderText, p.selectionBackground);
 }
 
+QString ThemeManager::scrollBarStyleSheet(bool transparentTrack) const
+{
+    ThemePalette p = currentPalette();
+    const QString track = transparentTrack ? QStringLiteral("transparent") : p.scrollTrack;
+
+    return QString(
+        "QScrollBar:vertical {"
+        "  width: 10px;"
+        "  background: %1;"
+        "  margin: 0px;"
+        "}"
+        "QScrollBar::handle:vertical {"
+        "  background: %2;"
+        "  border-radius: 5px;"
+        "  min-height: 20px;"
+        "}"
+        "QScrollBar::handle:vertical:hover {"
+        "  background: %3;"
+        "}"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+        "  height: 0px;"
+        "  background: transparent;"
+        "  border: none;"
+        "}"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+        "  background: transparent;"
+        "}"
+        "QScrollBar:horizontal {"
+        "  height: 10px;"
+        "  background: %1;"
+        "  margin: 0px;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "  background: %2;"
+        "  border-radius: 5px;"
+        "  min-width: 20px;"
+        "}"
+        "QScrollBar::handle:horizontal:hover {"
+        "  background: %3;"
+        "}"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+        "  width: 0px;"
+        "  background: transparent;"
+        "  border: none;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "  background: transparent;"
+        "}"
+    ).arg(track, p.scrollHandle, p.scrollHandleHover);
+}
+
 QString ThemeManager::scrollAreaStyleSheet() const
 {
     ThemePalette p = currentPalette();
-    return QString(
-        "QScrollArea { background-color: %1; border: none; }"
-        "QScrollBar:vertical { width: 10px; background: %2; }"
-        "QScrollBar::handle:vertical { background: %3; border-radius: 5px; min-height: 20px; }"
-        "QScrollBar::handle:vertical:hover { background: %4; }"
-        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
-        "QScrollBar:horizontal { height: 10px; background: %2; }"
-        "QScrollBar::handle:horizontal { background: %3; border-radius: 5px; min-width: 20px; }"
-        "QScrollBar::handle:horizontal:hover { background: %4; }"
-        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }"
-    ).arg(p.pageBackground, p.scrollTrack, p.scrollHandle, p.scrollHandleHover);
+    return QString("QScrollArea { background-color: %1; border: none; }")
+        .arg(p.pageBackground) + scrollBarStyleSheet(false);
 }
 
 QString ThemeManager::pageStyleSheet() const
@@ -1313,18 +1355,8 @@ QString ThemeManager::softPageStyleSheet() const
 
 QString ThemeManager::softScrollAreaStyleSheet() const
 {
-    ThemePalette p = currentPalette();
-    return QString(
-        "QScrollArea { background-color: transparent; border: none; }"
-        "QScrollBar:vertical { width: 10px; background: transparent; }"
-        "QScrollBar::handle:vertical { background: %1; border-radius: 5px; min-height: 20px; }"
-        "QScrollBar::handle:vertical:hover { background: %2; }"
-        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
-        "QScrollBar:horizontal { height: 10px; background: transparent; }"
-        "QScrollBar::handle:horizontal { background: %1; border-radius: 5px; min-width: 20px; }"
-        "QScrollBar::handle:horizontal:hover { background: %2; }"
-        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }"
-    ).arg(p.scrollHandle, p.scrollHandleHover);
+    return QStringLiteral("QScrollArea { background-color: transparent; border: none; }")
+        + scrollBarStyleSheet(true);
 }
 
 QString ThemeManager::softTitleLabelStyleSheet() const

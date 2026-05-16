@@ -3,6 +3,7 @@
 #include "theme/thememanager.h"
 #include "widgets/emptystatewidget.h"
 
+#include <QFrame>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -36,6 +37,8 @@ void PetChatWidget::setupUi()
     mainLayout->setSpacing(8);
 
     m_messageStack = new QStackedWidget(this);
+    m_messageStack->setAttribute(Qt::WA_StyledBackground, true);
+    m_messageStack->setStyleSheet("background: transparent; border: none;");
 
     m_emptyState = new EmptyStateWidget(m_messageStack);
     m_emptyState->setTitle(tr("对话"));
@@ -43,6 +46,7 @@ void PetChatWidget::setupUi()
 
     m_messageDisplay = new QPlainTextEdit(m_messageStack);
     m_messageDisplay->setReadOnly(true);
+    m_messageDisplay->setFrameShape(QFrame::NoFrame);
     m_messageDisplay->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_messageDisplay->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_messageDisplay->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -52,6 +56,7 @@ void PetChatWidget::setupUi()
     mainLayout->addWidget(m_messageStack, 1);
 
     m_inputEdit = new QPlainTextEdit(this);
+    m_inputEdit->setFrameShape(QFrame::NoFrame);
     m_inputEdit->setMinimumHeight(48);
     m_inputEdit->setMaximumHeight(80);
     m_inputEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -69,23 +74,54 @@ void PetChatWidget::applyTheme()
     ThemeManager &theme = ThemeManager::instance();
     ThemePalette p = theme.currentPalette();
 
+    QString scrollStyle = theme.scrollBarStyleSheet(false);
+
     QString inputStyle = QString(
-        "QPlainTextEdit { background: %1; color: %2; border: 1px solid %3; "
-        "border-radius: 8px; padding: 10px; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }"
-        "QPlainTextEdit:focus { border: 1px solid %4; }"
-    ).arg(p.inputBackground, p.textPrimary, p.border, p.accent);
+        "QPlainTextEdit {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 8px;"
+        "  padding: 10px;"
+        "  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;"
+        "  placeholder-text-color: %4;"
+        "  selection-background-color: %5;"
+        "}"
+        "QPlainTextEdit:hover {"
+        "  border-color: %6;"
+        "}"
+        "QPlainTextEdit:focus {"
+        "  border-color: %7;"
+        "}"
+    ).arg(p.inputBackground,
+          p.inputText,
+          p.inputBorder,
+          p.placeholderText,
+          p.selectionBackground,
+          p.inputHoverBorder,
+          p.inputFocusBorder);
+
+    m_inputEdit->setStyleSheet(inputStyle + scrollStyle);
 
     QString messageStyle = QString(
-        "QPlainTextEdit { background: %1; color: %2; border: none; "
-        "border-radius: 8px; padding: 10px; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }"
-    ).arg(p.inputBackground, p.textPrimary);
+        "QPlainTextEdit {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: none;"
+        "  border-radius: 8px;"
+        "  padding: 10px;"
+        "  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;"
+        "  selection-background-color: %3;"
+        "}"
+    ).arg(p.inputBackground, p.inputText, p.selectionBackground);
 
-    m_inputEdit->setStyleSheet(inputStyle);
-    m_messageDisplay->setStyleSheet(messageStyle);
+    m_messageDisplay->setStyleSheet(messageStyle + scrollStyle);
 
     if (m_emptyState) {
         m_emptyState->applyTheme();
     }
+
+    update();
 }
 
 void PetChatWidget::paintEvent(QPaintEvent *event)
@@ -104,11 +140,9 @@ void PetChatWidget::paintEvent(QPaintEvent *event)
     path.addRoundedRect(rect(), borderRadius, borderRadius);
 
     QColor bgColor(p.cardBackground);
-    bgColor.setAlpha(245);
     painter.fillPath(path, bgColor);
 
     QColor borderColor(p.border);
-    borderColor.setAlpha(150);
     QPen borderPen(borderColor, 1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
