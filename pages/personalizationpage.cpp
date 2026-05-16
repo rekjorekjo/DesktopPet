@@ -2,13 +2,16 @@
 
 #include "core/appsettings.h"
 #include "theme/thememanager.h"
+#include "widgets/softmessagebox.h"
 #include "widgets/wheelguardlistwidget.h"
 
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QListWidgetItem>
+#include <QPushButton>
 #include <QSignalBlocker>
+#include <QSettings>
 #include <QVBoxLayout>
 
 PersonalizationPage::PersonalizationPage(QWidget *parent)
@@ -37,6 +40,7 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_autoStartOnBootCheckBox(nullptr)
     , m_autoPlayOnLaunchCheckBox(nullptr)
     , m_openSettingsOnLaunchCheckBox(nullptr)
+    , m_clearRegistryButton(nullptr)
 {
     setAttribute(Qt::WA_StyledBackground, false);
     setAutoFillBackground(false);
@@ -154,7 +158,7 @@ void PersonalizationPage::setupUi()
     displayLayout->addWidget(m_displayCardTitle);
 
     QHBoxLayout *opacityLayout = new QHBoxLayout();
-    m_opacityLabel = new QLabel(tr("桌宠透明度:"), m_displayCard);
+    m_opacityLabel = new QLabel(tr("桌宠不透明度:"), m_displayCard);
     m_opacityLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(p.textSecondary));
     m_opacitySlider = new QSlider(Qt::Horizontal, m_displayCard);
@@ -162,11 +166,13 @@ void PersonalizationPage::setupUi()
     m_opacitySlider->setValue(static_cast<int>(AppSettings::petOpacity() * 100));
     m_opacitySlider->setMinimumWidth(200);
     m_opacitySlider->setStyleSheet(theme.sliderStyleSheet());
+    m_opacitySlider->setToolTip(tr("数值越高越不透明；当前最低为 20%"));
     m_opacityValueLabel = new QLabel(m_displayCard);
     m_opacityValueLabel->setMinimumWidth(50);
     m_opacityValueLabel->setText(QString("%1%").arg(m_opacitySlider->value()));
     m_opacityValueLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                          .arg(p.textSecondary));
+    m_opacityValueLabel->setToolTip(tr("数值越高越不透明；当前最低为 20%"));
     opacityLayout->addWidget(m_opacityLabel);
     opacityLayout->addWidget(m_opacitySlider);
     opacityLayout->addWidget(m_opacityValueLabel);
@@ -226,7 +232,7 @@ void PersonalizationPage::setupUi()
     startupLayout->setContentsMargins(24, 24, 24, 24);
     startupLayout->setSpacing(16);
 
-    m_startupCardTitle = new QLabel(tr("启动行为"), m_startupCard);
+    m_startupCardTitle = new QLabel(tr("软件行为"), m_startupCard);
     QFont startupTitleFont = m_startupCardTitle->font();
     startupTitleFont.setPointSize(12);
     startupTitleFont.setBold(true);
@@ -236,7 +242,10 @@ void PersonalizationPage::setupUi()
     startupLayout->addWidget(m_startupCardTitle);
 
     m_autoStartOnBootCheckBox = new QCheckBox(tr("开机自启动"), m_startupCard);
-    m_autoStartOnBootCheckBox->setChecked(AppSettings::autoStartOnBoot());
+    {
+        QSignalBlocker blocker(m_autoStartOnBootCheckBox);
+        m_autoStartOnBootCheckBox->setChecked(AppSettings::autoStartOnBoot());
+    }
     m_autoStartOnBootCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     startupLayout->addWidget(m_autoStartOnBootCheckBox);
 
@@ -249,6 +258,18 @@ void PersonalizationPage::setupUi()
     m_openSettingsOnLaunchCheckBox->setChecked(AppSettings::openSettingsOnLaunch());
     m_openSettingsOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     startupLayout->addWidget(m_openSettingsOnLaunchCheckBox);
+
+    startupLayout->addSpacing(8);
+
+    QLabel *clearRegistryHint = new QLabel(tr("仅清空 DesktopPet 的本机设置，不删除宠物和动作资源。"), m_startupCard);
+    clearRegistryHint->setStyleSheet(QString("color: %1; border: none; background: transparent; font-size: 12px;")
+                                         .arg(p.textSecondary));
+    startupLayout->addWidget(clearRegistryHint);
+
+    m_clearRegistryButton = new QPushButton(tr("清空注册表修改"), m_startupCard);
+    m_clearRegistryButton->setMinimumHeight(32);
+    m_clearRegistryButton->setStyleSheet(theme.dangerButtonStyleSheet());
+    startupLayout->addWidget(m_clearRegistryButton);
 
     contentLayout->addWidget(m_startupCard);
 
@@ -286,6 +307,9 @@ void PersonalizationPage::connectSignals()
 
     connect(m_openSettingsOnLaunchCheckBox, &QCheckBox::toggled,
             this, &PersonalizationPage::onOpenSettingsOnLaunchChanged);
+
+    connect(m_clearRegistryButton, &QPushButton::clicked,
+            this, &PersonalizationPage::onClearRegistryClicked);
 }
 
 bool PersonalizationPage::isLightTheme(const QString &themeId) const
@@ -391,6 +415,42 @@ void PersonalizationPage::onOpenSettingsOnLaunchChanged(bool enabled)
     AppSettings::setOpenSettingsOnLaunch(enabled);
 }
 
+void PersonalizationPage::onClearRegistryClicked()
+{
+    bool yes = SoftMessageBox::question(
+        this,
+        tr("清空注册表修改"),
+        tr("确定要清空 DesktopPet 保存在本机注册表中的设置吗？\n\n"
+           "将清空：\n"
+           "- 主题、窗口位置、宠物透明度等个性化设置\n"
+           "- 当前宠物 ID、API 当前配置名\n"
+           "- 开机自启动、自动播放等选项\n\n"
+           "不会删除：\n"
+           "- pets/ 文件夹（宠物和动作资源）\n"
+           "- resources/ 文件夹\n\n"
+           "操作后建议重启程序。"))
+        == SoftMessageBox::Yes;
+
+    if (!yes) return;
+
+#ifdef Q_OS_WIN
+    QSettings runSettings(
+        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        QSettings::NativeFormat);
+    runSettings.remove("DesktopPet");
+    runSettings.sync();
+#endif
+
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.clear();
+    settings.sync();
+
+    SoftMessageBox::information(
+        this,
+        tr("清空注册表修改"),
+        tr("本机设置已清空，建议重启程序。"));
+}
+
 void PersonalizationPage::refreshTheme()
 {
     applyTheme();
@@ -442,6 +502,8 @@ void PersonalizationPage::applyTheme()
     m_autoStartOnBootCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_autoPlayOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_openSettingsOnLaunchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+
+    m_clearRegistryButton->setStyleSheet(theme.dangerButtonStyleSheet());
 
     m_scrollArea->setStyleSheet(theme.softScrollAreaStyleSheet());
 

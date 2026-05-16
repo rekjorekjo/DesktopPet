@@ -9,6 +9,7 @@
 
 #include "widgets/softcardwidget.h"
 
+class QPushButton;
 class WheelGuardListWidget;
 class QListWidgetItem;
 
@@ -38,6 +39,7 @@ private slots:
     void onAutoStartOnBootChanged(bool enabled);
     void onAutoPlayOnLaunchChanged(bool enabled);
     void onOpenSettingsOnLaunchChanged(bool enabled);
+    void onClearRegistryClicked();
 
 private:
     void setupUi();
@@ -78,6 +80,7 @@ private:
     QCheckBox *m_autoStartOnBootCheckBox;
     QCheckBox *m_autoPlayOnLaunchCheckBox;
     QCheckBox *m_openSettingsOnLaunchCheckBox;
+    QPushButton *m_clearRegistryButton;
 };
 
 #endif // PERSONALIZATIONPAGE_H
