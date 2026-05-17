@@ -552,6 +552,10 @@ void PetWidget::reloadPet()
     m_nextSequence = 0;
 
     loadPet(PetPaths::currentPetDirectory());
+
+    if (m_chatWidget) {
+        m_chatWidget->setPetDisplayName(m_petInfo.name);
+    }
 }
 
 void PetWidget::reloadPlaylistPreservePlayback()
@@ -1316,6 +1320,7 @@ void PetWidget::showChatWidget()
     }
 
     m_chatWidget->setPetName(m_petInfo.name);
+    m_chatWidget->setPetDisplayName(m_petInfo.name);
 
     ApiConfig cfg;
     ApiProfileService &svc = ApiProfileService::instance();
@@ -1359,14 +1364,13 @@ void PetWidget::updateChatWidgetGeometry()
     int chatWidth = qMax(260, petSize.width() * 2);
     chatWidth = qMin(chatWidth, screenRect.width() - 20);
 
-    int chatHeight = qMax(180, static_cast<int>(petSize.height() * 1.35));
-    chatHeight = qMin(chatHeight, screenRect.height() / 3);
+    int chatHeight = qMax(520, petSize.width() * 2);
+    chatHeight = qMin(chatHeight, screenRect.height() - 20);
 
     m_chatWidget->setFixedSize(chatWidth, chatHeight);
 
     QPoint petCenter = geometry().center();
     int chatX = petCenter.x() - chatWidth / 2;
-    int chatY = geometry().bottom() + 4;
 
     if (chatX < screenRect.left()) {
         chatX = screenRect.left() + 10;
@@ -1374,13 +1378,18 @@ void PetWidget::updateChatWidgetGeometry()
         chatX = screenRect.right() - chatWidth - 10;
     }
 
-    if (chatY + chatHeight > screenRect.bottom()) {
-        int spaceBelow = screenRect.bottom() - chatY;
-        if (spaceBelow < 100) {
-            chatY = geometry().top() - chatHeight - 4;
-            if (chatY < screenRect.top()) {
-                chatY = screenRect.top() + 10;
-            }
+    const int gap = 4;
+    const int margin = 10;
+    const int belowY = geometry().bottom() + gap;
+    const int aboveY = geometry().top() - chatHeight - gap;
+    int chatY = belowY;
+    if (belowY + chatHeight > screenRect.bottom() - margin) {
+        if (aboveY > screenRect.top() + margin) {
+            chatY = aboveY;
+        } else {
+            const int minY = screenRect.top() + margin;
+            const int maxY = screenRect.bottom() - chatHeight - margin;
+            chatY = qBound(minY, belowY, maxY);
         }
     }
 

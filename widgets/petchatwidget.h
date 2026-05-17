@@ -19,6 +19,7 @@ public:
     ~PetChatWidget();
 
     void setPetName(const QString &name);
+    void setPetDisplayName(const QString &name);
     void setApiConfigName(const QString &name);
     void setApiInfo(const QString &apiConfigName, const QString &model);
 
@@ -59,6 +60,7 @@ private:
     QPlainTextEdit *m_inputEdit;
 
     QString m_petName;
+    QString m_petDisplayName;
     QString m_apiConfigName;
     QString m_model;
     bool m_hasMessages;

@@ -248,9 +248,9 @@ QString ChatLogService::formatRole(const QString &role)
     QString lowerRole = role.toLower();
 
     if (lowerRole == "user") {
-        return "用户";
+        return "我";
     } else if (lowerRole == "assistant") {
-        return "AI";
+        return "宠物";
     } else if (lowerRole == "system") {
         return "系统";
     }

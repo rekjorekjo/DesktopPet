@@ -212,6 +212,11 @@ void PetChatWidget::setPetName(const QString &name)
     m_petName = name;
 }
 
+void PetChatWidget::setPetDisplayName(const QString &name)
+{
+    m_petDisplayName = name.trimmed();
+}
+
 void PetChatWidget::setApiConfigName(const QString &name)
 {
     m_apiConfigName = name;
@@ -234,7 +239,7 @@ void PetChatWidget::appendUserMessage(const QString &content)
     hideEmptyState();
 
     QString currentText = m_messageDisplay->toPlainText();
-    QString newMessage = tr("用户：\n%1\n").arg(content);
+    QString newMessage = tr("我：\n%1\n").arg(content);
     m_messageDisplay->setPlainText(currentText + newMessage);
 
     QTextCursor cursor = m_messageDisplay->textCursor();
@@ -245,7 +250,8 @@ void PetChatWidget::appendUserMessage(const QString &content)
 void PetChatWidget::appendAiMessage(const QString &content)
 {
     QString currentText = m_messageDisplay->toPlainText();
-    QString newMessage = tr("\n宠物：\n%1\n").arg(content);
+    const QString speakerName = m_petDisplayName.isEmpty() ? tr("宠物") : m_petDisplayName;
+    QString newMessage = tr("\n%1：\n%2\n").arg(speakerName, content);
     m_messageDisplay->setPlainText(currentText + newMessage);
 
     QTextCursor cursor = m_messageDisplay->textCursor();
