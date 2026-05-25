@@ -1,0 +1,47 @@
+; DesktopPet Inno Setup Script
+; Requires Inno Setup 6.7.1+
+
+#define MyAppName "DesktopPet"
+#define MyAppVersion "0.30.6"
+#define MyAppPublisher "DesktopPet Team"
+#define MyAppExeName "DesktopPet.exe"
+#define MyDistDir "..\..\dist\DesktopPet-v" + MyAppVersion + "-release"
+
+[Setup]
+AppId={{A8F2E1B6-3C74-4C0C-9DB7-7F53E7770C61}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+DefaultDirName={localappdata}\Programs\{#MyAppName}
+DefaultGroupName={#MyAppName}
+OutputDir=output
+OutputBaseFilename=DesktopPet_Setup_v{#MyAppVersion}
+SetupIconFile=..\..\resources\icons\app_icon.ico
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+ArchitecturesInstallIn64BitMode=x64compatible
+PrivilegesRequired=lowest
+CloseApplications=yes
+CloseApplicationsFilter=DesktopPet.exe,DesktopPet-resize.exe
+UninstallDisplayIcon={app}\{#MyAppExeName}
+VersionInfoVersion={#MyAppVersion}.0
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+
+[Files]
+Source: "{#MyDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "pets\*,pets,actions\*,actions,logs\*,logs,chat_logs\*,chat_logs,config\api_profiles.json,config\chat_settings.json,build\*,build,.git\*,.git"
+
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName} Resize Tool"; Filename: "{app}\DesktopPet-resize.exe"
+Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent

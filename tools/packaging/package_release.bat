@@ -9,7 +9,7 @@ rem ============================================================
 
 rem === Version Configuration ===
 set "APP_NAME=DesktopPet"
-set "APP_VERSION=0.30.5"
+set "APP_VERSION=0.30.6"
 set "RELEASE_DIR_NAME=%APP_NAME%-v%APP_VERSION%-release"
 set "ZIP_NAME=%APP_NAME%-v%APP_VERSION%-release.zip"
 
@@ -124,16 +124,6 @@ if exist "%PROJECT_ROOT%\resources" (
         echo   WARNING: Failed to copy resources directory.
     ) else (
         echo   Resources: OK
-    )
-)
-
-if exist "%PROJECT_ROOT%\config" (
-    echo   Copying config...
-    robocopy "%PROJECT_ROOT%\config" "%DIST_DIR%\config" /e /njh /njs /ndl /nc /ns >nul
-    if errorlevel 8 (
-        echo   WARNING: Failed to copy config directory.
-    ) else (
-        echo   Config: OK
     )
 )
 
