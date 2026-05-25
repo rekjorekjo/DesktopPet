@@ -36,6 +36,14 @@ if not exist "%ISCC%" (
 )
 echo   ISCC: OK
 
+if not exist "F:\Inno Setup 6\Languages\ChineseSimplified.isl" (
+    echo ERROR: ChineseSimplified.isl not found.
+    echo Please install or copy ChineseSimplified.isl to:
+    echo F:\Inno Setup 6\Languages\ChineseSimplified.isl
+    goto error
+)
+echo   ChineseSimplified.isl: OK
+
 if not exist "%DIST_DIR%\DesktopPet.exe" (
     echo ERROR: DesktopPet.exe not found in dist directory.
     echo        Please run package_release.bat first:
