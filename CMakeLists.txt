@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.19)
 
 project(DesktopPet LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(DESKTOPPET_VERSION_MAJOR 0)
+set(DESKTOPPET_VERSION_MINOR 30)
+set(DESKTOPPET_VERSION_PATCH 5)
+set(DESKTOPPET_VERSION_BUILD 0)
+set(DESKTOPPET_VERSION_TAG "v0.30.5")
+set(DESKTOPPET_VERSION_DISPLAY "v0.30.5(beta)")
+
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Network)
 
 qt_standard_project_setup()
@@ -139,7 +149,14 @@ qt_add_resources(DesktopPet "app_resources"
 )
 
 if(WIN32)
-    target_sources(DesktopPet PRIVATE resources/appicon.rc)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources/appicon.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/appicon.rc"
+        @ONLY
+    )
+    target_sources(DesktopPet PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/appicon.rc"
+    )
 endif()
 
 target_include_directories(DesktopPet
@@ -185,6 +202,17 @@ qt_add_resources(DesktopPet-resize "resize_icons"
     FILES
         resources/icons/checkmark_white.svg
 )
+
+if(WIN32)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/resize/resize.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/resize.rc"
+        @ONLY
+    )
+    target_sources(DesktopPet-resize PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/resize.rc"
+    )
+endif()
 
 target_include_directories(DesktopPet-resize
     PRIVATE
