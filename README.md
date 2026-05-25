@@ -89,7 +89,9 @@ pets/
 └── actions/<actionId>/    # 动作资源（action.json、图片帧）
 ```
 
-> API Key 会保存到本地 JSON 配置文件中，请妥善保管 `config/` 目录。后续版本可考虑接入系统级安全存储。
+### API Key 存储说明
+
+当前版本的 API Profile 会保存在本地 `config/api_profiles.json` 中，API Key 仍以明文形式存储。DesktopPet 不会主动上传 API Key，但请不要在公共电脑或不可信设备上保存密钥。后续版本计划接入系统级安全存储。
 
 ---
 

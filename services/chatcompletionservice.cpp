@@ -1,5 +1,7 @@
 #include "chatcompletionservice.h"
 
+#include "services/secretstorageservice.h"
+
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -97,9 +99,10 @@ void ChatCompletionService::onReplyFinished(QNetworkReply *reply)
 
         QString errorMsg;
         if (status > 0) {
-            errorMsg = tr("HTTP %1: %2").arg(status).arg(body.left(200));
+            errorMsg = tr("HTTP %1: %2").arg(status)
+                         .arg(SecretStorageService::redactSecrets(body.left(200)));
         } else {
-            errorMsg = reply->errorString();
+            errorMsg = SecretStorageService::redactSecrets(reply->errorString());
         }
 
         emit requestFailed(requestId, errorMsg);
@@ -126,7 +129,7 @@ void ChatCompletionService::onReplyFinished(QNetworkReply *reply)
     // Check for API error
     if (root.contains("error")) {
         QJsonObject errorObj = root["error"].toObject();
-        QString errorMsg = errorObj["message"].toString();
+        QString errorMsg = SecretStorageService::redactSecrets(errorObj["message"].toString());
         if (errorMsg.isEmpty()) errorMsg = tr("未知 API 错误。");
         emit requestFailed(requestId, errorMsg);
         return;

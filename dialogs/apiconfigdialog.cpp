@@ -1,6 +1,7 @@
 #include "apiconfigdialog.h"
 
 #include "models/apiproviderpreset.h"
+#include "services/secretstorageservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softcardwidget.h"
 #include "widgets/softdialogtitlebar.h"
@@ -386,6 +387,23 @@ void ApiConfigDialog::setupUi()
           p.inputFocusBorder) + theme.scrollBarStyleSheet(false));
 
     cardLayout->addWidget(m_templateEdit, 1);
+
+    // Security notice
+    QLabel *securityLabel = new QLabel(
+        tr("安全提示：当前版本会将 API Key 保存在本地 config/api_profiles.json 中。"
+           "请勿在公共电脑或不可信设备上保存密钥。"),
+        cardWidget);
+    securityLabel->setWordWrap(true);
+    securityLabel->setStyleSheet(QString(
+        "QLabel {"
+        "  color: %1;"
+        "  font-size: 12px;"
+        "  background: transparent;"
+        "  border: none;"
+        "  padding: 4px 0;"
+        "}"
+    ).arg(p.textSecondary));
+    cardLayout->addWidget(securityLabel);
 
     // 按钮
     QWidget *buttonBar = new QWidget(cardWidget);

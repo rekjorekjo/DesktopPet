@@ -4,6 +4,7 @@
 #include "dialogs/apiconfigdialog.h"
 #include "services/apiprofileservice.h"
 #include "services/chatsettingsservice.h"
+#include "services/secretstorageservice.h"
 #include "theme/thememanager.h"
 #include "widgets/softmessagebox.h"
 
@@ -108,6 +109,15 @@ void ApiConfigPage::setupUi()
         QString("color: %1; border: none; background: transparent;")
             .arg(p.accent));
     statusLayout->addWidget(m_currentApiProfileLabel);
+
+    QLabel *storageNoteLabel = new QLabel(
+        tr("存储后端：%1 — 请妥善保管设备与 API 配置文件。")
+            .arg(SecretStorageService::backendName()),
+        m_statusCard);
+    storageNoteLabel->setStyleSheet(QString(
+        "color: %1; border: none; background: transparent; font-size: 12px;"
+    ).arg(p.textSecondary));
+    statusLayout->addWidget(storageNoteLabel);
 
     contentLayout->addWidget(m_statusCard);
 

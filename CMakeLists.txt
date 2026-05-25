@@ -73,6 +73,8 @@ qt_add_executable(DesktopPet
     services/chatlogservice.h
     services/chatsettingsservice.cpp
     services/chatsettingsservice.h
+    services/secretstorageservice.cpp
+    services/secretstorageservice.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
