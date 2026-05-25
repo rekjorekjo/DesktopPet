@@ -12,6 +12,7 @@
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
 #include <QGuiApplication>
 #include <QHideEvent>
@@ -48,6 +49,7 @@ PetWidget::PetWidget(QWidget *parent)
     , m_chatWidget(nullptr)
     , m_chatVisible(false)
     , m_autoMovementPausedByChat(false)
+    , m_clampingPetPosition(false)
     , m_nextSequence(0)
 {
     setupUi();
@@ -67,6 +69,7 @@ PetWidget::PetWidget(QWidget *parent)
     connect(m_moveTimer, &QTimer::timeout, this, &PetWidget::updateMovement);
 
     m_chatWidget = new PetChatWidget();
+    m_chatWidget->installEventFilter(this);
 
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
         if (m_chatWidget) {
@@ -307,6 +310,8 @@ bool PetWidget::loadPet(const QString &petDirPath)
     QSize displaySize = currentDisplaySize();
     setFixedSize(displaySize);
     m_displayLabel->setFixedSize(displaySize);
+    clampPetToScreen();
+    keepPetAboveChat();
 
     clearStatusMessage();
 
@@ -355,6 +360,8 @@ bool PetWidget::playAction(const PetAction &action, const PetActionRef &ref)
     QSize displaySize = currentDisplaySize();
     setFixedSize(displaySize);
     m_displayLabel->setFixedSize(displaySize);
+    clampPetToScreen();
+    keepPetAboveChat();
 
     if (!m_player->loadAction(action, displaySize)) {
         showStatusMessage(tr("动作加载失败"), QString());
@@ -862,6 +869,8 @@ void PetWidget::setPetScaleFactor(double scale)
     QSize displaySize = currentDisplaySize();
     setFixedSize(displaySize);
     m_displayLabel->setFixedSize(displaySize);
+    clampPetToScreen();
+    keepPetAboveChat();
 
     if (m_currentAction.isValid() && m_currentActionRef.isValid()) {
         bool wasRunning = m_petRunning;
@@ -976,7 +985,7 @@ void PetWidget::mouseMoveEvent(QMouseEvent *event)
         }
 
         if (m_dragging) {
-            move(currentPos - m_dragPosition);
+            move(clampedPetPosition(currentPos - m_dragPosition));
             event->accept();
             return;
         }
@@ -1231,52 +1240,56 @@ void PetWidget::updateMovement()
 
     QPoint currentPos = pos();
     QPoint newPos = currentPos + QPoint(dx, dy);
+    QPoint clampedPos = clampedPetPosition(newPos);
 
-    QRect screenRect = getAvailableScreenGeometry();
-    QRect widgetRect = QRect(newPos, size());
-
-    if (widgetRect.left() < screenRect.left()) {
-        newPos.setX(screenRect.left());
+    if (clampedPos.x() != newPos.x()) {
         m_moveRemainderX = 0.0;
-        if (m_moveAxis == MoveAxis::Horizontal) {
-            m_moveDirection = 1;
-        } else if (m_moveAxis == MoveAxis::Random) {
-            m_moveDirection = 1;
-        }
-    } else if (widgetRect.right() > screenRect.right()) {
-        newPos.setX(screenRect.right() - width());
-        m_moveRemainderX = 0.0;
-        if (m_moveAxis == MoveAxis::Horizontal) {
-            m_moveDirection = 0;
-        } else if (m_moveAxis == MoveAxis::Random) {
-            m_moveDirection = 0;
+        if (newPos.x() < clampedPos.x()) {
+            // Hit left edge -> move right
+            if (m_moveAxis == MoveAxis::Horizontal || m_moveAxis == MoveAxis::Random)
+                m_moveDirection = 1;
+        } else {
+            // Hit right edge -> move left
+            if (m_moveAxis == MoveAxis::Horizontal || m_moveAxis == MoveAxis::Random)
+                m_moveDirection = 0;
         }
     }
 
-    if (widgetRect.top() < screenRect.top()) {
-        newPos.setY(screenRect.top());
+    if (clampedPos.y() != newPos.y()) {
         m_moveRemainderY = 0.0;
-        if (m_moveAxis == MoveAxis::Vertical) {
-            m_moveDirection = 3;
-        } else if (m_moveAxis == MoveAxis::Random) {
-            m_moveDirection = 3;
-        }
-    } else if (widgetRect.bottom() > screenRect.bottom()) {
-        newPos.setY(screenRect.bottom() - height());
-        m_moveRemainderY = 0.0;
-        if (m_moveAxis == MoveAxis::Vertical) {
-            m_moveDirection = 2;
-        } else if (m_moveAxis == MoveAxis::Random) {
-            m_moveDirection = 2;
+        if (newPos.y() < clampedPos.y()) {
+            // Hit top edge -> move down
+            if (m_moveAxis == MoveAxis::Vertical || m_moveAxis == MoveAxis::Random)
+                m_moveDirection = 3;
+        } else {
+            // Hit bottom edge -> move up
+            if (m_moveAxis == MoveAxis::Vertical || m_moveAxis == MoveAxis::Random)
+                m_moveDirection = 2;
         }
     }
 
-    move(newPos);
+    move(clampedPos);
 }
 
 QRect PetWidget::getAvailableScreenGeometry() const
 {
-    QScreen *screen = QGuiApplication::screenAt(pos());
+    return availableScreenGeometryForRect(geometry());
+}
+
+QRect PetWidget::availableScreenGeometryForRect(const QRect &rect) const
+{
+    QScreen *screen = QGuiApplication::screenAt(rect.center());
+    if (!screen) {
+        int bestArea = 0;
+        for (QScreen *s : QGuiApplication::screens()) {
+            QRect inter = s->availableGeometry().intersected(rect);
+            int area = inter.width() * inter.height();
+            if (area > bestArea) {
+                bestArea = area;
+                screen = s;
+            }
+        }
+    }
     if (!screen) {
         screen = QGuiApplication::primaryScreen();
     }
@@ -1286,11 +1299,56 @@ QRect PetWidget::getAvailableScreenGeometry() const
     return QRect(0, 0, 1920, 1080);
 }
 
+QPoint PetWidget::clampedPetPosition(const QPoint &topLeft) const
+{
+    QRect candidate(topLeft, size());
+    QRect screen = availableScreenGeometryForRect(candidate);
+
+    int minX = screen.left();
+    int maxX = screen.right() - width() + 1;
+    int minY = screen.top();
+    int maxY = screen.bottom() - height() + 1;
+
+    if (maxX < minX) maxX = minX;
+    if (maxY < minY) maxY = minY;
+
+    return QPoint(qBound(minX, topLeft.x(), maxX),
+                  qBound(minY, topLeft.y(), maxY));
+}
+
+void PetWidget::clampPetToScreen()
+{
+    QPoint fixed = clampedPetPosition(pos());
+    if (fixed == pos()) return;
+    m_clampingPetPosition = true;
+    move(fixed);
+    m_clampingPetPosition = false;
+}
+
+void PetWidget::keepPetAboveChat()
+{
+    if (m_chatWidget && m_chatVisible && m_chatWidget->isVisible()) {
+        raise();
+    }
+}
+
 void PetWidget::moveEvent(QMoveEvent *event)
 {
     QWidget::moveEvent(event);
+
+    if (!m_clampingPetPosition) {
+        QPoint fixed = clampedPetPosition(pos());
+        if (fixed != pos()) {
+            m_clampingPetPosition = true;
+            move(fixed);
+            m_clampingPetPosition = false;
+            return;
+        }
+    }
+
     if (m_chatWidget && m_chatVisible) {
         updateChatWidgetGeometry();
+        keepPetAboveChat();
     }
 }
 
@@ -1298,6 +1356,27 @@ void PetWidget::hideEvent(QHideEvent *event)
 {
     QWidget::hideEvent(event);
     hideChatWidget();
+}
+
+bool PetWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_chatWidget && m_chatWidget && m_chatVisible) {
+        switch (event->type()) {
+        case QEvent::Show:
+        case QEvent::WindowActivate:
+        case QEvent::MouseButtonPress:
+        case QEvent::Move:
+        case QEvent::Resize:
+            QTimer::singleShot(0, this, [this]() {
+                keepPetAboveChat();
+            });
+            break;
+        default:
+            break;
+        }
+    }
+
+    return QWidget::eventFilter(watched, event);
 }
 
 void PetWidget::toggleChatWidget()
@@ -1338,6 +1417,7 @@ void PetWidget::showChatWidget()
     m_chatWidget->raise();
     m_chatWidget->activateWindow();
     m_chatWidget->focusInput();
+    keepPetAboveChat();
 }
 
 void PetWidget::hideChatWidget()
@@ -1369,31 +1449,25 @@ void PetWidget::updateChatWidgetGeometry()
 
     m_chatWidget->setFixedSize(chatWidth, chatHeight);
 
-    QPoint petCenter = geometry().center();
-    int chatX = petCenter.x() - chatWidth / 2;
-
-    if (chatX < screenRect.left()) {
-        chatX = screenRect.left() + 10;
-    } else if (chatX + chatWidth > screenRect.right()) {
-        chatX = screenRect.right() - chatWidth - 10;
-    }
-
     const int gap = 4;
     const int margin = 10;
-    const int belowY = geometry().bottom() + gap;
-    const int aboveY = geometry().top() - chatHeight - gap;
-    int chatY = belowY;
-    if (belowY + chatHeight > screenRect.bottom() - margin) {
-        if (aboveY > screenRect.top() + margin) {
-            chatY = aboveY;
-        } else {
-            const int minY = screenRect.top() + margin;
-            const int maxY = screenRect.bottom() - chatHeight - margin;
-            chatY = qBound(minY, belowY, maxY);
-        }
-    }
+
+    QPoint petCenter = geometry().center();
+
+    int desiredX = petCenter.x() - chatWidth / 2;
+    int minX = screenRect.left() + margin;
+    int maxX = screenRect.right() - chatWidth - margin + 1;
+    if (maxX < minX) maxX = minX;
+    int chatX = qBound(minX, desiredX, maxX);
+
+    int desiredY = geometry().bottom() + gap;
+    int minY = screenRect.top() + margin;
+    int maxY = screenRect.bottom() - chatHeight - margin + 1;
+    if (maxY < minY) maxY = minY;
+    int chatY = qBound(minY, desiredY, maxY);
 
     m_chatWidget->move(chatX, chatY);
+    keepPetAboveChat();
 }
 
 bool PetWidget::isAutoMoving() const

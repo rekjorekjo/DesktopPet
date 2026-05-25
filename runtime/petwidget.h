@@ -120,6 +120,7 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
     void hideEvent(QHideEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 signals:
     void openSettingsRequested();
@@ -175,6 +176,11 @@ private:
     bool isAutoMoving() const;
     void pauseAutoMovementForChat();
     void resumeAutoMovementAfterChat();
+
+    QRect availableScreenGeometryForRect(const QRect &rect) const;
+    QPoint clampedPetPosition(const QPoint &topLeft) const;
+    void clampPetToScreen();
+    void keepPetAboveChat();
 
     QLabel *m_displayLabel;
     PetAnimationPlayer *m_player;
@@ -234,6 +240,9 @@ private:
     // 聊天时自动移动暂停标志
     // 聊天窗口显示时暂停自动移动，隐藏后恢复
     bool m_autoMovementPausedByChat;
+
+    // 防止 moveEvent 递归的标志
+    bool m_clampingPetPosition;
 
     // 运行时动作队列，存储待播放的 random/timed/emotion 动作
     // 不写入 playlist.json，只存在于内存中
