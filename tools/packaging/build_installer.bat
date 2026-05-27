@@ -5,7 +5,7 @@ rem ============================================================
 rem  DesktopPet Inno Setup Build Script
 rem ============================================================
 
-set "APP_VERSION=0.30.6"
+set "APP_VERSION=0.31.0"
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%..\.."
 cd /d "%PROJECT_ROOT%"

@@ -11,6 +11,7 @@
 #include <QPointer>
 
 #include "models/apiconfig.h"
+#include "services/chatcompletionservice.h"
 #include "widgets/softcardwidget.h"
 
 class ApiConfigDialog;
@@ -49,6 +50,8 @@ private slots:
     void onRemoveApiProfile(int row);
     void onApiProfileSelectionChanged();
     void onDialogSubmitted(const QString &profileName, const ApiConfig &config);
+    void onTestConnectionClicked();
+    void onConnectionTestFinished(const QString &requestId, bool ok, const QString &message);
 
 private:
     QScrollArea *m_scrollArea;
@@ -71,6 +74,11 @@ private:
     QPlainTextEdit *m_systemPromptEdit;
     QPushButton *m_resetPromptButton;
     QPushButton *m_savePromptButton;
+
+    QPushButton *m_testConnectionButton;
+    ChatCompletionService *m_testChatService;
+    QString m_testRequestId;
+    bool m_testPending;
 };
 
 #endif // APICONFIGPAGE_H

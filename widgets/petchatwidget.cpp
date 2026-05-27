@@ -6,6 +6,7 @@
 #include "widgets/emptystatewidget.h"
 
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -17,6 +18,7 @@ PetChatWidget::PetChatWidget(QWidget *parent)
     , m_emptyState(nullptr)
     , m_messageDisplay(nullptr)
     , m_inputEdit(nullptr)
+    , m_cancelButton(nullptr)
     , m_hasMessages(false)
     , m_chatService(new ChatCompletionService(this))
     , m_requestPending(false)
@@ -25,6 +27,8 @@ PetChatWidget::PetChatWidget(QWidget *parent)
             this, &PetChatWidget::onRequestFinished);
     connect(m_chatService, &ChatCompletionService::requestFailed,
             this, &PetChatWidget::onRequestFailed);
+    connect(m_chatService, &ChatCompletionService::requestCanceled,
+            this, &PetChatWidget::onRequestCanceled);
 
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground, true);
@@ -64,7 +68,15 @@ void PetChatWidget::setupUi()
     m_messageStack->setCurrentWidget(m_emptyState);
     mainLayout->addWidget(m_messageStack, 1);
 
-    m_inputEdit = new QPlainTextEdit(this);
+    // Bottom input area: horizontal layout with input + cancel button
+    QWidget *inputPanel = new QWidget(this);
+    inputPanel->setObjectName("chatInputPanel");
+
+    QHBoxLayout *inputLayout = new QHBoxLayout(inputPanel);
+    inputLayout->setContentsMargins(0, 0, 0, 0);
+    inputLayout->setSpacing(6);
+
+    m_inputEdit = new QPlainTextEdit(inputPanel);
     m_inputEdit->setFrameShape(QFrame::NoFrame);
     m_inputEdit->setMinimumHeight(48);
     m_inputEdit->setMaximumHeight(80);
@@ -72,8 +84,18 @@ void PetChatWidget::setupUi()
     m_inputEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_inputEdit->setPlaceholderText(tr("输入消息，按 Enter 发送，Shift+Enter 换行..."));
     m_inputEdit->installEventFilter(this);
+    inputLayout->addWidget(m_inputEdit, 1);
 
-    mainLayout->addWidget(m_inputEdit);
+    m_cancelButton = new QPushButton(tr("取消"), inputPanel);
+    m_cancelButton->setObjectName("chatCancelButton");
+    m_cancelButton->setMinimumHeight(48);
+    m_cancelButton->setMaximumHeight(80);
+    m_cancelButton->setFixedWidth(56);
+    m_cancelButton->setVisible(false);
+    connect(m_cancelButton, &QPushButton::clicked, this, &PetChatWidget::cancelCurrentRequest);
+    inputLayout->addWidget(m_cancelButton);
+
+    mainLayout->addWidget(inputPanel);
 
     showEmptyState();
 }
@@ -111,6 +133,29 @@ void PetChatWidget::applyTheme()
           p.inputFocusBorder);
 
     m_inputEdit->setStyleSheet(inputStyle + scrollStyle);
+
+    // Cancel button style
+    m_cancelButton->setStyleSheet(QString(
+        "QPushButton {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 8px;"
+        "  padding: 6px 12px;"
+        "  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;"
+        "  font-size: 12px;"
+        "}"
+        "QPushButton:hover {"
+        "  background-color: %4;"
+        "}"
+        "QPushButton:pressed {"
+        "  background-color: %5;"
+        "}"
+    ).arg(p.inputBackground,
+          p.dangerText,
+          p.inputBorder,
+          p.dangerHover,
+          p.accentPressed));
 
     QString messageStyle = QString(
         "QPlainTextEdit {"
@@ -279,6 +324,7 @@ void PetChatWidget::clearMessages()
     m_messages.clear();
     m_pendingRequestId.clear();
     m_requestPending = false;
+    m_chatService->cancelAllRequests();
     setWaitingState(false);
     showEmptyState();
 }
@@ -300,7 +346,7 @@ void PetChatWidget::submitMessage()
     }
 
     if (m_requestPending) {
-        appendSystemMessage(tr("请等待当前回复完成..."));
+        // Silently ignore - don't append system message
         return;
     }
 
@@ -375,10 +421,21 @@ void PetChatWidget::setWaitingState(bool waiting)
 {
     m_inputEdit->setEnabled(!waiting);
     if (waiting) {
-        m_inputEdit->setPlaceholderText(tr("正在等待回复..."));
+        m_inputEdit->setPlaceholderText(tr("正在等待回复，可点击取消..."));
+        m_cancelButton->setVisible(true);
+        m_cancelButton->setEnabled(true);
     } else {
         m_inputEdit->setPlaceholderText(tr("输入消息，按 Enter 发送，Shift+Enter 换行..."));
+        m_cancelButton->setVisible(false);
     }
+}
+
+void PetChatWidget::cancelCurrentRequest()
+{
+    if (!m_requestPending) return;
+    if (m_pendingRequestId.isEmpty()) return;
+
+    m_chatService->cancelRequest(m_pendingRequestId);
 }
 
 void PetChatWidget::onRequestFinished(const QString &requestId, const QString &content)
@@ -407,4 +464,15 @@ void PetChatWidget::onRequestFailed(const QString &requestId, const QString &err
     setWaitingState(false);
 
     appendSystemMessage(tr("请求失败：%1").arg(errorMessage));
+}
+
+void PetChatWidget::onRequestCanceled(const QString &requestId)
+{
+    if (requestId != m_pendingRequestId) return;
+
+    m_pendingRequestId.clear();
+    m_requestPending = false;
+    setWaitingState(false);
+
+    appendSystemMessage(tr("已取消当前回复。"));
 }

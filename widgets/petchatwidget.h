@@ -5,6 +5,7 @@
 
 #include <QList>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QWidget>
 
@@ -48,16 +49,19 @@ private:
     void hideEmptyState();
     void setWaitingState(bool waiting);
     QString currentSystemPrompt() const;
+    void cancelCurrentRequest();
 
 private slots:
     void onRequestFinished(const QString &requestId, const QString &content);
     void onRequestFailed(const QString &requestId, const QString &errorMessage);
+    void onRequestCanceled(const QString &requestId);
 
 private:
     QStackedWidget *m_messageStack;
     EmptyStateWidget *m_emptyState;
     QPlainTextEdit *m_messageDisplay;
     QPlainTextEdit *m_inputEdit;
+    QPushButton *m_cancelButton;
 
     QString m_petName;
     QString m_petDisplayName;

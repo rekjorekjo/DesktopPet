@@ -32,6 +32,9 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_systemPromptEdit(nullptr)
     , m_resetPromptButton(nullptr)
     , m_savePromptButton(nullptr)
+    , m_testConnectionButton(nullptr)
+    , m_testChatService(new ChatCompletionService(this))
+    , m_testPending(false)
 {
     setAttribute(Qt::WA_StyledBackground, false);
     setAutoFillBackground(false);
@@ -96,9 +99,12 @@ void ApiConfigPage::setupUi()
     m_statusCard = new SoftCardWidget(m_contentWidget);
     m_statusCard->setObjectName("statusCard");
     m_statusCard->setBackgroundOpacity(40);
-    QVBoxLayout *statusLayout = new QVBoxLayout(m_statusCard);
-    statusLayout->setContentsMargins(24, 20, 24, 20);
-    statusLayout->setSpacing(10);
+    QHBoxLayout *statusOuterLayout = new QHBoxLayout(m_statusCard);
+    statusOuterLayout->setContentsMargins(24, 20, 24, 20);
+    statusOuterLayout->setSpacing(12);
+
+    QVBoxLayout *statusTextLayout = new QVBoxLayout();
+    statusTextLayout->setSpacing(10);
 
     m_currentApiProfileLabel = new QLabel(tr("当前API配置：未选择"), m_statusCard);
     QFont statusTitleFont = m_currentApiProfileLabel->font();
@@ -108,7 +114,7 @@ void ApiConfigPage::setupUi()
     m_currentApiProfileLabel->setStyleSheet(
         QString("color: %1; border: none; background: transparent;")
             .arg(p.accent));
-    statusLayout->addWidget(m_currentApiProfileLabel);
+    statusTextLayout->addWidget(m_currentApiProfileLabel);
 
     QLabel *storageNoteLabel = new QLabel(
         tr("存储后端：%1 — 请妥善保管设备与 API 配置文件。")
@@ -117,7 +123,17 @@ void ApiConfigPage::setupUi()
     storageNoteLabel->setStyleSheet(QString(
         "color: %1; border: none; background: transparent; font-size: 12px;"
     ).arg(p.textSecondary));
-    statusLayout->addWidget(storageNoteLabel);
+    statusTextLayout->addWidget(storageNoteLabel);
+
+    statusOuterLayout->addLayout(statusTextLayout, 1);
+
+    m_testConnectionButton = new QPushButton(tr("测试连接"), m_statusCard);
+    m_testConnectionButton->setMinimumHeight(32);
+    m_testConnectionButton->setMinimumWidth(80);
+    m_testConnectionButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    connect(m_testConnectionButton, &QPushButton::clicked,
+            this, &ApiConfigPage::onTestConnectionClicked);
+    statusOuterLayout->addWidget(m_testConnectionButton, 0, Qt::AlignVCenter);
 
     contentLayout->addWidget(m_statusCard);
 
@@ -172,6 +188,8 @@ void ApiConfigPage::connectSignals()
 {
     connect(m_addApiProfileButton, &QPushButton::clicked, this, &ApiConfigPage::onAddApiProfile);
     connect(m_apiProfileList, &QListWidget::currentRowChanged, this, &ApiConfigPage::onApiProfileSelectionChanged);
+    connect(m_testChatService, &ChatCompletionService::connectionTestFinished,
+            this, &ApiConfigPage::onConnectionTestFinished);
 }
 
 void ApiConfigPage::refreshTheme()
@@ -238,6 +256,9 @@ void ApiConfigPage::applyTheme()
     if (m_savePromptButton) {
         m_savePromptButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     }
+    if (m_testConnectionButton) {
+        m_testConnectionButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    }
 }
 
 void ApiConfigPage::updateEmptyState()
@@ -255,6 +276,10 @@ void ApiConfigPage::updateCurrentProfileDisplay()
         m_currentApiProfileLabel->setText(tr("当前API配置：未选择"));
     } else {
         m_currentApiProfileLabel->setText(tr("当前API配置：%1").arg(current));
+    }
+
+    if (m_testConnectionButton) {
+        m_testConnectionButton->setEnabled(!current.isEmpty() && !m_testPending);
     }
 }
 
@@ -660,5 +685,73 @@ void ApiConfigPage::resetSystemPromptToDefault()
 {
     if (m_systemPromptEdit) {
         m_systemPromptEdit->setPlainText(ChatSettingsService::defaultSystemPrompt());
+    }
+}
+
+// ── Test connection ──────────────────────────────────────────────
+
+void ApiConfigPage::onTestConnectionClicked()
+{
+    if (m_testPending) return;
+
+    ApiConfig config;
+    ApiProfileService &svc = ApiProfileService::instance();
+    if (!svc.currentProfile(&config)) {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("请先选择一个 API 配置。"));
+        return;
+    }
+
+    if (config.apiFormat != ApiFormat::OpenAICompatible) {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("当前仅支持 OpenAI 兼容格式的 API。"));
+        return;
+    }
+
+    if (config.apiKey.trimmed().isEmpty()) {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("API 配置不完整：缺少 API_KEY。"));
+        return;
+    }
+    if (config.baseUrl.trimmed().isEmpty()) {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("API 配置不完整：缺少 BASE_URL。"));
+        return;
+    }
+    if (config.model.trimmed().isEmpty()) {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("API 配置不完整：缺少 MODEL。"));
+        return;
+    }
+
+    m_testPending = true;
+    m_testConnectionButton->setEnabled(false);
+    m_testConnectionButton->setText(tr("测试中..."));
+
+    m_testRequestId = m_testChatService->testConnection(config);
+}
+
+void ApiConfigPage::onConnectionTestFinished(const QString &requestId, bool ok, const QString &message)
+{
+    if (requestId != m_testRequestId) return;
+
+    m_testPending = false;
+    m_testRequestId.clear();
+    m_testConnectionButton->setEnabled(true);
+    m_testConnectionButton->setText(tr("测试连接"));
+
+    if (ok) {
+        SoftMessageBox::information(this,
+                                    tr("测试连接"),
+                                    tr("连接成功！\n%1").arg(message));
+    } else {
+        SoftMessageBox::warning(this,
+                                tr("测试连接"),
+                                tr("连接失败：\n%1").arg(message));
     }
 }

@@ -2,7 +2,7 @@
 ; Requires Inno Setup 6.7.1+
 
 #define MyAppName "DesktopPet"
-#define MyAppVersion "0.30.6"
+#define MyAppVersion "0.31.0"
 #define MyAppPublisher "rekjorekjo"
 #define MyAppExeName "DesktopPet.exe"
 #define MyDistDir "..\..\dist\DesktopPet-v" + MyAppVersion + "-release"
