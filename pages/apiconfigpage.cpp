@@ -1,6 +1,5 @@
 #include "apiconfigpage.h"
 
-#include "core/appsettings.h"
 #include "dialogs/apiconfigdialog.h"
 #include "services/apiprofileservice.h"
 #include "services/chatsettingsservice.h"

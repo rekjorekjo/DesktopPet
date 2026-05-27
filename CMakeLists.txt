@@ -48,6 +48,9 @@ qt_add_executable(DesktopPet
     runtime/petanimationplayer.h
     runtime/petwidget.cpp
     runtime/petwidget.h
+    runtime/petwidget_actions.cpp
+    runtime/petwidget_chat.cpp
+    runtime/petwidget_movement.cpp
     runtime/traymanager.cpp
     runtime/traymanager.h
     utils/gifframeextractor.cpp
