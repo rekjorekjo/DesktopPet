@@ -7,16 +7,20 @@ rem ============================================================
 rem  Output: DesktopPet-vX.Y.Z-release.zip
 rem ============================================================
 
-rem === Version Configuration ===
-set "APP_NAME=DesktopPet"
-set "APP_VERSION=0.31.0"
-set "RELEASE_DIR_NAME=%APP_NAME%-v%APP_VERSION%-release"
-set "ZIP_NAME=%APP_NAME%-v%APP_VERSION%-release.zip"
-
 rem === Path Configuration ===
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%..\.."
 cd /d "%PROJECT_ROOT%"
+
+rem === Version Configuration ===
+set "APP_NAME=DesktopPet"
+set /p APP_VERSION=<"%PROJECT_ROOT%\VERSION.txt"
+if "%APP_VERSION%"=="" (
+    echo ERROR: VERSION.txt file not found or empty.
+    goto error
+)
+set "RELEASE_DIR_NAME=%APP_NAME%-v%APP_VERSION%-release"
+set "ZIP_NAME=%APP_NAME%-v%APP_VERSION%-release.zip"
 
 set "QT_DIR=F:\Qt\6.11.0\msvc2022_64"
 set "WINDEPLOYQT=%QT_DIR%\bin\windeployqt.exe"

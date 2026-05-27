@@ -5,10 +5,15 @@ rem ============================================================
 rem  DesktopPet Inno Setup Build Script
 rem ============================================================
 
-set "APP_VERSION=0.31.0"
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%..\.."
 cd /d "%PROJECT_ROOT%"
+
+set /p APP_VERSION=<"%PROJECT_ROOT%\VERSION.txt"
+if "%APP_VERSION%"=="" (
+    echo ERROR: VERSION.txt file not found or empty.
+    goto error
+)
 
 set "DIST_DIR=%PROJECT_ROOT%\dist\DesktopPet-v%APP_VERSION%-release"
 set "ISS_FILE=%SCRIPT_DIR%DesktopPet.iss"
@@ -86,7 +91,7 @@ echo.
 echo [3/3] Compiling installer...
 rem ============================================================
 
-"%ISCC%" "%PROJECT_ROOT%\tools\packaging\DesktopPet.iss" /O"%PROJECT_ROOT%\dist"
+"%ISCC%" "%PROJECT_ROOT%\tools\packaging\DesktopPet.iss" /O"%PROJECT_ROOT%\dist" /DMyAppVersion="%APP_VERSION%"
 if errorlevel 1 (
     echo ERROR: Inno Setup compilation failed.
     goto error

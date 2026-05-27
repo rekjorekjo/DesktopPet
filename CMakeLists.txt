@@ -5,12 +5,19 @@ project(DesktopPet LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(DESKTOPPET_VERSION_MAJOR 0)
-set(DESKTOPPET_VERSION_MINOR 31)
-set(DESKTOPPET_VERSION_PATCH 0)
+# ── Read version from VERSION.txt ─────────────────────────────────
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" _VERSION_RAW)
+string(STRIP "${_VERSION_RAW}" DESKTOPPET_VERSION)
+if(NOT DESKTOPPET_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Invalid VERSION format: '${DESKTOPPET_VERSION}'. Expected X.Y.Z")
+endif()
+string(REPLACE "." ";" _VERSION_PARTS "${DESKTOPPET_VERSION}")
+list(GET _VERSION_PARTS 0 DESKTOPPET_VERSION_MAJOR)
+list(GET _VERSION_PARTS 1 DESKTOPPET_VERSION_MINOR)
+list(GET _VERSION_PARTS 2 DESKTOPPET_VERSION_PATCH)
 set(DESKTOPPET_VERSION_BUILD 0)
-set(DESKTOPPET_VERSION_TAG "v0.31.0")
-set(DESKTOPPET_VERSION_DISPLAY "v0.31.0(beta)")
+set(DESKTOPPET_VERSION_TAG "v${DESKTOPPET_VERSION}")
+set(DESKTOPPET_VERSION_DISPLAY "v${DESKTOPPET_VERSION}(beta)")
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Network)
 
@@ -150,6 +157,12 @@ qt_add_resources(DesktopPet "app_resources"
         resources/themes/themes.json
 )
 
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/appversion_generated.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/appversion_generated.h"
+    @ONLY
+)
+
 if(WIN32)
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/resources/appicon.rc.in"
@@ -164,6 +177,7 @@ endif()
 target_include_directories(DesktopPet
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(DesktopPet
