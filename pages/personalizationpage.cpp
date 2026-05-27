@@ -21,7 +21,6 @@ PersonalizationPage::PersonalizationPage(QWidget *parent)
     , m_titleLabel(nullptr)
     , m_appearanceCard(nullptr)
     , m_appearanceCardTitle(nullptr)
-    , m_themeHintLabel(nullptr)
     , m_lightThemeLabel(nullptr)
     , m_lightThemeList(nullptr)
     , m_darkThemeLabel(nullptr)
@@ -101,11 +100,6 @@ void PersonalizationPage::setupUi()
     m_appearanceCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                            .arg(p.subtitleText));
     appearanceLayout->addWidget(m_appearanceCardTitle);
-
-    m_themeHintLabel = new QLabel(tr("选择喜欢的配色方案"), m_appearanceCard);
-    m_themeHintLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                        .arg(p.textSecondary));
-    appearanceLayout->addWidget(m_themeHintLabel);
 
     QHBoxLayout *themeColumnsLayout = new QHBoxLayout();
     themeColumnsLayout->setSpacing(16);
@@ -476,7 +470,6 @@ void PersonalizationPage::applyTheme()
     m_displayCardTitle->setStyleSheet(sectionTitleStyle);
     m_startupCardTitle->setStyleSheet(sectionTitleStyle);
 
-    m_themeHintLabel->setStyleSheet(normalLabelStyle);
     m_lightThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")
                                          .arg(p.textPrimary));
     m_darkThemeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent; font-weight: bold;")

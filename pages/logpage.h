@@ -40,6 +40,7 @@ private:
 
     QPushButton *m_loadLogButton;
     QLineEdit *m_filePathEdit;
+    QLabel *m_searchLabel;
     QLineEdit *m_searchEdit;
 
     QPlainTextEdit *m_logDisplay;

@@ -1,7 +1,9 @@
 #include "petchatwidget.h"
 
+#include "models/websearchconfig.h"
 #include "services/apiprofileservice.h"
 #include "services/chatsettingsservice.h"
+#include "services/websearchsettingsservice.h"
 #include "theme/thememanager.h"
 #include "widgets/emptystatewidget.h"
 
@@ -22,6 +24,8 @@ PetChatWidget::PetChatWidget(QWidget *parent)
     , m_hasMessages(false)
     , m_chatService(new ChatCompletionService(this))
     , m_requestPending(false)
+    , m_webSearchService(new WebSearchService(this))
+    , m_waitingForSearch(false)
 {
     connect(m_chatService, &ChatCompletionService::requestFinished,
             this, &PetChatWidget::onRequestFinished);
@@ -29,6 +33,13 @@ PetChatWidget::PetChatWidget(QWidget *parent)
             this, &PetChatWidget::onRequestFailed);
     connect(m_chatService, &ChatCompletionService::requestCanceled,
             this, &PetChatWidget::onRequestCanceled);
+
+    connect(m_webSearchService, &WebSearchService::searchFinished,
+            this, &PetChatWidget::onWebSearchFinished);
+    connect(m_webSearchService, &WebSearchService::searchFailed,
+            this, &PetChatWidget::onWebSearchFailed);
+    connect(m_webSearchService, &WebSearchService::searchCanceled,
+            this, &PetChatWidget::onWebSearchCanceled);
 
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground, true);
@@ -325,6 +336,13 @@ void PetChatWidget::clearMessages()
     m_pendingRequestId.clear();
     m_requestPending = false;
     m_chatService->cancelAllRequests();
+
+    m_pendingSearchRequestId.clear();
+    m_pendingSearchQuery.clear();
+    m_pendingUserMessage.clear();
+    m_waitingForSearch = false;
+    m_webSearchService->cancelAllRequests();
+
     setWaitingState(false);
     showEmptyState();
 }
@@ -345,8 +363,7 @@ void PetChatWidget::submitMessage()
         return;
     }
 
-    if (m_requestPending) {
-        // Silently ignore - don't append system message
+    if (m_requestPending || m_waitingForSearch) {
         return;
     }
 
@@ -378,43 +395,9 @@ void PetChatWidget::submitMessage()
 
     appendUserMessage(content);
     m_inputEdit->clear();
-
-    // Get current system prompt
-    const QString systemPrompt = currentSystemPrompt();
-
-    // Ensure system message is first in context
-    if (m_messages.isEmpty()) {
-        ChatCompletionService::Message sysMsg;
-        sysMsg.role = "system";
-        sysMsg.content = systemPrompt;
-        m_messages.append(sysMsg);
-    } else if (m_messages.first().role == "system") {
-        m_messages[0].content = systemPrompt;
-    }
-
-    // Add user message to context
-    ChatCompletionService::Message userMsg;
-    userMsg.role = "user";
-    userMsg.content = content;
-    m_messages.append(userMsg);
-
-    // Trim context: keep system message + last 12 normal messages
-    if (m_messages.size() > 13) {
-        QList<ChatCompletionService::Message> trimmed;
-        trimmed.append(m_messages.first()); // system message
-        // Keep last 12 normal messages
-        int start = m_messages.size() - 12;
-        for (int i = start; i < m_messages.size(); ++i) {
-            trimmed.append(m_messages.at(i));
-        }
-        m_messages = trimmed;
-    }
-
-    m_requestPending = true;
-    setWaitingState(true);
-    m_pendingRequestId = m_chatService->sendChatCompletion(config, m_messages);
-
     emit messageSubmitted(content);
+
+    startChatRequestWithOptionalSearch(content);
 }
 
 void PetChatWidget::setWaitingState(bool waiting)
@@ -432,10 +415,14 @@ void PetChatWidget::setWaitingState(bool waiting)
 
 void PetChatWidget::cancelCurrentRequest()
 {
-    if (!m_requestPending) return;
-    if (m_pendingRequestId.isEmpty()) return;
+    if (m_waitingForSearch && !m_pendingSearchRequestId.isEmpty()) {
+        m_webSearchService->cancelRequest(m_pendingSearchRequestId);
+        return;
+    }
 
-    m_chatService->cancelRequest(m_pendingRequestId);
+    if (m_requestPending && !m_pendingRequestId.isEmpty()) {
+        m_chatService->cancelRequest(m_pendingRequestId);
+    }
 }
 
 void PetChatWidget::onRequestFinished(const QString &requestId, const QString &content)
@@ -475,4 +462,219 @@ void PetChatWidget::onRequestCanceled(const QString &requestId)
     setWaitingState(false);
 
     appendSystemMessage(tr("已取消当前回复。"));
+}
+
+bool PetChatWidget::isForcedWebSearchQuery(const QString &text) const
+{
+    QString trimmed = text.trimmed();
+    return trimmed.startsWith("/search ", Qt::CaseInsensitive)
+        || trimmed.startsWith("#search ", Qt::CaseInsensitive)
+        || trimmed.startsWith("搜一下")
+        || trimmed.startsWith("查一下");
+}
+
+bool PetChatWidget::shouldUseWebSearch(const QString &message) const
+{
+    // Keyword-based trigger
+    static const QStringList keywords = {
+        QStringLiteral("最近"), QStringLiteral("最新"), QStringLiteral("今天"),
+        QStringLiteral("昨天"), QStringLiteral("新闻"), QStringLiteral("天气"),
+        QStringLiteral("股价"), QStringLiteral("汇率"), QStringLiteral("赛事"),
+        QStringLiteral("比分"), QStringLiteral("上映"), QStringLiteral("发布"),
+        QStringLiteral("热搜"), QStringLiteral("头条"), QStringLiteral("实时"),
+        QStringLiteral("现在"), QStringLiteral("目前"), QStringLiteral("今年"),
+        QStringLiteral("本月"), QStringLiteral("这周"), QStringLiteral("上周"),
+    };
+
+    for (const QString &kw : keywords) {
+        if (message.contains(kw)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+QString PetChatWidget::normalizeSearchQuery(const QString &message) const
+{
+    QString trimmed = message.trimmed();
+
+    // Strip forced-search prefixes
+    static const QStringList prefixTriggers = {
+        "/search", "#search", "搜一下", "查一下"
+    };
+    for (const QString &prefix : prefixTriggers) {
+        if (trimmed.startsWith(prefix, Qt::CaseInsensitive)) {
+            trimmed = trimmed.mid(prefix.size()).trimmed();
+            break;
+        }
+    }
+
+    // If nothing left after stripping, use original
+    if (trimmed.isEmpty()) {
+        return message.trimmed();
+    }
+
+    return trimmed;
+}
+
+QString PetChatWidget::buildWebSearchContext(const QList<WebSearchResult> &results) const
+{
+    if (results.isEmpty()) {
+        return QString();
+    }
+
+    QString ctx = QStringLiteral("[联网搜索结果]\n");
+    for (int i = 0; i < results.size(); ++i) {
+        const WebSearchResult &r = results.at(i);
+        ctx += QString::number(i + 1) + ". ";
+        if (!r.title.isEmpty()) {
+            ctx += r.title + "\n";
+        }
+        if (!r.url.isEmpty()) {
+            ctx += "   链接: " + r.url + "\n";
+        }
+        if (!r.snippet.isEmpty()) {
+            ctx += "   摘要: " + r.snippet + "\n";
+        }
+        if (!r.publishedAt.isEmpty()) {
+            ctx += "   时间: " + r.publishedAt + "\n";
+        }
+    }
+    ctx += QStringLiteral("[搜索结果结束]\n\n请根据以上搜索结果回答用户的问题。如果搜索结果中没有相关信息，请如实说明。");
+    return ctx;
+}
+
+void PetChatWidget::startChatRequestWithOptionalSearch(const QString &userMessage)
+{
+    WebSearchConfig config = WebSearchSettingsService::load();
+
+    if (isForcedWebSearchQuery(userMessage)) {
+        if (!config.enabled || config.apiKey.trimmed().isEmpty()) {
+            m_requestPending = false;
+            m_waitingForSearch = false;
+            setWaitingState(false);
+            appendSystemMessage(tr("请先在联网搜索设置中启用联网搜索并配置搜索 API Key。"));
+            return;
+        }
+
+        QString query = normalizeSearchQuery(userMessage);
+        m_pendingSearchQuery = query;
+        m_pendingUserMessage = userMessage;
+        m_waitingForSearch = true;
+        setWaitingState(true);
+        m_pendingSearchRequestId = m_webSearchService->search(query, config);
+        return;
+    }
+
+    if (config.enabled && !config.apiKey.trimmed().isEmpty() && shouldUseWebSearch(userMessage)) {
+        QString query = normalizeSearchQuery(userMessage);
+        m_pendingSearchQuery = query;
+        m_pendingUserMessage = userMessage;
+        m_waitingForSearch = true;
+        setWaitingState(true);
+        m_pendingSearchRequestId = m_webSearchService->search(query, config);
+        return;
+    }
+
+    // No search needed, send directly
+    sendChatRequestWithWebContext(userMessage, QString());
+}
+
+void PetChatWidget::sendChatRequestWithWebContext(const QString &userMessage, const QString &webContext)
+{
+    // Get current system prompt
+    const QString systemPrompt = currentSystemPrompt();
+
+    // Ensure system message is first in context
+    if (m_messages.isEmpty()) {
+        ChatCompletionService::Message sysMsg;
+        sysMsg.role = "system";
+        sysMsg.content = systemPrompt;
+        m_messages.append(sysMsg);
+    } else if (m_messages.first().role == "system") {
+        m_messages[0].content = systemPrompt;
+    }
+
+    // Build messages for this request
+    QList<ChatCompletionService::Message> requestMessages = m_messages;
+
+    // If we have web context, inject as temporary system message (NOT persisted in m_messages)
+    if (!webContext.isEmpty()) {
+        ChatCompletionService::Message webMsg;
+        webMsg.role = "system";
+        webMsg.content = webContext;
+        requestMessages.append(webMsg);
+    }
+
+    // Add user message to persisted context
+    ChatCompletionService::Message userMsg;
+    userMsg.role = "user";
+    userMsg.content = userMessage;
+    m_messages.append(userMsg);
+
+    // Add user message to request messages (always needed)
+    requestMessages.append(userMsg);
+
+    // Trim context: keep system message + last 12 normal messages
+    if (m_messages.size() > 13) {
+        QList<ChatCompletionService::Message> trimmed;
+        trimmed.append(m_messages.first()); // system message
+        int start = m_messages.size() - 12;
+        for (int i = start; i < m_messages.size(); ++i) {
+            trimmed.append(m_messages.at(i));
+        }
+        m_messages = trimmed;
+    }
+
+    // Get current API config
+    ApiConfig config;
+    ApiProfileService::instance().currentProfile(&config);
+
+    m_requestPending = true;
+    setWaitingState(true);
+    m_pendingRequestId = m_chatService->sendChatCompletion(config, requestMessages);
+}
+
+void PetChatWidget::onWebSearchFinished(const QString &requestId, const QString &query, const QList<WebSearchResult> &results)
+{
+    Q_UNUSED(query);
+    if (requestId != m_pendingSearchRequestId) return;
+
+    m_pendingSearchRequestId.clear();
+    m_waitingForSearch = false;
+
+    // Show search status briefly in chat
+    appendSystemMessage(tr("联网搜索完成，找到 %1 条结果，正在生成回答...").arg(results.size()));
+
+    QString webContext = buildWebSearchContext(results);
+    sendChatRequestWithWebContext(m_pendingUserMessage, webContext);
+    m_pendingUserMessage.clear();
+}
+
+void PetChatWidget::onWebSearchFailed(const QString &requestId, const QString &query, const QString &message)
+{
+    Q_UNUSED(query);
+    if (requestId != m_pendingSearchRequestId) return;
+
+    m_pendingSearchRequestId.clear();
+    m_pendingSearchQuery.clear();
+    m_pendingUserMessage.clear();
+    m_waitingForSearch = false;
+    m_requestPending = false;
+    setWaitingState(false);
+
+    appendSystemMessage(tr("联网搜索失败：%1").arg(message));
+}
+
+void PetChatWidget::onWebSearchCanceled(const QString &requestId)
+{
+    if (requestId != m_pendingSearchRequestId) return;
+
+    m_pendingSearchRequestId.clear();
+    m_waitingForSearch = false;
+    m_pendingUserMessage.clear();
+    setWaitingState(false);
+
+    appendSystemMessage(tr("已取消联网搜索。"));
 }

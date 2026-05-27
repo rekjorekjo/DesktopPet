@@ -63,6 +63,34 @@ SoftMessageBox::StandardButton SoftMessageBox::question(QWidget *parent, const Q
     return static_cast<StandardButton>(result);
 }
 
+void SoftMessageBox::showInformation(QWidget *parent, const QString &title, const QString &text)
+{
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+    QString iconColor = p.accent;
+    QDialog *dialog = createDialog(parent, title, text, "i", iconColor, Ok, Ok);
+    if (dialog) {
+        dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+        dialog->setWindowModality(Qt::NonModal);
+        dialog->show();
+        dialog->raise();
+    }
+}
+
+void SoftMessageBox::showWarning(QWidget *parent, const QString &title, const QString &text)
+{
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+    QString iconColor = p.accent;
+    QDialog *dialog = createDialog(parent, title, text, "!", iconColor, Ok, Ok);
+    if (dialog) {
+        dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+        dialog->setWindowModality(Qt::NonModal);
+        dialog->show();
+        dialog->raise();
+    }
+}
+
 QDialog* SoftMessageBox::createDialog(QWidget *parent, const QString &title, const QString &text,
                                         const QString &iconText, const QString &iconColor,
                                         StandardButtons buttons, StandardButton defaultButton)

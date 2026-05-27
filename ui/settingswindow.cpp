@@ -4,6 +4,7 @@
 #include "pages/aboutpage.h"
 #include "pages/actionsettingspage.h"
 #include "pages/apiconfigpage.h"
+#include "pages/websearchconfigpage.h"
 #include "pages/logpage.h"
 #include "pages/personalizationpage.h"
 #include "pages/petmanagepage.h"
@@ -84,6 +85,7 @@ SettingsWindow::SettingsWindow(QWidget *parent)
     , m_petManagePage(nullptr)
     , m_actionSettingsPage(nullptr)
     , m_apiConfigPage(nullptr)
+    , m_webSearchConfigPage(nullptr)
     , m_logPage(nullptr)
     , m_personalizationPage(nullptr)
     , m_aboutPage(nullptr)
@@ -143,8 +145,9 @@ void SettingsWindow::setupSidebar()
     m_sidebar->setFocusPolicy(Qt::NoFocus);
     m_sidebar->addItem(tr("宠物管理"));
     m_sidebar->addItem(tr("动作设置"));
-    m_sidebar->addItem(tr("聊天设置"));
-    m_sidebar->addItem(tr("日志"));
+    m_sidebar->addItem(tr("LLM 设置"));
+    m_sidebar->addItem(tr("搜索设置"));
+    m_sidebar->addItem(tr("对话日志"));
     m_sidebar->addItem(tr("个性化"));
     m_sidebar->addItem(tr("关于"));
     m_sidebar->setCurrentRow(0);
@@ -160,6 +163,7 @@ void SettingsWindow::setupPages()
     m_petManagePage = new PetManagePage(this);
     m_actionSettingsPage = new ActionSettingsPage(this);
     m_apiConfigPage = new ApiConfigPage(this);
+    m_webSearchConfigPage = new WebSearchConfigPage(this);
     m_logPage = new LogPage(this);
     m_personalizationPage = new PersonalizationPage(this);
     m_aboutPage = new AboutPage(this);
@@ -167,6 +171,7 @@ void SettingsWindow::setupPages()
     m_stackedWidget->addWidget(m_petManagePage);
     m_stackedWidget->addWidget(m_actionSettingsPage);
     m_stackedWidget->addWidget(m_apiConfigPage);
+    m_stackedWidget->addWidget(m_webSearchConfigPage);
     m_stackedWidget->addWidget(m_logPage);
     m_stackedWidget->addWidget(m_personalizationPage);
     m_stackedWidget->addWidget(m_aboutPage);
@@ -281,6 +286,9 @@ void SettingsWindow::applyTheme()
     }
     if (m_apiConfigPage) {
         m_apiConfigPage->refreshTheme();
+    }
+    if (m_webSearchConfigPage) {
+        m_webSearchConfigPage->refreshTheme();
     }
     if (m_logPage) {
         m_logPage->refreshTheme();

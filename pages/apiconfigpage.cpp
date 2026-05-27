@@ -115,15 +115,6 @@ void ApiConfigPage::setupUi()
             .arg(p.accent));
     statusTextLayout->addWidget(m_currentApiProfileLabel);
 
-    QLabel *storageNoteLabel = new QLabel(
-        tr("存储后端：%1 — 请妥善保管设备与 API 配置文件。")
-            .arg(SecretStorageService::backendName()),
-        m_statusCard);
-    storageNoteLabel->setStyleSheet(QString(
-        "color: %1; border: none; background: transparent; font-size: 12px;"
-    ).arg(p.textSecondary));
-    statusTextLayout->addWidget(storageNoteLabel);
-
     statusOuterLayout->addLayout(statusTextLayout, 1);
 
     m_testConnectionButton = new QPushButton(tr("测试连接"), m_statusCard);

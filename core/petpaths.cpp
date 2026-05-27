@@ -95,6 +95,11 @@ QString PetPaths::chatSettingsFilePath()
     return configDir() + "/chat_settings.json";
 }
 
+QString PetPaths::webSearchSettingsFilePath()
+{
+    return configDir() + "/websearch_settings.json";
+}
+
 bool PetPaths::ensureDefaultStructure()
 {
     QDir rootDir(rootDirectory());

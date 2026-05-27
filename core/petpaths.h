@@ -25,6 +25,7 @@ public:
     static QString configDir();
     static QString apiProfilesFilePath();
     static QString chatSettingsFilePath();
+    static QString webSearchSettingsFilePath();
 
     static bool ensureDefaultStructure();
 

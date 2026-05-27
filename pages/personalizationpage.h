@@ -54,7 +54,6 @@ private:
 
     SoftCardWidget *m_appearanceCard;
     QLabel *m_appearanceCardTitle;
-    QLabel *m_themeHintLabel;
     QLabel *m_lightThemeLabel;
     WheelGuardListWidget *m_lightThemeList;
     QLabel *m_darkThemeLabel;

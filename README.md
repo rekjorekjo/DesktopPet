@@ -19,6 +19,7 @@ DesktopPet 是一款基于 C++ / Qt 6 开发的桌面宠物应用，支持桌面
 - 桌宠移动（水平、垂直、随机方向）
 - 主题系统（浅色 / 深色 / Bloom / 卡片渐变 / 随机渐变）
 - 基于 OpenAI 兼容 API 的非流式 AI 对话
+- 联网搜索增强（支持 Tavily / Brave Search / Exa，关键词自动触发与手动触发）
 - 聊天设置与系统提示词自定义（桌宠人格设定）
 - API Profile 配置管理与 JSON 持久化
 - 配套工具 DesktopPet-resize，用于批量处理动作图片资源
@@ -76,8 +77,9 @@ DesktopPet/
 
 ```
 config/
-├── api_profiles.json      # API 配置档案（支持多配置切换）
-└── chat_settings.json     # 系统提示词与聊天设置
+├── api_profiles.json         # API 配置档案（支持多配置切换）
+├── chat_settings.json        # 系统提示词与聊天设置
+└── websearch_settings.json   # 联网搜索配置（搜索服务、API Key 等）
 ```
 
 ### 宠物与动作数据
@@ -102,6 +104,7 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 ### 当前支持
 
 - OpenAI 兼容格式的非流式聊天请求
+- 联网搜索增强：支持 Tavily、Brave Search、Exa 三种搜索服务
 - 从聊天设置页选择当前 API Profile
 - 自定义系统提示词（桌宠人格与对话风格设定）
 - 聊天窗口中用户消息显示为"我"，宠物回复显示为当前宠物名称
@@ -109,12 +112,20 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 
 ### 当前暂不支持
 
-- WebSearch / 联网搜索
 - Tool Calling / Function Calling
 - 流式输出
-- 请求取消
 - 模型情感动作联动
 - 聊天日志自动写入
+
+### 联网搜索说明
+
+v0.31.2 起支持联网搜索增强。用户可在"联网搜索设置"页面配置搜索服务（Tavily / Brave Search / Exa）及其 API Key。
+
+联网搜索有两种触发方式：
+- **关键词自动触发**：消息中包含"最近"、"最新"、"新闻"、"天气"等关键词时自动搜索
+- **手动触发**：消息以 `/search`、`#search`、"搜一下"、"查一下"等前缀开头
+
+搜索结果会作为临时上下文注入对话，不会写入聊天历史。搜索失败时自动降级为直接 AI 回答。
 
 ---
 
@@ -158,7 +169,7 @@ cmake --build build --config Release
 
 - 聊天日志持久化
 - 模型回复情感信息与宠物动作联动
-- WebSearch / 外部信息工具
+- ~~WebSearch / 外部信息工具~~（v0.31.2 已实现）
 - Tool Calling / Function Calling
 - 流式输出与请求取消
 - 更多跨平台适配

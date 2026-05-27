@@ -19,6 +19,7 @@ LogPage::LogPage(QWidget *parent)
     , m_logCard(nullptr)
     , m_loadLogButton(nullptr)
     , m_filePathEdit(nullptr)
+    , m_searchLabel(nullptr)
     , m_searchEdit(nullptr)
     , m_logDisplay(nullptr)
 {
@@ -54,7 +55,7 @@ void LogPage::setupUi()
     QHBoxLayout *headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(24);
 
-    m_titleLabel = new QLabel(tr("日志"), m_contentWidget);
+    m_titleLabel = new QLabel(tr("对话日志"), m_contentWidget);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -91,10 +92,10 @@ void LogPage::setupUi()
     QHBoxLayout *searchLayout = new QHBoxLayout();
     searchLayout->setSpacing(12);
 
-    QLabel *searchLabel = new QLabel(tr("搜索"), m_logCard);
-    searchLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                   .arg(theme.currentPalette().textSecondary));
-    searchLayout->addWidget(searchLabel);
+    m_searchLabel = new QLabel(tr("搜索"), m_logCard);
+    m_searchLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                     .arg(theme.currentPalette().textPrimary));
+    searchLayout->addWidget(m_searchLabel);
 
     m_searchEdit = new QLineEdit(m_logCard);
     m_searchEdit->setPlaceholderText(tr("搜索对话内容 / 宠物 / API配置"));
@@ -149,6 +150,8 @@ void LogPage::applyTheme()
     m_loadLogButton->setStyleSheet(theme.softButtonStyleSheet());
     m_filePathEdit->setStyleSheet(theme.lineEditStyleSheet());
     m_searchEdit->setStyleSheet(theme.lineEditStyleSheet());
+    m_searchLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                     .arg(p.textPrimary));
 
     m_logDisplay->setStyleSheet(
         QString("QPlainTextEdit { background: %1; color: %2; border: 1px solid %3; "

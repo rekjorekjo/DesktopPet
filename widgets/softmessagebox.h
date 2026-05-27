@@ -23,6 +23,9 @@ public:
                                     StandardButtons buttons = Yes | No,
                                     StandardButton defaultButton = NoButton);
 
+    static void showInformation(QWidget *parent, const QString &title, const QString &text);
+    static void showWarning(QWidget *parent, const QString &title, const QString &text);
+
 private:
     static QDialog* createDialog(QWidget *parent, const QString &title, const QString &text,
                                   const QString &iconText, const QString &iconColor,

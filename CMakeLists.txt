@@ -38,6 +38,8 @@ qt_add_executable(DesktopPet
     models/apiconfig.cpp
     models/apiproviderpreset.h
     models/apiproviderpreset.cpp
+    models/websearchconfig.h
+    models/websearchconfig.cpp
     models/petaction.cpp
     models/petaction.h
     models/petplaylist.cpp
@@ -85,6 +87,10 @@ qt_add_executable(DesktopPet
     services/chatsettingsservice.h
     services/secretstorageservice.cpp
     services/secretstorageservice.h
+    services/websearchservice.cpp
+    services/websearchservice.h
+    services/websearchsettingsservice.cpp
+    services/websearchsettingsservice.h
     pages/petmanagepage.cpp
     pages/petmanagepage.h
     pages/actionsettingspage.cpp
@@ -106,6 +112,8 @@ qt_add_executable(DesktopPet
     dialogs/apiconfigdialog.h
     pages/apiconfigpage.cpp
     pages/apiconfigpage.h
+    pages/websearchconfigpage.cpp
+    pages/websearchconfigpage.h
     pages/logpage.cpp
     pages/logpage.h
     pages/personalizationpage.cpp
