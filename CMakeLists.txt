@@ -281,6 +281,8 @@ if(BUILD_TESTING)
         tests/test_chatqueryclassifier.cpp
         tests/test_repositorycleanup.h
         tests/test_repositorycleanup.cpp
+        tests/test_apiprofileservice.h
+        tests/test_apiprofileservice.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -293,6 +295,10 @@ if(BUILD_TESTING)
         services/chatqueryclassifier.h
         services/chatlogservice.cpp
         services/chatlogservice.h
+        services/apiprofileservice.cpp
+        services/apiprofileservice.h
+        models/apiconfig.cpp
+        models/apiconfig.h
         core/petpaths.cpp
         core/petpaths.h
         core/appsettings.cpp

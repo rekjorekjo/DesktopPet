@@ -79,7 +79,7 @@ DesktopPet/
 
 ```
 config/
-├── api_profiles.json         # API 配置档案（支持多配置切换）
+├── api_profiles.json         # API 配置档案（支持多配置切换，当前配置也保存在此文件中）
 ├── chat_settings.json        # 系统提示词与聊天设置
 └── websearch_settings.json   # 联网搜索配置（搜索服务、API Key 等）
 ```

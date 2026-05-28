@@ -5,6 +5,7 @@
 #include "test_petlibraryindexservice.h"
 #include "test_chatqueryclassifier.h"
 #include "test_repositorycleanup.h"
+#include "test_apiprofileservice.h"
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +29,10 @@ int main(int argc, char *argv[])
     }
     {
         TestRepositoryCleanup t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestApiProfileService t;
         status |= QTest::qExec(&t, argc, argv);
     }
 

@@ -1,6 +1,5 @@
 #include "apiprofileservice.h"
 
-#include "core/appsettings.h"
 #include "core/petpaths.h"
 
 #include <QDebug>
@@ -74,14 +73,6 @@ bool ApiProfileService::load(QString *error)
     }
 
     m_currentProfileName = root["currentProfile"].toString().trimmed();
-
-    // Fallback: if JSON currentProfile is empty, try AppSettings
-    if (m_currentProfileName.isEmpty()) {
-        QString legacy = AppSettings::currentApiConfigName().trimmed();
-        if (!legacy.isEmpty() && m_profiles.contains(legacy)) {
-            m_currentProfileName = legacy;
-        }
-    }
 
     // Validate currentProfile exists in loaded profiles
     if (!m_currentProfileName.isEmpty() && !m_profiles.contains(m_currentProfileName)) {
@@ -211,7 +202,6 @@ bool ApiProfileService::setCurrentProfileName(const QString &name, QString *erro
     }
 
     m_currentProfileName = trimmed;
-    AppSettings::setCurrentApiConfigName(m_currentProfileName);
     return save(error);
 }
 
@@ -271,7 +261,6 @@ bool ApiProfileService::updateProfile(const QString &oldName, const QString &new
     // Sync current profile name if it was the old name
     if (m_currentProfileName == trimmedOld) {
         m_currentProfileName = trimmedNew;
-        AppSettings::setCurrentApiConfigName(m_currentProfileName);
     }
 
     return save(error);
@@ -295,7 +284,6 @@ bool ApiProfileService::removeProfile(const QString &name, QString *error)
         } else {
             m_currentProfileName.clear();
         }
-        AppSettings::setCurrentApiConfigName(m_currentProfileName);
     }
 
     return save(error);

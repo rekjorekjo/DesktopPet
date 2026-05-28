@@ -13,9 +13,6 @@ public:
     static QString currentPetId();
     static void setCurrentPetId(const QString &petId);
 
-    static QString currentApiConfigName();
-    static void setCurrentApiConfigName(const QString &name);
-
     static double petScaleFactor();
     static void setPetScaleFactor(double scale);
 
