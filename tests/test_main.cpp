@@ -4,6 +4,7 @@
 #include "test_websearchconfig.h"
 #include "test_petlibraryindexservice.h"
 #include "test_chatqueryclassifier.h"
+#include "test_repositorycleanup.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +24,10 @@ int main(int argc, char *argv[])
     }
     {
         TestChatQueryClassifier t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestRepositoryCleanup t;
         status |= QTest::qExec(&t, argc, argv);
     }
 

@@ -279,6 +279,8 @@ if(BUILD_TESTING)
         tests/test_petlibraryindexservice.cpp
         tests/test_chatqueryclassifier.h
         tests/test_chatqueryclassifier.cpp
+        tests/test_repositorycleanup.h
+        tests/test_repositorycleanup.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -289,6 +291,8 @@ if(BUILD_TESTING)
         services/actionlibraryindexservice.h
         services/chatqueryclassifier.cpp
         services/chatqueryclassifier.h
+        services/chatlogservice.cpp
+        services/chatlogservice.h
         core/petpaths.cpp
         core/petpaths.h
         core/appsettings.cpp

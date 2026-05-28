@@ -24,7 +24,7 @@ QString ChatLogService::petLogDirectory(const QString &petId)
 {
     QString safePetId = sanitizePetId(petId);
     if (safePetId.isEmpty()) {
-        safePetId = "default_pet";
+        safePetId = "_no_pet";
     }
 
     QString petDir = rootLogDirectory() + "/" + safePetId;

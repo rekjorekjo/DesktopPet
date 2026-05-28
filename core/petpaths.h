@@ -13,12 +13,8 @@ public:
     static QString petsDirectory();
     static QString petDirectory(const QString &petId);
     static QString currentPetDirectory();
-    static QString defaultPetDirectory();
-    static QString legacyDefaultPetDirectory();
     static QString currentPetJsonPath();
     static QString currentPlaylistPath();
-    static QString defaultPetJsonPath();
-    static QString defaultPlaylistPath();
 
     static QString resolveActionDirectory(const PetAction &action);
 
@@ -33,10 +29,6 @@ public:
     // Call clearDataRootOverrideForTesting() in cleanup.
     static void setDataRootOverrideForTesting(const QString &path);
     static void clearDataRootOverrideForTesting();
-
-private:
-    static bool migrateFromLegacyStructure();
-    static bool copyDirectory(const QString &source, const QString &destination);
 };
 
 #endif // PETPATHS_H
