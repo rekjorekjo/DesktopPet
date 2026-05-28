@@ -11,8 +11,22 @@
 #include <QDir>
 #include <QFile>
 
+static QString s_dataRootOverride;
+
+void PetPaths::setDataRootOverrideForTesting(const QString &path)
+{
+    s_dataRootOverride = path;
+}
+
+void PetPaths::clearDataRootOverrideForTesting()
+{
+    s_dataRootOverride.clear();
+}
+
 QString PetPaths::rootDirectory()
 {
+    if (!s_dataRootOverride.isEmpty())
+        return s_dataRootOverride;
     return QDir::currentPath() + "/pets";
 }
 

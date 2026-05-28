@@ -29,6 +29,11 @@ public:
 
     static bool ensureDefaultStructure();
 
+    // Test-only: override the data root directory for isolated testing.
+    // Call clearDataRootOverrideForTesting() in cleanup.
+    static void setDataRootOverrideForTesting(const QString &path);
+    static void clearDataRootOverrideForTesting();
+
 private:
     static bool migrateFromLegacyStructure();
     static bool copyDirectory(const QString &source, const QString &destination);

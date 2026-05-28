@@ -41,6 +41,7 @@ DesktopPet 是一款基于 C++ / Qt 6 开发的桌面宠物应用，支持桌面
 | Qt Widgets | UI 组件 |
 | Qt Network | 网络请求（AI 对话） |
 | Qt Svg | SVG 图标支持 |
+| Qt Test | 单元测试框架 |
 | CMake 3.19+ | 构建系统 |
 | JSON | 配置与数据持久化 |
 
@@ -64,6 +65,7 @@ DesktopPet/
 ├── utils/         # GIF 抽帧、图片处理等工具函数
 ├── platform/      # 平台相关代码
 ├── tools/         # 配套工具与打包脚本
+├── tests/         # 单元测试
 └── resources/     # 图标、主题等资源
 ```
 
@@ -90,6 +92,8 @@ pets/
 ├── pets/<petId>/          # 宠物配置（pet.json、playlist.json）
 └── actions/<actionId>/    # 动作资源（action.json、图片帧）
 ```
+
+**DesktopPet 不内置默认宠物资源。** 安装包和 release 包不会打包默认 pets 资源。用户需要自行创建、导入或恢复宠物资源。
 
 ### API Key 存储说明
 
@@ -153,7 +157,38 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
+构建测试版本：
+
+```bash
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+```
+
 如果 Qt 未加入默认搜索路径，需设置 `CMAKE_PREFIX_PATH` 或 `Qt6_DIR`。
+
+---
+
+## 运行测试
+
+项目使用 Qt Test 作为测试框架，通过 CTest 运行。
+
+```bash
+ctest --test-dir build -C Release --output-on-failure
+```
+
+### 测试范围
+
+当前测试主要覆盖：
+
+- API Key 脱敏（SecretStorageService）
+- WebSearch 配置 JSON 序列化与边界修正（WebSearchConfig）
+- 宠物库磁盘恢复逻辑（PetLibraryIndexService）
+
+### 暂不覆盖
+
+- Qt Widgets 图形界面自动化测试
+- 真实联网搜索请求
+- Inno Setup 安装流程
 
 ---
 
@@ -191,9 +226,10 @@ DesktopPet 当前仍处于 Beta 阶段，功能和配置格式可能继续调整
 
 ```bash
 tools/packaging/package_release.bat
+tools/packaging/build_installer.bat
 ```
 
-脚本会调用 `windeployqt` 收集 Qt 依赖，并生成可发布目录与压缩包。打包前需先在 Qt Creator 中构建 Release 版本。
+`package_release.bat` 调用 `windeployqt` 收集 Qt 依赖，并生成可发布目录与压缩包。`build_installer.bat` 调用 Inno Setup 生成安装程序。打包前需先在 Qt Creator 中构建 Release 版本。
 
 ---
 

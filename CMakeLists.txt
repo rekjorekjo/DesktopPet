@@ -21,6 +21,11 @@ set(DESKTOPPET_VERSION_DISPLAY "v${DESKTOPPET_VERSION}(beta)")
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Network)
 
+include(CTest)
+if(BUILD_TESTING)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+endif()
+
 qt_standard_project_setup()
 
 qt_add_executable(DesktopPet
@@ -257,3 +262,52 @@ install(TARGETS DesktopPet-resize
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+# ── Tests ────────────────────────────────────────────────────────
+if(BUILD_TESTING)
+    enable_testing()
+
+    add_executable(DesktopPetTests
+        tests/test_main.cpp
+        tests/test_secretstorageservice.h
+        tests/test_secretstorageservice.cpp
+        tests/test_websearchconfig.h
+        tests/test_websearchconfig.cpp
+        tests/test_petlibraryindexservice.h
+        tests/test_petlibraryindexservice.cpp
+        services/secretstorageservice.cpp
+        services/secretstorageservice.h
+        models/websearchconfig.cpp
+        models/websearchconfig.h
+        services/petlibraryindexservice.cpp
+        services/petlibraryindexservice.h
+        services/actionlibraryindexservice.cpp
+        services/actionlibraryindexservice.h
+        core/petpaths.cpp
+        core/petpaths.h
+        core/appsettings.cpp
+        core/appsettings.h
+        core/petconfigmanager.cpp
+        core/petconfigmanager.h
+        models/petaction.cpp
+        models/petaction.h
+        models/petplaylist.cpp
+        models/petplaylist.h
+        models/timedtrigger.cpp
+        models/timedtrigger.h
+    )
+
+    target_include_directories(DesktopPetTests
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    target_link_libraries(DesktopPetTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+    )
+
+    add_test(NAME DesktopPetTests COMMAND DesktopPetTests)
+endif()
