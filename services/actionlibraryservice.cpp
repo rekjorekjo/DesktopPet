@@ -66,9 +66,8 @@ ActionLibraryOperationResult ActionLibraryService::removeAction(
 
     QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
     for (const PetLibraryEntry &entry : petEntries) {
-        QString petId = entry.id;
-        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
-        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
+        if (entry.id.isEmpty()) continue;
+        QString playlistPath = PetPaths::petDirectory(entry.id) + "/playlist.json";
 
         if (!QFile::exists(playlistPath)) {
             continue;
@@ -184,9 +183,8 @@ ActionLibraryOperationResult ActionLibraryService::deleteAction(
 
     QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
     for (const PetLibraryEntry &entry : petEntries) {
-        QString petId = entry.id;
-        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
-        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
+        if (entry.id.isEmpty()) continue;
+        QString playlistPath = PetPaths::petDirectory(entry.id) + "/playlist.json";
 
         if (!QFile::exists(playlistPath)) {
             continue;
@@ -392,9 +390,8 @@ ActionLibraryOperationResult ActionLibraryService::renameActionId(
 
     QList<PetLibraryEntry> petEntries = PetLibraryIndexService::loadEntries();
     for (const PetLibraryEntry &entry : petEntries) {
-        QString petId = entry.id;
-        QString petDir = entry.dir.isEmpty() ? petId : entry.dir;
-        QString playlistPath = QDir(PetPaths::petsDirectory()).filePath(petDir + "/playlist.json");
+        if (entry.id.isEmpty()) continue;
+        QString playlistPath = PetPaths::petDirectory(entry.id) + "/playlist.json";
 
         if (!QFile::exists(playlistPath)) {
             continue;

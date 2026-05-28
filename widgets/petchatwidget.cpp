@@ -556,7 +556,7 @@ void PetChatWidget::startChatRequestWithOptionalSearch(const QString &userMessag
             m_requestPending = false;
             m_waitingForSearch = false;
             setWaitingState(false);
-            appendSystemMessage(tr("请先在联网搜索设置中启用联网搜索并配置搜索 API Key。"));
+            appendSystemMessage(tr("请先在搜索设置中启用联网搜索并配置搜索 API Key。"));
             return;
         }
 

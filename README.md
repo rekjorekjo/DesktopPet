@@ -87,11 +87,12 @@ config/
 ### 宠物与动作数据
 
 ```
-pets/
-├── petlibrary.json        # 宠物库索引
-├── pets/<petId>/          # 宠物配置（pet.json、playlist.json）
-└── actions/<actionId>/    # 动作资源（action.json、图片帧）
+petlibrary.json              # 宠物库索引（宠物 ID 唯一依据）
+pets/<petId>/                # 宠物配置（pet.json、playlist.json）
+actions/<actionId>/          # 动作资源（action.json、图片帧）
 ```
+
+宠物目录规则：`pets/<petId>/` 是唯一合法的宠物目录格式，`petId` 必须与 `pet.json` 中的 `id` 字段一致。
 
 **DesktopPet 不内置默认宠物资源。** 安装包和 release 包不会打包默认 pets 资源。用户需要自行创建、导入或恢复宠物资源。
 

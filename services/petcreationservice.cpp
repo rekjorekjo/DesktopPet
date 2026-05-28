@@ -98,7 +98,6 @@ PetCreationResult PetCreationService::createPet(
     PetLibraryEntry entry;
     entry.id = trimmedId;
     entry.name = info.name;
-    entry.dir = "pets/" + trimmedId;
     entry.enabled = true;
     PetLibraryIndexService::addOrUpdatePet(entry);
 
@@ -184,7 +183,6 @@ PetCreationResult PetCreationService::createOrRepairPetConfig(
     PetLibraryEntry entry;
     entry.id = trimmedId;
     entry.name = finalName;
-    entry.dir = "pets/" + trimmedId;
     entry.enabled = true;
     PetLibraryIndexService::addOrUpdatePet(entry);
 

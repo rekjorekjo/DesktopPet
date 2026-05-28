@@ -152,4 +152,37 @@ void TestPetLibraryIndexService::existingLibraryNotOverwritten()
     QCOMPARE(entries.first().id, QString("cat"));
 }
 
+void TestPetLibraryIndexService::saveEntriesWritesNoDirField()
+{
+    PetLibraryEntry entry;
+    entry.id = "testpet";
+    entry.name = "Test Pet";
+    entry.enabled = true;
+
+    QList<PetLibraryEntry> entries;
+    entries.append(entry);
+
+    QVERIFY(PetLibraryIndexService::saveEntries(entries));
+
+    QString libraryPath = PetPaths::rootDirectory() + "/petlibrary.json";
+    QFile file(libraryPath);
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    QByteArray data = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    QCOMPARE(parseError.error, QJsonParseError::NoError);
+
+    QJsonObject root = doc.object();
+    QJsonArray petsArray = root["pets"].toArray();
+    QCOMPARE(petsArray.size(), 1);
+
+    QJsonObject petObj = petsArray.first().toObject();
+    QVERIFY(petObj.contains("id"));
+    QVERIFY(petObj.contains("name"));
+    QVERIFY(petObj.contains("enabled"));
+    QVERIFY(!petObj.contains("dir"));
+}
+
 #include "moc_test_petlibraryindexservice.cpp"

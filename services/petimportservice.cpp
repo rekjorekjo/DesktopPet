@@ -114,7 +114,6 @@ PetImportResult PetImportService::importPet(
     PetLibraryEntry entry;
     entry.id = targetPetId;
     entry.name = info.name;
-    entry.dir = "pets/" + targetPetId;
     entry.enabled = true;
     PetLibraryIndexService::addOrUpdatePet(entry);
 

@@ -874,7 +874,6 @@ void PetManagePage::editPetById(const QString &petId)
         PetLibraryEntry entry;
         entry.id = newPetId;
         entry.name = updatedInfo.name;
-        entry.dir = "pets/" + newPetId;
         entry.enabled = true;
         PetLibraryIndexService::addOrUpdatePet(entry);
 

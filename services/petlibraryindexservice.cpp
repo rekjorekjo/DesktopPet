@@ -69,7 +69,6 @@ QList<PetLibraryEntry> PetLibraryIndexService::loadEntries()
         PetLibraryEntry entry;
         entry.id = petObj["id"].toString();
         entry.name = petObj["name"].toString();
-        entry.dir = petObj["dir"].toString();
         entry.enabled = petObj["enabled"].toBool(true);
 
         if (!entry.id.isEmpty()) {
@@ -89,7 +88,6 @@ bool PetLibraryIndexService::saveEntries(const QList<PetLibraryEntry> &entries)
         QJsonObject petObj;
         petObj["id"] = entry.id;
         petObj["name"] = entry.name;
-        petObj["dir"] = entry.dir;
         petObj["enabled"] = entry.enabled;
         petsArray.append(petObj);
     }
@@ -330,7 +328,6 @@ bool PetLibraryIndexService::recoverLibraryFromDiskIfEmpty()
         PetLibraryEntry entry;
         entry.id = info.id;
         entry.name = info.name.isEmpty() ? info.id : info.name;
-        entry.dir = "pets/" + folderName;
         entry.enabled = true;
         recovered.append(entry);
     }

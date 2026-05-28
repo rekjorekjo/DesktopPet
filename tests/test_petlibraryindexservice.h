@@ -26,6 +26,7 @@ private slots:
     void validDirectoryRecovered();
     void mismatchedIdSkipped();
     void existingLibraryNotOverwritten();
+    void saveEntriesWritesNoDirField();
 };
 
 #endif

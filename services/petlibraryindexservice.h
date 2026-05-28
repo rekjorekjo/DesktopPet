@@ -10,7 +10,6 @@ struct PetLibraryEntry
 {
     QString id;       // 宠物唯一标识
     QString name;     // 宠物显示名称
-    QString dir;      // 宠物目录名（默认与 id 相同）
     bool enabled = true;
 };
 
