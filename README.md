@@ -108,7 +108,7 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 
 ### 当前支持
 
-- OpenAI 兼容格式的非流式聊天请求
+- 仅支持 OpenAI 兼容格式（OpenAI-compatible）的非流式聊天请求
 - 联网搜索增强：支持 Tavily、Brave Search、Exa 三种搜索服务
 - 从聊天设置页选择当前 API Profile
 - 自定义系统提示词（桌宠人格与对话风格设定）
@@ -123,6 +123,14 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 - 流式输出
 - 模型情感动作联动
 - 聊天日志自动写入
+
+### 支持的 API 格式与供应商
+
+当前版本仅支持 OpenAI-compatible API 格式。以下供应商预设均按 OpenAI 兼容接口调用：
+
+DeepSeek、Kimi、Qwen、GLM、Doubao、MiniMax、XiaoMiMiMo、OpenAI、Gemini（OpenAI endpoint）、Grok，以及"自定义"配置。
+
+Claude / Anthropic 原生接口（Anthropic-compatible）暂未开放。
 
 ### 联网搜索说明
 

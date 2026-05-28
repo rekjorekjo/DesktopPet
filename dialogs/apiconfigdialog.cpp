@@ -84,18 +84,8 @@ void ApiConfigDialog::setApiConfig(const ApiConfig &config)
     m_lastProviderIndex = m_providerCombo->currentIndex();
     m_updatingProviderCombo = false;
 
-    // 选择 API 格式
-    switch (config.apiFormat) {
-    case ApiFormat::OpenAICompatible:
-        m_formatCombo->setCurrentIndex(0);
-        break;
-    case ApiFormat::AnthropicCompatible:
-        m_formatCombo->setCurrentIndex(1);
-        break;
-    case ApiFormat::Custom:
-        m_formatCombo->setCurrentIndex(2);
-        break;
-    }
+    // API 格式固定为 OpenAI-compatible（当前版本不支持其他格式）
+    m_formatCombo->setCurrentIndex(0);
 
     // 填充模板文本
     if (!config.templateText.isEmpty()) {
@@ -114,13 +104,8 @@ ApiConfig ApiConfigDialog::apiConfig() const
     ApiConfig config;
     config.providerId = m_providerCombo->currentData().toString();
 
-    int fmtIdx = m_formatCombo->currentIndex();
-    switch (fmtIdx) {
-    case 0: config.apiFormat = ApiFormat::OpenAICompatible; break;
-    case 1: config.apiFormat = ApiFormat::AnthropicCompatible; break;
-    case 2: config.apiFormat = ApiFormat::Custom; break;
-    default: config.apiFormat = ApiFormat::OpenAICompatible; break;
-    }
+    // 当前版本仅支持 OpenAI-compatible 格式
+    config.apiFormat = ApiFormat::OpenAICompatible;
 
     config.templateText = m_templateEdit->toPlainText();
 
@@ -220,19 +205,9 @@ void ApiConfigDialog::onProviderChanged(int index)
 
     m_lastProviderIndex = index;
 
-    // 自动切换 API 格式
+    // API 格式固定为 OpenAI-compatible
     m_updatingProviderCombo = true;
-    switch (preset.defaultFormat) {
-    case ApiFormat::OpenAICompatible:
-        m_formatCombo->setCurrentIndex(0);
-        break;
-    case ApiFormat::AnthropicCompatible:
-        m_formatCombo->setCurrentIndex(1);
-        break;
-    case ApiFormat::Custom:
-        m_formatCombo->setCurrentIndex(2);
-        break;
-    }
+    m_formatCombo->setCurrentIndex(0);
     m_updatingProviderCombo = false;
 
     loadProviderTemplate(index);
@@ -344,10 +319,12 @@ void ApiConfigDialog::setupUi()
     m_formatCombo->setMinimumHeight(40);
     m_formatCombo->setStyleSheet(theme.comboBoxStyleSheet());
     m_formatCombo->addItem("OpenAI-compatible");
-    m_formatCombo->addItem("Anthropic-compatible");
-    m_formatCombo->addItem("Custom");
     m_formatCombo->setCurrentIndex(0);
     cardLayout->addWidget(m_formatCombo);
+
+    // 隐藏 API 格式区域：当前版本仅支持 OpenAI-compatible
+    m_formatLabel->hide();
+    m_formatCombo->hide();
 
     // 配置模板
     m_templateLabel = makeLabel(tr("配置模板:"));
@@ -389,20 +366,17 @@ void ApiConfigDialog::setupUi()
     cardLayout->addWidget(m_templateEdit, 1);
 
     // Security notice
-    QLabel *securityLabel = new QLabel(
-        tr("安全提示：当前版本会将 API Key 保存在本地 config/api_profiles.json 中。"
-           "请勿在公共电脑或不可信设备上保存密钥。"),
-        cardWidget);
+    QLabel *securityLabel = new QLabel(tr("安全提示：请勿在公共电脑或不可信设备上保存密钥。"),
+                                       cardWidget);
     securityLabel->setWordWrap(true);
-    securityLabel->setStyleSheet(QString(
-        "QLabel {"
-        "  color: %1;"
-        "  font-size: 12px;"
-        "  background: transparent;"
-        "  border: none;"
-        "  padding: 4px 0;"
-        "}"
-    ).arg(p.textSecondary));
+    securityLabel->setStyleSheet(QString("QLabel {"
+                                         "  color: %1;"
+                                         "  font-size: 14px;"
+                                         "  background: transparent;"
+                                         "  border: none;"
+                                         "  padding: 4px 0;"
+                                         "}")
+                                     .arg(p.textSecondary));
     cardLayout->addWidget(securityLabel);
 
     // 按钮

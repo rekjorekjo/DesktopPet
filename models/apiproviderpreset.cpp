@@ -5,7 +5,8 @@ static const QList<ApiProviderPreset> &buildPresets()
     static QList<ApiProviderPreset> list
         = {{"custom",
             "自定义",
-            ApiFormat::Custom,
+            ApiFormat::OpenAICompatible,
+            "# 仅支持 OpenAI 兼容格式的 API\n"
             "API_KEY=\n"
             "BASE_URL=\n"
             "MODEL="},
@@ -69,14 +70,7 @@ static const QList<ApiProviderPreset> &buildPresets()
             ApiFormat::OpenAICompatible,
             "API_KEY=\n"
             "BASE_URL=https://api.x.ai/v1\n"
-            "MODEL="},
-           {"anthropic",
-            "Claude",
-            ApiFormat::AnthropicCompatible,
-            "API_KEY=\n"
-            "BASE_URL=https://api.anthropic.com\n"
-            "MODEL=\n"
-            "MAX_TOKENS=1024"}};
+            "MODEL="}};
     return list;
 }
 

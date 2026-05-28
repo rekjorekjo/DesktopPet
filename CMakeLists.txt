@@ -283,6 +283,8 @@ if(BUILD_TESTING)
         tests/test_repositorycleanup.cpp
         tests/test_apiprofileservice.h
         tests/test_apiprofileservice.cpp
+        tests/test_apiconfig.h
+        tests/test_apiconfig.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -299,6 +301,8 @@ if(BUILD_TESTING)
         services/apiprofileservice.h
         models/apiconfig.cpp
         models/apiconfig.h
+        models/apiproviderpreset.cpp
+        models/apiproviderpreset.h
         core/petpaths.cpp
         core/petpaths.h
         core/appsettings.cpp
