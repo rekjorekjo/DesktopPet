@@ -2,6 +2,7 @@
 
 #include "models/websearchconfig.h"
 #include "services/apiprofileservice.h"
+#include "services/chatqueryclassifier.h"
 #include "services/chatsettingsservice.h"
 #include "services/websearchsettingsservice.h"
 #include "theme/thememanager.h"
@@ -26,6 +27,8 @@ PetChatWidget::PetChatWidget(QWidget *parent)
     , m_requestPending(false)
     , m_webSearchService(new WebSearchService(this))
     , m_waitingForSearch(false)
+    , m_firstChatAfterLaunch(true)
+    , m_waitingForPersonaSearch(false)
 {
     connect(m_chatService, &ChatCompletionService::requestFinished,
             this, &PetChatWidget::onRequestFinished);
@@ -341,6 +344,9 @@ void PetChatWidget::clearMessages()
     m_pendingSearchQuery.clear();
     m_pendingUserMessage.clear();
     m_waitingForSearch = false;
+    m_waitingForPersonaSearch = false;
+    m_personaSearchRequestId.clear();
+    m_pendingPersonaUserMessage.clear();
     m_webSearchService->cancelAllRequests();
 
     setWaitingState(false);
@@ -363,7 +369,7 @@ void PetChatWidget::submitMessage()
         return;
     }
 
-    if (m_requestPending || m_waitingForSearch) {
+    if (m_requestPending || m_waitingForSearch || m_waitingForPersonaSearch) {
         return;
     }
 
@@ -415,6 +421,11 @@ void PetChatWidget::setWaitingState(bool waiting)
 
 void PetChatWidget::cancelCurrentRequest()
 {
+    if (m_waitingForPersonaSearch && !m_personaSearchRequestId.isEmpty()) {
+        m_webSearchService->cancelRequest(m_personaSearchRequestId);
+        return;
+    }
+
     if (m_waitingForSearch && !m_pendingSearchRequestId.isEmpty()) {
         m_webSearchService->cancelRequest(m_pendingSearchRequestId);
         return;
@@ -466,33 +477,13 @@ void PetChatWidget::onRequestCanceled(const QString &requestId)
 
 bool PetChatWidget::isForcedWebSearchQuery(const QString &text) const
 {
-    QString trimmed = text.trimmed();
-    return trimmed.startsWith("/search ", Qt::CaseInsensitive)
-        || trimmed.startsWith("#search ", Qt::CaseInsensitive)
-        || trimmed.startsWith("搜一下")
-        || trimmed.startsWith("查一下");
+    return ChatQueryClassifier::isForcedSearchQuery(text);
 }
 
 bool PetChatWidget::shouldUseWebSearch(const QString &message) const
 {
-    // Keyword-based trigger
-    static const QStringList keywords = {
-        QStringLiteral("最近"), QStringLiteral("最新"), QStringLiteral("今天"),
-        QStringLiteral("昨天"), QStringLiteral("新闻"), QStringLiteral("天气"),
-        QStringLiteral("股价"), QStringLiteral("汇率"), QStringLiteral("赛事"),
-        QStringLiteral("比分"), QStringLiteral("上映"), QStringLiteral("发布"),
-        QStringLiteral("热搜"), QStringLiteral("头条"), QStringLiteral("实时"),
-        QStringLiteral("现在"), QStringLiteral("目前"), QStringLiteral("今年"),
-        QStringLiteral("本月"), QStringLiteral("这周"), QStringLiteral("上周"),
-    };
-
-    for (const QString &kw : keywords) {
-        if (message.contains(kw)) {
-            return true;
-        }
-    }
-
-    return false;
+    WebSearchConfig config = WebSearchSettingsService::load();
+    return ChatQueryClassifier::shouldUseWebSearch(message, config.enabled);
 }
 
 QString PetChatWidget::normalizeSearchQuery(const QString &message) const
@@ -549,6 +540,17 @@ void PetChatWidget::startChatRequestWithOptionalSearch(const QString &userMessag
 {
     WebSearchConfig config = WebSearchSettingsService::load();
 
+    // Always consume first-chat flag on any first message
+    const bool firstChat = m_firstChatAfterLaunch;
+    m_firstChatAfterLaunch = false;
+
+    // Local time queries: skip search entirely, send directly with time context
+    if (ChatQueryClassifier::isLocalTimeQuery(userMessage)) {
+        sendChatRequestWithWebContext(userMessage, QString());
+        return;
+    }
+
+    // Forced search (user explicitly requested search)
     if (isForcedWebSearchQuery(userMessage)) {
         if (!config.enabled || config.apiKey.trimmed().isEmpty()) {
             m_requestPending = false;
@@ -567,6 +569,7 @@ void PetChatWidget::startChatRequestWithOptionalSearch(const QString &userMessag
         return;
     }
 
+    // Keyword-based search (user-triggered)
     if (config.enabled && !config.apiKey.trimmed().isEmpty() && shouldUseWebSearch(userMessage)) {
         QString query = normalizeSearchQuery(userMessage);
         m_pendingSearchQuery = query;
@@ -575,6 +578,24 @@ void PetChatWidget::startChatRequestWithOptionalSearch(const QString &userMessag
         setWaitingState(true);
         m_pendingSearchRequestId = m_webSearchService->search(query, config);
         return;
+    }
+
+    // First-chat persona realtime search (only when no user-triggered search)
+    if (firstChat
+        && config.enabled
+        && !config.apiKey.trimmed().isEmpty()
+        && config.personaRealtimeSearchOnFirstChat) {
+        QString persona = currentSystemPrompt();
+        QString personaQuery = ChatQueryClassifier::buildPersonaRealtimeSearchQuery(persona);
+        if (!personaQuery.isEmpty()
+            && ChatQueryClassifier::shouldUsePersonaRealtimeSearch(persona, true, true)) {
+            m_pendingPersonaUserMessage = userMessage;
+            m_waitingForPersonaSearch = true;
+            setWaitingState(true);
+            appendSystemMessage(tr("正在搜索角色设定中的实时内容..."));
+            m_personaSearchRequestId = m_webSearchService->search(personaQuery, config);
+            return;
+        }
     }
 
     // No search needed, send directly
@@ -598,6 +619,23 @@ void PetChatWidget::sendChatRequestWithWebContext(const QString &userMessage, co
 
     // Build messages for this request
     QList<ChatCompletionService::Message> requestMessages = m_messages;
+
+    // Inject local time as temporary system message (not persisted)
+    QDateTime now = QDateTime::currentDateTime();
+    QTimeZone zone = QTimeZone::systemTimeZone();
+    QLocale locale(QLocale::Chinese);
+    QString timeContext = QStringLiteral(
+        "当前本地时间：%1，%2，时区：%3。\n"
+        "请在涉及\"现在几点、今天、当前时间、上午、下午、晚上\"等问题时，"
+        "以这个时间为准，不要自行猜测。"
+    ).arg(
+        now.toString("yyyy-MM-dd HH:mm:ss"),
+        locale.dayName(now.date().dayOfWeek()),
+        QString::fromUtf8(zone.id()));
+    ChatCompletionService::Message timeMsg;
+    timeMsg.role = "system";
+    timeMsg.content = timeContext;
+    requestMessages.append(timeMsg);
 
     // If we have web context, inject as temporary system message (NOT persisted in m_messages)
     if (!webContext.isEmpty()) {
@@ -639,6 +677,20 @@ void PetChatWidget::sendChatRequestWithWebContext(const QString &userMessage, co
 void PetChatWidget::onWebSearchFinished(const QString &requestId, const QString &query, const QList<WebSearchResult> &results)
 {
     Q_UNUSED(query);
+
+    // Handle persona realtime search completion
+    if (requestId == m_personaSearchRequestId) {
+        m_personaSearchRequestId.clear();
+        m_waitingForPersonaSearch = false;
+
+        appendSystemMessage(tr("角色设定实时内容搜索完成，正在生成回答..."));
+
+        QString webContext = buildWebSearchContext(results);
+        sendChatRequestWithWebContext(m_pendingPersonaUserMessage, webContext);
+        m_pendingPersonaUserMessage.clear();
+        return;
+    }
+
     if (requestId != m_pendingSearchRequestId) return;
 
     m_pendingSearchRequestId.clear();
@@ -655,6 +707,19 @@ void PetChatWidget::onWebSearchFinished(const QString &requestId, const QString 
 void PetChatWidget::onWebSearchFailed(const QString &requestId, const QString &query, const QString &message)
 {
     Q_UNUSED(query);
+
+    // Persona search failure: fall back to direct answer
+    if (requestId == m_personaSearchRequestId) {
+        m_personaSearchRequestId.clear();
+        m_waitingForPersonaSearch = false;
+
+        appendSystemMessage(tr("角色设定实时内容搜索失败，将直接生成回答。"));
+
+        sendChatRequestWithWebContext(m_pendingPersonaUserMessage, QString());
+        m_pendingPersonaUserMessage.clear();
+        return;
+    }
+
     if (requestId != m_pendingSearchRequestId) return;
 
     m_pendingSearchRequestId.clear();
@@ -669,6 +734,17 @@ void PetChatWidget::onWebSearchFailed(const QString &requestId, const QString &q
 
 void PetChatWidget::onWebSearchCanceled(const QString &requestId)
 {
+    // Persona search cancellation
+    if (requestId == m_personaSearchRequestId) {
+        m_personaSearchRequestId.clear();
+        m_waitingForPersonaSearch = false;
+        m_pendingPersonaUserMessage.clear();
+        setWaitingState(false);
+
+        appendSystemMessage(tr("已取消角色设定实时内容搜索。"));
+        return;
+    }
+
     if (requestId != m_pendingSearchRequestId) return;
 
     m_pendingSearchRequestId.clear();

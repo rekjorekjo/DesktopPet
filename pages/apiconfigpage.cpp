@@ -584,7 +584,10 @@ void ApiConfigPage::setupChatSettingsSection(QVBoxLayout *parentLayout)
     cardLayout->setContentsMargins(24, 24, 24, 24);
     cardLayout->setSpacing(12);
 
-    // Title
+    // Title row with buttons
+    QHBoxLayout *titleRowLayout = new QHBoxLayout();
+    titleRowLayout->setSpacing(12);
+
     m_chatSettingsTitleLabel = new QLabel(tr("对话设定"), m_chatSettingsCard);
     QFont titleFont = m_chatSettingsTitleLabel->font();
     titleFont.setPointSize(12);
@@ -593,7 +596,25 @@ void ApiConfigPage::setupChatSettingsSection(QVBoxLayout *parentLayout)
     m_chatSettingsTitleLabel->setStyleSheet(QString(
         "color: %1; border: none; background: transparent;"
     ).arg(p.subtitleText));
-    cardLayout->addWidget(m_chatSettingsTitleLabel);
+    titleRowLayout->addWidget(m_chatSettingsTitleLabel);
+
+    titleRowLayout->addStretch();
+
+    m_resetPromptButton = new QPushButton(tr("恢复默认"), m_chatSettingsCard);
+    m_resetPromptButton->setMinimumHeight(32);
+    m_resetPromptButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    connect(m_resetPromptButton, &QPushButton::clicked,
+            this, &ApiConfigPage::resetSystemPromptToDefault);
+    titleRowLayout->addWidget(m_resetPromptButton);
+
+    m_savePromptButton = new QPushButton(tr("保存设定"), m_chatSettingsCard);
+    m_savePromptButton->setMinimumHeight(32);
+    m_savePromptButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    connect(m_savePromptButton, &QPushButton::clicked,
+            this, &ApiConfigPage::saveChatSettingsFromUi);
+    titleRowLayout->addWidget(m_savePromptButton);
+
+    cardLayout->addLayout(titleRowLayout);
 
     // System prompt editor
     m_systemPromptEdit = new QPlainTextEdit(m_chatSettingsCard);
@@ -625,27 +646,6 @@ void ApiConfigPage::setupChatSettingsSection(QVBoxLayout *parentLayout)
           p.inputFocusBorder) + scrollStyle);
     cardLayout->addWidget(m_systemPromptEdit);
 
-    // Buttons
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
-
-    m_resetPromptButton = new QPushButton(tr("恢复默认"), m_chatSettingsCard);
-    m_resetPromptButton->setMinimumHeight(32);
-    m_resetPromptButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
-    connect(m_resetPromptButton, &QPushButton::clicked,
-            this, &ApiConfigPage::resetSystemPromptToDefault);
-    buttonLayout->addWidget(m_resetPromptButton);
-
-    buttonLayout->addStretch();
-
-    m_savePromptButton = new QPushButton(tr("保存设定"), m_chatSettingsCard);
-    m_savePromptButton->setMinimumHeight(32);
-    m_savePromptButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
-    connect(m_savePromptButton, &QPushButton::clicked,
-            this, &ApiConfigPage::saveChatSettingsFromUi);
-    buttonLayout->addWidget(m_savePromptButton);
-
-    cardLayout->addLayout(buttonLayout);
 
     parentLayout->addWidget(m_chatSettingsCard);
 }

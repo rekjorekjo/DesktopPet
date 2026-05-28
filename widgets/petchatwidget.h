@@ -5,9 +5,12 @@
 #include "services/websearchservice.h"
 
 #include <QList>
+#include <QLocale>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QDateTime>
+#include <QTimeZone>
 #include <QWidget>
 
 class EmptyStateWidget;
@@ -90,6 +93,10 @@ private:
     QString m_pendingSearchQuery;
     QString m_pendingUserMessage;
     bool m_waitingForSearch;
+    bool m_firstChatAfterLaunch;
+    bool m_waitingForPersonaSearch;
+    QString m_personaSearchRequestId;
+    QString m_pendingPersonaUserMessage;
 };
 
 #endif // PETCHATWIDGET_H

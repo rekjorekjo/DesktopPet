@@ -51,6 +51,7 @@ private:
     SoftCardWidget *m_settingsCard;
     QLabel *m_settingsCardTitle;
     QCheckBox *m_enabledCheckBox;
+    QCheckBox *m_personaRealtimeSearchCheckBox;
     QLabel *m_providerLabel;
     QComboBox *m_providerCombo;
     QLabel *m_apiKeyLabel;

@@ -28,6 +28,7 @@ QJsonObject webSearchConfigToJson(const WebSearchConfig &config)
     obj["resultCount"] = config.resultCount;
     obj["searchDepth"] = config.searchDepth;
     obj["timeoutMs"] = config.timeoutMs;
+    obj["personaRealtimeSearchOnFirstChat"] = config.personaRealtimeSearchOnFirstChat;
     return obj;
 }
 
@@ -43,5 +44,6 @@ WebSearchConfig webSearchConfigFromJson(const QJsonObject &obj)
         config.searchDepth = "basic";
     }
     config.timeoutMs = qBound(5000, obj["timeoutMs"].toInt(15000), 60000);
+    config.personaRealtimeSearchOnFirstChat = obj["personaRealtimeSearchOnFirstChat"].toBool(false);
     return config;
 }

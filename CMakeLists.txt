@@ -86,6 +86,8 @@ qt_add_executable(DesktopPet
     services/apiprofileservice.h
     services/chatcompletionservice.cpp
     services/chatcompletionservice.h
+    services/chatqueryclassifier.cpp
+    services/chatqueryclassifier.h
     services/chatlogservice.cpp
     services/chatlogservice.h
     services/chatsettingsservice.cpp
@@ -275,6 +277,8 @@ if(BUILD_TESTING)
         tests/test_websearchconfig.cpp
         tests/test_petlibraryindexservice.h
         tests/test_petlibraryindexservice.cpp
+        tests/test_chatqueryclassifier.h
+        tests/test_chatqueryclassifier.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -283,6 +287,8 @@ if(BUILD_TESTING)
         services/petlibraryindexservice.h
         services/actionlibraryindexservice.cpp
         services/actionlibraryindexservice.h
+        services/chatqueryclassifier.cpp
+        services/chatqueryclassifier.h
         core/petpaths.cpp
         core/petpaths.h
         core/appsettings.cpp

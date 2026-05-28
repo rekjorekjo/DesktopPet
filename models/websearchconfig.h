@@ -19,6 +19,7 @@ struct WebSearchConfig
     int resultCount = 5;
     QString searchDepth = "basic";
     int timeoutMs = 15000;
+    bool personaRealtimeSearchOnFirstChat = false;
 };
 
 QString webSearchProviderToString(WebSearchProvider provider);

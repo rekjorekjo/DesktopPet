@@ -20,6 +20,7 @@ WebSearchConfigPage::WebSearchConfigPage(QWidget *parent)
     , m_settingsCard(nullptr)
     , m_settingsCardTitle(nullptr)
     , m_enabledCheckBox(nullptr)
+    , m_personaRealtimeSearchCheckBox(nullptr)
     , m_providerLabel(nullptr)
     , m_providerCombo(nullptr)
     , m_apiKeyLabel(nullptr)
@@ -128,6 +129,12 @@ void WebSearchConfigPage::setupUi()
     m_enabledCheckBox = new QCheckBox(tr("启用联网搜索"), m_settingsCard);
     m_enabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     settingsLayout->addWidget(m_enabledCheckBox);
+
+    // Persona realtime search checkbox
+    m_personaRealtimeSearchCheckBox = new QCheckBox(tr("首次对话时搜索角色设定中的实时内容"), m_settingsCard);
+    m_personaRealtimeSearchCheckBox->setToolTip(tr("应用启动后的第一次聊天中，如果角色设定包含\"最近、最新、当前、流行、很火、新闻、天气、版本、价格\"等实时内容，会额外搜索一次作为背景。"));
+    m_personaRealtimeSearchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    settingsLayout->addWidget(m_personaRealtimeSearchCheckBox);
 
     // Provider combo
     QHBoxLayout *providerLayout = new QHBoxLayout();
@@ -240,6 +247,7 @@ void WebSearchConfigPage::loadConfig()
     WebSearchConfig config = WebSearchSettingsService::load();
 
     m_enabledCheckBox->setChecked(config.enabled);
+    m_personaRealtimeSearchCheckBox->setChecked(config.personaRealtimeSearchOnFirstChat);
 
     int providerIndex = m_providerCombo->findData(static_cast<int>(config.provider));
     if (providerIndex >= 0) {
@@ -278,6 +286,7 @@ void WebSearchConfigPage::onSaveClicked()
 {
     WebSearchConfig config;
     config.enabled = m_enabledCheckBox->isChecked();
+    config.personaRealtimeSearchOnFirstChat = m_personaRealtimeSearchCheckBox->isChecked();
     config.provider = static_cast<WebSearchProvider>(m_providerCombo->currentData().toInt());
     config.apiKey = m_apiKeyEdit->text().trimmed();
     config.resultCount = m_resultCountSpin->value();
@@ -306,6 +315,7 @@ void WebSearchConfigPage::onReloadClicked()
     }
 
     m_enabledCheckBox->setChecked(config.enabled);
+    m_personaRealtimeSearchCheckBox->setChecked(config.personaRealtimeSearchOnFirstChat);
 
     int providerIndex = m_providerCombo->findData(static_cast<int>(config.provider));
     if (providerIndex >= 0) {
@@ -416,6 +426,7 @@ void WebSearchConfigPage::applyTheme()
     m_timeoutLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;").arg(p.textSecondary));
 
     m_enabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
+    m_personaRealtimeSearchCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_saveButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_testButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     m_reloadButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
