@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
+#include <QSet>
 
 // petlibrary.json 是宠物 ID 是否存在的唯一依据。
 // 目录存在但 library 无 entry 时，ID 可复用。
@@ -28,45 +29,13 @@ bool PetLibraryIndexService::ensureLibrary()
         return true;
     }
 
-    QList<PetLibraryEntry> entries = scanExistingPets();
-
-    if (entries.isEmpty()) {
-        QString defaultPetDir = PetPaths::petDirectory("default_pet");
-        QDir dir;
-        if (!dir.mkpath(defaultPetDir)) {
-            qWarning() << "Failed to create default pet directory:" << defaultPetDir;
-            return false;
-        }
-
-        QString petJsonPath = defaultPetDir + "/pet.json";
-        QString playlistPath = defaultPetDir + "/playlist.json";
-
-        PetBasicInfo info;
-        info.id = "default_pet";
-        info.name = "Default Pet";
-        info.canvasSize = QSize(400, 400);
-        info.displaySize = QSize(200, 200);
-
-        if (!PetConfigManager::savePetInfoJson(petJsonPath, info)) {
-            qWarning() << "Failed to create default pet.json";
-            return false;
-        }
-
-        PetPlaylist playlist;
-        if (!PetConfigManager::savePlaylistToJson(playlistPath, playlist)) {
-            qWarning() << "Failed to create default playlist.json";
-            return false;
-        }
-
-        PetLibraryEntry entry;
-        entry.id = "default_pet";
-        entry.name = "Default Pet";
-        entry.dir = "pets/default_pet";
-        entry.enabled = true;
-        entries.append(entry);
+    if (recoverLibraryFromDiskIfEmpty()) {
+        return true;
     }
 
-    return saveEntries(entries);
+    saveEntries({});
+    AppSettings::setCurrentPetId("");
+    return true;
 }
 
 QList<PetLibraryEntry> PetLibraryIndexService::loadEntries()
@@ -265,60 +234,128 @@ QString PetLibraryIndexService::findFirstEnabledPetId(const QString &excludePetI
 QString PetLibraryIndexService::ensureValidCurrentPetId()
 {
     ensureLibrary();
+    recoverLibraryFromDiskIfEmpty();
 
     QString currentPetId = AppSettings::currentPetId();
-
     QList<PetLibraryEntry> entries = loadEntries();
 
     if (!currentPetId.isEmpty()) {
         for (const PetLibraryEntry &entry : entries) {
             if (entry.id == currentPetId) {
-                return currentPetId;
+                QString petDir = PetPaths::petDirectory(entry.id);
+                if (isPetDirectoryValid(petDir)) {
+                    return currentPetId;
+                }
             }
         }
     }
 
-    if (!entries.isEmpty()) {
-        QString firstId = entries.first().id;
-        AppSettings::setCurrentPetId(firstId);
-        return firstId;
+    for (const PetLibraryEntry &entry : entries) {
+        QString petDir = PetPaths::petDirectory(entry.id);
+        if (isPetDirectoryValid(petDir)) {
+            AppSettings::setCurrentPetId(entry.id);
+            return entry.id;
+        }
     }
 
     AppSettings::setCurrentPetId("");
     return QString();
 }
 
-QList<PetLibraryEntry> PetLibraryIndexService::scanExistingPets()
+bool PetLibraryIndexService::isPetDirectoryValid(const QString &petDir)
 {
-    QList<PetLibraryEntry> entries;
+    QString petJsonPath = petDir + "/pet.json";
+    QString playlistPath = petDir + "/playlist.json";
+
+    if (!QFile::exists(petJsonPath) || !QFile::exists(playlistPath)) {
+        return false;
+    }
+
+    PetBasicInfo info;
+    return PetConfigManager::loadPetInfoJson(petJsonPath, info) && !info.id.isEmpty();
+}
+
+bool PetLibraryIndexService::recoverLibraryFromDiskIfEmpty()
+{
+    QList<PetLibraryEntry> entries = loadEntries();
+
+    bool needsRecovery = entries.isEmpty();
+    if (!needsRecovery) {
+        bool hasValid = false;
+        for (const PetLibraryEntry &entry : entries) {
+            QString petDir = PetPaths::petDirectory(entry.id);
+            if (isPetDirectoryValid(petDir)) {
+                hasValid = true;
+                break;
+            }
+        }
+        needsRecovery = !hasValid;
+    }
+
+    if (!needsRecovery) {
+        return false;
+    }
 
     QString petsDirPath = PetPaths::petsDirectory();
     QDir petsDir(petsDirPath);
-
     if (!petsDir.exists()) {
-        return entries;
+        return false;
     }
+
+    QSet<QString> seenIds;
+    QList<PetLibraryEntry> recovered;
 
     QStringList petFolders = petsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-    for (const QString &petId : petFolders) {
-        QString petDir = PetPaths::petDirectory(petId);
-        QString petJsonPath = petDir + "/pet.json";
-
-        PetLibraryEntry entry;
-        entry.id = petId;
-        entry.dir = "pets/" + petId;
-        entry.enabled = true;
-
-        PetBasicInfo info;
-        if (PetConfigManager::loadPetInfoJson(petJsonPath, info)) {
-            entry.name = info.name.isEmpty() ? petId : info.name;
-        } else {
-            entry.name = petId;
+    for (const QString &folderName : petFolders) {
+        QString petDir = PetPaths::petDirectory(folderName);
+        if (!isPetDirectoryValid(petDir)) {
+            continue;
         }
 
-        entries.append(entry);
+        QString petJsonPath = petDir + "/pet.json";
+        PetBasicInfo info;
+        PetConfigManager::loadPetInfoJson(petJsonPath, info);
+
+        if (info.id != folderName) {
+            qWarning() << "Skipping pet directory for recovery: folderName" << folderName
+                        << "!= info.id" << info.id;
+            continue;
+        }
+
+        if (seenIds.contains(info.id)) {
+            continue;
+        }
+        seenIds.insert(info.id);
+
+        PetLibraryEntry entry;
+        entry.id = info.id;
+        entry.name = info.name.isEmpty() ? info.id : info.name;
+        entry.dir = "pets/" + folderName;
+        entry.enabled = true;
+        recovered.append(entry);
     }
 
-    return entries;
+    if (recovered.isEmpty()) {
+        return false;
+    }
+
+    if (!saveEntries(recovered)) {
+        return false;
+    }
+
+    QString currentPetId = AppSettings::currentPetId();
+    bool currentValid = false;
+    if (!currentPetId.isEmpty()) {
+        for (const PetLibraryEntry &entry : recovered) {
+            if (entry.id == currentPetId) {
+                currentValid = true;
+                break;
+            }
+        }
+    }
+    if (!currentValid) {
+        AppSettings::setCurrentPetId(recovered.first().id);
+    }
+
+    return true;
 }

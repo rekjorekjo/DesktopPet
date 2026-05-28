@@ -54,8 +54,14 @@ public:
     // 如果 currentPetId 为空或无效，自动修正为第一个有效宠物
     static QString ensureValidCurrentPetId();
 
+    // 当宠物库为空或损坏时，扫描磁盘恢复宠物
+    // 恢复条件：petlibrary.json 不存在，或 loadEntries() 为空，
+    // 或 currentPetId 无效且没有有效条目
+    // 返回 true 表示执行了恢复操作
+    static bool recoverLibraryFromDiskIfEmpty();
+
 private:
-    static QList<PetLibraryEntry> scanExistingPets();
+    static bool isPetDirectoryValid(const QString &petDir);
 };
 
 #endif // PETLIBRARYINDEXSERVICE_H

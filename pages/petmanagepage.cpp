@@ -20,6 +20,7 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QSet>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QFile>
 
@@ -67,8 +68,12 @@ void PetManagePage::connectSignals()
     });
 
     connect(m_reloadButton, &QPushButton::clicked, this, [this]() {
-        loadPetInfo();
-        emit applyConfigRequested();
+        PetLibraryIndexService::recoverLibraryFromDiskIfEmpty();
+        refreshPetList();
+        QTimer::singleShot(0, this, [this]() {
+            loadPetInfo();
+            emit applyConfigRequested();
+        });
     });
 
     connect(m_petListWidget, &QListWidget::itemClicked, this, &PetManagePage::onPetListItemClicked);
@@ -653,6 +658,9 @@ void PetManagePage::refreshTheme()
 
 void PetManagePage::reloadPetInfo()
 {
+    PetLibraryIndexService::recoverLibraryFromDiskIfEmpty();
+    PetLibraryIndexService::ensureValidCurrentPetId();
+    refreshPetList();
     loadPetInfo();
 }
 
