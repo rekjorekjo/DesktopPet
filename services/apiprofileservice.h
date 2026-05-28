@@ -15,6 +15,7 @@ public:
     static ApiProfileService &instance();
 
     bool load(QString *error = nullptr);
+    bool reload(QString *error = nullptr);
     bool save(QString *error = nullptr) const;
 
     QList<ApiConfig> profiles() const;

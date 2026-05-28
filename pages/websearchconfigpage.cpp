@@ -32,6 +32,7 @@ WebSearchConfigPage::WebSearchConfigPage(QWidget *parent)
     , m_timeoutSpin(nullptr)
     , m_saveButton(nullptr)
     , m_testButton(nullptr)
+    , m_reloadButton(nullptr)
     , m_testService(new WebSearchService(this))
     , m_testPending(false)
 {
@@ -85,9 +86,9 @@ void WebSearchConfigPage::setupUi()
     m_statusCard = new SoftCardWidget(m_contentWidget);
     m_statusCard->setObjectName("searchStatusCard");
     m_statusCard->setBackgroundOpacity(40);
-    QVBoxLayout *statusLayout = new QVBoxLayout(m_statusCard);
+    QHBoxLayout *statusLayout = new QHBoxLayout(m_statusCard);
     statusLayout->setContentsMargins(24, 20, 24, 20);
-    statusLayout->setSpacing(10);
+    statusLayout->setSpacing(12);
 
     m_statusLabel = new QLabel(m_statusCard);
     QFont statusTitleFont = m_statusLabel->font();
@@ -95,7 +96,15 @@ void WebSearchConfigPage::setupUi()
     statusTitleFont.setBold(true);
     m_statusLabel->setFont(statusTitleFont);
     m_statusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;").arg(p.accent));
-    statusLayout->addWidget(m_statusLabel);
+    statusLayout->addWidget(m_statusLabel, 1);
+
+    m_reloadButton = new QPushButton(tr("重新加载"), m_statusCard);
+    m_reloadButton->setMinimumHeight(32);
+    m_reloadButton->setMinimumWidth(80);
+    m_reloadButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    connect(m_reloadButton, &QPushButton::clicked,
+            this, &WebSearchConfigPage::onReloadClicked);
+    statusLayout->addWidget(m_reloadButton, 0, Qt::AlignVCenter);
 
     contentLayout->addWidget(m_statusCard);
 
@@ -285,6 +294,41 @@ void WebSearchConfigPage::onSaveClicked()
     SoftMessageBox::showInformation(this, tr("搜索设置"), tr("搜索设置已保存。"));
 }
 
+void WebSearchConfigPage::onReloadClicked()
+{
+    QString error;
+    WebSearchConfig config = WebSearchSettingsService::load(&error);
+
+    if (!error.isEmpty()) {
+        SoftMessageBox::showWarning(this, tr("搜索设置"),
+                                    tr("重新加载搜索设置失败：%1").arg(error));
+        return;
+    }
+
+    m_enabledCheckBox->setChecked(config.enabled);
+
+    int providerIndex = m_providerCombo->findData(static_cast<int>(config.provider));
+    if (providerIndex >= 0) {
+        m_providerCombo->setCurrentIndex(providerIndex);
+    }
+
+    m_apiKeyEdit->setText(config.apiKey);
+    m_resultCountSpin->setValue(config.resultCount);
+
+    int depthIndex = m_searchDepthCombo->findData(config.searchDepth);
+    if (depthIndex >= 0) {
+        m_searchDepthCombo->setCurrentIndex(depthIndex);
+    }
+
+    m_timeoutSpin->setValue(config.timeoutMs / 1000);
+
+    onProviderChanged(m_providerCombo->currentIndex());
+    updateStatusDisplay();
+
+    SoftMessageBox::showInformation(this, tr("搜索设置"),
+                                    tr("搜索设置已重新加载。"));
+}
+
 void WebSearchConfigPage::onTestSearchClicked()
 {
     if (m_testPending) return;
@@ -374,6 +418,7 @@ void WebSearchConfigPage::applyTheme()
     m_enabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     m_saveButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
     m_testButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    m_reloadButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
 
     updateStatusDisplay();
 }

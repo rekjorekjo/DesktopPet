@@ -32,6 +32,7 @@ ApiConfigPage::ApiConfigPage(QWidget *parent)
     , m_resetPromptButton(nullptr)
     , m_savePromptButton(nullptr)
     , m_testConnectionButton(nullptr)
+    , m_reloadConfigButton(nullptr)
     , m_testChatService(new ChatCompletionService(this))
     , m_testPending(false)
 {
@@ -83,7 +84,7 @@ void ApiConfigPage::setupUi()
     QHBoxLayout *headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(24);
 
-    m_titleLabel = new QLabel(tr("聊天设置"), m_contentWidget);
+    m_titleLabel = new QLabel(tr("LLM 设置"), m_contentWidget);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -124,6 +125,14 @@ void ApiConfigPage::setupUi()
     connect(m_testConnectionButton, &QPushButton::clicked,
             this, &ApiConfigPage::onTestConnectionClicked);
     statusOuterLayout->addWidget(m_testConnectionButton, 0, Qt::AlignVCenter);
+
+    m_reloadConfigButton = new QPushButton(tr("重新加载"), m_statusCard);
+    m_reloadConfigButton->setMinimumHeight(32);
+    m_reloadConfigButton->setMinimumWidth(80);
+    m_reloadConfigButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
+    connect(m_reloadConfigButton, &QPushButton::clicked,
+            this, &ApiConfigPage::onReloadConfigClicked);
+    statusOuterLayout->addWidget(m_reloadConfigButton, 0, Qt::AlignVCenter);
 
     contentLayout->addWidget(m_statusCard);
 
@@ -248,6 +257,9 @@ void ApiConfigPage::applyTheme()
     }
     if (m_testConnectionButton) {
         m_testConnectionButton->setStyleSheet(theme.softButtonStyleSheet(6, 40));
+    }
+    if (m_reloadConfigButton) {
+        m_reloadConfigButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 24));
     }
 }
 
@@ -744,4 +756,25 @@ void ApiConfigPage::onConnectionTestFinished(const QString &requestId, bool ok, 
                                 tr("测试连接"),
                                 tr("连接失败：\n%1").arg(message));
     }
+}
+
+void ApiConfigPage::onReloadConfigClicked()
+{
+    QString error;
+    if (!ApiProfileService::instance().reload(&error)) {
+        SoftMessageBox::showWarning(this,
+                                    tr("重新加载"),
+                                    tr("重新加载失败：%1").arg(error));
+        return;
+    }
+
+    ChatSettingsService::instance().load();
+
+    refreshProfileList();
+    updateCurrentProfileDisplay();
+    loadChatSettingsToUi();
+
+    SoftMessageBox::showInformation(this,
+                                    tr("重新加载"),
+                                    tr("重新加载完成。"));
 }

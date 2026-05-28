@@ -28,6 +28,7 @@ public slots:
 
 private slots:
     void onSaveClicked();
+    void onReloadClicked();
     void onTestSearchClicked();
     void onProviderChanged(int index);
     void onSearchFinished(const QString &requestId, const QString &query, int resultCount);
@@ -63,6 +64,7 @@ private:
 
     QPushButton *m_saveButton;
     QPushButton *m_testButton;
+    QPushButton *m_reloadButton;
 
     WebSearchService *m_testService;
     QString m_testRequestId;

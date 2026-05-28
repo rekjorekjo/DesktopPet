@@ -52,6 +52,7 @@ private slots:
     void onDialogSubmitted(const QString &profileName, const ApiConfig &config);
     void onTestConnectionClicked();
     void onConnectionTestFinished(const QString &requestId, bool ok, const QString &message);
+    void onReloadConfigClicked();
 
 private:
     QScrollArea *m_scrollArea;
@@ -76,6 +77,7 @@ private:
     QPushButton *m_savePromptButton;
 
     QPushButton *m_testConnectionButton;
+    QPushButton *m_reloadConfigButton;
     ChatCompletionService *m_testChatService;
     QString m_testRequestId;
     bool m_testPending;

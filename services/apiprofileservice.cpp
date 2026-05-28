@@ -95,6 +95,11 @@ bool ApiProfileService::load(QString *error)
     return true;
 }
 
+bool ApiProfileService::reload(QString *error)
+{
+    return load(error);
+}
+
 bool ApiProfileService::save(QString *error) const
 {
     const QString filePath = PetPaths::apiProfilesFilePath();
