@@ -177,34 +177,63 @@ bool PetWidget::hasAnyEnabledPet() const
 
 void PetWidget::showStatusMessage(const QString &title, const QString &subtitle)
 {
+    ThemeManager &theme = ThemeManager::instance();
+    ThemePalette p = theme.currentPalette();
+
+    // 让 label 铺满整个 player 区域
+    QSize statusSize = size();
+    if (!statusSize.isValid() || statusSize.isEmpty()) {
+        statusSize = QSize(200, 200);
+    }
+    m_displayLabel->setFixedSize(statusSize);
+
+    auto rgba = [](const QColor &c) {
+        return QString("rgba(%1, %2, %3, %4)")
+            .arg(c.red())
+            .arg(c.green())
+            .arg(c.blue())
+            .arg(c.alpha());
+    };
+
+    QColor bgColor(p.cardBackground);
+    bgColor.setAlpha(245);
+
+    QString borderHex = p.cardBorder.isEmpty() ? p.border : p.cardBorder;
+    QColor borderColor(borderHex);
+    borderColor.setAlpha(180);
+
+    QString titleColor = p.textPrimary;
+    QString subtitleColor = p.textSecondary;
+
     QString html;
     if (subtitle.isEmpty()) {
         html = QString(
-            "<div style='text-align: center; padding: 20px;'>"
-            "<span style='font-size: 16px; font-weight: bold; color: #374151;'>%1</span>"
+            "<div style='text-align: center;'>"
+            "<span style='font-size: 16px; font-weight: bold; color: %1;'>%2</span>"
             "</div>"
-        ).arg(title);
+        ).arg(titleColor, title);
     } else {
         html = QString(
-            "<div style='text-align: center; padding: 20px;'>"
-            "<span style='font-size: 16px; font-weight: bold; color: #374151;'>%1</span><br/><br/>"
-            "<span style='font-size: 13px; color: #6B7280;'>%2</span>"
+            "<div style='text-align: center;'>"
+            "<span style='font-size: 16px; font-weight: bold; color: %1;'>%2</span><br/><br/>"
+            "<span style='font-size: 13px; color: %3;'>%4</span>"
             "</div>"
-        ).arg(title, subtitle);
+        ).arg(titleColor, title, subtitleColor, subtitle);
     }
 
     m_displayLabel->setText(html);
     m_displayLabel->setTextFormat(Qt::RichText);
     m_displayLabel->setAlignment(Qt::AlignCenter);
     m_displayLabel->setWordWrap(true);
-    m_displayLabel->setStyleSheet(
+    m_displayLabel->setStyleSheet(QString(
         "QLabel {"
-        "  background: transparent;"
-        "  border: none;"
-        "  padding: 0px;"
-        "  color: #4B5563;"
+        "  background: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 18px;"
+        "  padding: 22px;"
+        "  color: %3;"
         "}"
-    );
+    ).arg(rgba(bgColor), rgba(borderColor), p.textPrimary));
 }
 
 void PetWidget::clearStatusMessage()
