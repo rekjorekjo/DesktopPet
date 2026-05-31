@@ -267,8 +267,9 @@ void NewActionDialog::setupUi()
     m_emotionComboBox->addItem("happy");
     m_emotionComboBox->addItem("sad");
     m_emotionComboBox->addItem("angry");
+    m_emotionComboBox->addItem("surprised");
+    m_emotionComboBox->addItem("fear");
     m_emotionComboBox->addItem("confused");
-    m_emotionComboBox->addItem("comfort");
     m_emotionComboBox->setFixedWidth(150);
     m_emotionComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     emotionLayout->addWidget(m_emotionLabel);

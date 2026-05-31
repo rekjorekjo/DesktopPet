@@ -8,6 +8,7 @@ class ChatQueryClassifier
 {
 public:
     static bool isForcedSearchQuery(const QString &text);
+    static QString extractForcedSearchQuery(const QString &text);
     static bool isLocalTimeQuery(const QString &text);
     static bool shouldUseWebSearch(const QString &userText, bool webSearchEnabled);
     static bool shouldUsePersonaRealtimeSearch(const QString &personaText, bool webSearchEnabled, bool optionEnabled);

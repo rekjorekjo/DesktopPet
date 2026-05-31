@@ -23,7 +23,6 @@ signals:
     void pausePetRequested();
     void openSettingsRequested();
     void quitRequested();
-    void emotionRequested(const QString &emotion);
 
 private slots:
     void onTrayActivated();

@@ -162,7 +162,7 @@ void TestChatLogService::formatEntriesForDisplay()
     ChatLogEntry assistant;
     assistant.timestamp = QDateTime::fromString("2026-01-01T12:00:01", Qt::ISODate);
     assistant.petId = "cat";
-    assistant.petName = "猫猫";
+    assistant.petName = "噜噜";
     assistant.apiConfigName = "main";
     assistant.model = "deepseek-chat";
     assistant.role = "assistant";
@@ -172,7 +172,7 @@ void TestChatLogService::formatEntriesForDisplay()
     ChatLogEntry system;
     system.timestamp = QDateTime::fromString("2026-01-01T12:00:02", Qt::ISODate);
     system.petId = "cat";
-    system.petName = "猫猫";
+    system.petName = "噜噜";
     system.apiConfigName = "main";
     system.model = "deepseek-chat";
     system.role = "system";
@@ -181,7 +181,7 @@ void TestChatLogService::formatEntriesForDisplay()
 
     QString display = ChatLogService::formatEntriesForDisplay(entries);
     QVERIFY(display.contains("我"));
-    QVERIFY(display.contains("宠物"));
+    QVERIFY(display.contains("噜噜："));
     QVERIFY(display.contains("系统"));
     QVERIFY(display.contains("你好"));
     QVERIFY(display.contains("你好呀！"));

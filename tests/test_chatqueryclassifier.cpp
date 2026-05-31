@@ -124,4 +124,52 @@ void TestChatQueryClassifier::buildPersonaRealtimeSearchQuery()
     }
 }
 
+void TestChatQueryClassifier::isForcedSearchQuery_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("expected");
+
+    QTest::newRow("slash-search-space")     << QString("/search Qt 6.11")              << true;
+    QTest::newRow("slash-search-no-space")  << QString("/searchQt 6.11")               << true;
+    QTest::newRow("mid-message-search")     << QString("你好 /search Qt 6.11")         << true;
+    QTest::newRow("emoji-search")           << QString("你好😳/searchQt 6.11")         << true;
+    QTest::newRow("hash-search")            << QString("#search Qt 6.11")              << true;
+    QTest::newRow("souyixia")               << QString("搜一下Qt 6.11")                << true;
+    QTest::newRow("chayixia")               << QString("查一下Qt 6.11")                << true;
+    QTest::newRow("plain-text")             << QString("今天有什么新闻")                << false;
+    QTest::newRow("time-query")             << QString("现在几点")                     << false;
+}
+
+void TestChatQueryClassifier::isForcedSearchQuery()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, expected);
+    QCOMPARE(ChatQueryClassifier::isForcedSearchQuery(input), expected);
+}
+
+void TestChatQueryClassifier::extractForcedSearchQuery_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("emoji-search-query")
+        << QString("你好😳/search噜噜宝宝有没有喜欢吃的零食呢")
+        << QString("噜噜宝宝有没有喜欢吃的零食呢");
+
+    QTest::newRow("slash-search-space-query")
+        << QString("/search Qt 6.11 发布信息")
+        << QString("Qt 6.11 发布信息");
+
+    QTest::newRow("trailing-command")
+        << QString("你好 /search")
+        << QString("你好");
+}
+
+void TestChatQueryClassifier::extractForcedSearchQuery()
+{
+    QFETCH(QString, input);
+    QFETCH(QString, expected);
+    QCOMPARE(ChatQueryClassifier::extractForcedSearchQuery(input), expected);
+}
+
 #include "moc_test_chatqueryclassifier.cpp"

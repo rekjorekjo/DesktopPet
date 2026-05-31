@@ -60,6 +60,9 @@ PetWidget::PetWidget(QWidget *parent)
     m_chatWidget = new PetChatWidget();
     m_chatWidget->installEventFilter(this);
 
+    connect(m_chatWidget, &PetChatWidget::assistantEmotionDetected,
+            this, &PetWidget::playEmotion);
+
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
         if (m_chatWidget) {
             m_chatWidget->applyTheme();
@@ -411,6 +414,7 @@ void PetWidget::reloadPet()
     m_moveRemainderY = 0.0;
     m_runtimeQueue.clear();
     m_nextSequence = 0;
+    m_lastEmotionActionId.clear();
 
     loadPet(PetPaths::currentPetDirectory());
 
@@ -435,6 +439,7 @@ void PetWidget::reloadPlaylistPreservePlayback()
     m_playlist = newPlaylist;
     m_runtimeQueue.clear();
     m_nextSequence = 0;
+    m_lastEmotionActionId.clear();
 
     if (!m_currentActionId.isEmpty()) {
         PetActionRef newRef;
@@ -523,6 +528,7 @@ void PetWidget::reloadActionsAndPlaylistPreservePlayback()
 
     m_runtimeQueue.clear();
     m_nextSequence = 0;
+    m_lastEmotionActionId.clear();
 
     if (recoveryFromEmptyState && hasAnyUsableEnabledAction() && hasAnyPlaylistAction()) {
         reloadPet();

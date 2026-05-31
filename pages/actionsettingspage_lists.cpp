@@ -10,6 +10,16 @@
 #include <QDir>
 #include <QListWidgetItem>
 
+namespace {
+
+struct EmotionActionDisplayItem {
+    QString emotion;
+    int indexInEmotion;
+    PetActionRef ref;
+};
+
+} // anonymous namespace
+
 void ActionSettingsPage::refreshActionLibraryList()
 {
     m_actionLibraryList->clear();
@@ -56,7 +66,7 @@ void ActionSettingsPage::refreshCurrentCategoryList()
             refreshCategoryList(m_scheduledActionList, m_playlist.timedActions());
             break;
         case 3:
-            refreshCategoryList(m_emotionActionList, m_playlist.emotionActions("happy"));
+            refreshEmotionCategoryList();
             break;
     }
 }
@@ -199,7 +209,22 @@ QList<PetActionRef> ActionSettingsPage::currentCategoryActions() const
         case 0: return m_playlist.idleActions();
         case 1: return m_playlist.randomActions();
         case 2: return m_playlist.timedActions();
-        case 3: return m_playlist.emotionActions("happy");
+        case 3: {
+            // Emotion tab: return all emotion actions in supported order
+            QList<PetActionRef> all;
+            for (const QString &emotion : supportedEmotionKeys()) {
+                all.append(m_playlist.emotionActions(emotion));
+            }
+            // Append any unknown emotions
+            QMap<QString, QList<PetActionRef>> allMap = m_playlist.allEmotionActions();
+            QStringList known = supportedEmotionKeys();
+            for (auto it = allMap.constBegin(); it != allMap.constEnd(); ++it) {
+                if (!known.contains(it.key())) {
+                    all.append(it.value());
+                }
+            }
+            return all;
+        }
         default: return QList<PetActionRef>();
     }
 }
@@ -208,6 +233,22 @@ PetActionRef ActionSettingsPage::currentSelectedRef() const
 {
     QListWidget *list = currentCategoryList();
     if (!list) return PetActionRef();
+
+    QListWidgetItem *item = list->currentItem();
+    if (!item) return PetActionRef();
+
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 3) {
+        // Emotion tab: read emotion and index from item data
+        QString emotion = item->data(Qt::UserRole + 1).toString();
+        int index = item->data(Qt::UserRole).toInt();
+        QList<PetActionRef> refs = m_playlist.emotionActions(emotion);
+        if (index >= 0 && index < refs.size()) {
+            return refs[index];
+        }
+        return PetActionRef();
+    }
 
     int row = list->currentRow();
     if (row < 0) return PetActionRef();
@@ -223,15 +264,122 @@ bool ActionSettingsPage::updateCurrentSelectedRef(const PetActionRef &ref)
     QListWidget *list = currentCategoryList();
     if (!list) return false;
 
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 3) {
+        // Emotion tab: read emotion and index from item data
+        QListWidgetItem *item = list->currentItem();
+        if (!item) return false;
+        QString emotion = item->data(Qt::UserRole + 1).toString();
+        int index = item->data(Qt::UserRole).toInt();
+        return m_playlist.updateEmotionActionAt(emotion, index, ref);
+    }
+
     int row = list->currentRow();
     if (row < 0) return false;
 
-    int tabIndex = m_categoryTabs->currentIndex();
     switch (tabIndex) {
         case 0: return m_playlist.updateIdleActionAt(row, ref);
         case 1: return m_playlist.updateRandomActionAt(row, ref);
         case 2: return m_playlist.updateTimedActionAt(row, ref);
-        case 3: return m_playlist.updateEmotionActionAt("happy", row, ref);
         default: return false;
     }
+}
+
+QStringList ActionSettingsPage::supportedEmotionKeys() const
+{
+    return {"happy", "sad", "angry", "surprised", "fear", "confused"};
+}
+
+QString ActionSettingsPage::defaultEmotionForNewAction() const
+{
+    if (m_emotionConfigComboBox && !m_emotionConfigComboBox->currentText().trimmed().isEmpty()) {
+        return m_emotionConfigComboBox->currentText().trimmed();
+    }
+    return QStringLiteral("happy");
+}
+
+void ActionSettingsPage::refreshEmotionCategoryList()
+{
+    m_updatingCategoryList = true;
+
+    // Save current selection
+    QString savedActionId;
+    QString savedDisplayName;
+    QString savedEmotion;
+    QListWidgetItem *currentItem = m_emotionActionList->currentItem();
+    if (currentItem) {
+        PetActionRef savedRef = currentSelectedRef();
+        if (savedRef.isValid()) {
+            savedActionId = savedRef.actionId;
+            savedDisplayName = savedRef.displayName;
+            savedEmotion = currentItem->data(Qt::UserRole + 1).toString();
+        }
+    }
+
+    m_emotionActionList->clear();
+
+    // Build display list in supported emotion order
+    QList<EmotionActionDisplayItem> displayItems;
+
+    QStringList knownEmotions = supportedEmotionKeys();
+    QMap<QString, QList<PetActionRef>> allEmotions = m_playlist.allEmotionActions();
+
+    // First: supported emotions in order
+    for (const QString &emotion : knownEmotions) {
+        QList<PetActionRef> refs = m_playlist.emotionActions(emotion);
+        for (int i = 0; i < refs.size(); ++i) {
+            EmotionActionDisplayItem item;
+            item.emotion = emotion;
+            item.indexInEmotion = i;
+            item.ref = refs[i];
+            displayItems.append(item);
+        }
+    }
+
+    // Then: unknown emotions (alphabetical)
+    QStringList unknownEmotions;
+    for (auto it = allEmotions.constBegin(); it != allEmotions.constEnd(); ++it) {
+        if (!knownEmotions.contains(it.key())) {
+            unknownEmotions.append(it.key());
+        }
+    }
+    unknownEmotions.sort();
+    for (const QString &emotion : unknownEmotions) {
+        QList<PetActionRef> refs = m_playlist.emotionActions(emotion);
+        for (int i = 0; i < refs.size(); ++i) {
+            EmotionActionDisplayItem item;
+            item.emotion = emotion;
+            item.indexInEmotion = i;
+            item.ref = refs[i];
+            displayItems.append(item);
+        }
+    }
+
+    // Populate list
+    for (const EmotionActionDisplayItem &displayItem : displayItems) {
+        QListWidgetItem *listItem = new QListWidgetItem(formatActionDisplay(displayItem.ref));
+        listItem->setData(Qt::UserRole, displayItem.indexInEmotion);
+        listItem->setData(Qt::UserRole + 1, displayItem.emotion);
+        m_emotionActionList->addItem(listItem);
+    }
+
+    // Restore selection
+    if (!savedActionId.isEmpty()) {
+        for (int i = 0; i < m_emotionActionList->count(); ++i) {
+            QListWidgetItem *item = m_emotionActionList->item(i);
+            QString emotion = item->data(Qt::UserRole + 1).toString();
+            int index = item->data(Qt::UserRole).toInt();
+            QList<PetActionRef> refs = m_playlist.emotionActions(emotion);
+            if (index >= 0 && index < refs.size()
+                && refs[index].actionId == savedActionId
+                && refs[index].displayName == savedDisplayName
+                && emotion == savedEmotion) {
+                m_emotionActionList->setCurrentItem(item);
+                break;
+            }
+        }
+    }
+
+    m_updatingCategoryList = false;
 }

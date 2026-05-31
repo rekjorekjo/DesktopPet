@@ -158,13 +158,45 @@ void PetWidget::playEmotion(const QString &emotion)
 
     QList<PetActionRef> emotionRefs = m_playlist.emotionActions(emotion);
     if (emotionRefs.isEmpty()) {
+        qInfo() << "No emotion action configured for:" << emotion;
         return;
     }
 
-    int index = QRandomGenerator::global()->bounded(emotionRefs.size());
-    PetActionRef ref = emotionRefs.at(index);
+    // Filter to only valid, enabled actions
+    QList<PetActionRef> candidates;
+    for (const PetActionRef &ref : emotionRefs) {
+        PetAction action = findActionById(ref.actionId);
+        if (action.isValid()) {
+            candidates.append(ref);
+        }
+    }
 
+    if (candidates.isEmpty()) {
+        qInfo() << "No valid emotion action candidates for:" << emotion;
+        return;
+    }
+
+    // Avoid consecutive repeat of the same action if multiple candidates exist
+    int index;
+    if (candidates.size() > 1) {
+        QString lastId = m_lastEmotionActionId.value(emotion);
+        do {
+            index = QRandomGenerator::global()->bounded(candidates.size());
+        } while (candidates.at(index).actionId == lastId);
+    } else {
+        index = 0;
+    }
+
+    PetActionRef ref = candidates.at(index);
+    m_lastEmotionActionId[emotion] = ref.actionId;
+
+    qInfo() << "Emotion action queued:" << ref.actionId << "for" << emotion;
     enqueueAction(ref, QueuedActionType::Emotion, "emotion " + emotion);
+
+    // If currently in Idle mode, trigger immediate playback of the emotion action
+    if (m_currentMode == PetPlayMode::Idle) {
+        playNextRuntimeActionOrIdle();
+    }
 }
 
 PetAction PetWidget::findActionById(const QString &actionId) const

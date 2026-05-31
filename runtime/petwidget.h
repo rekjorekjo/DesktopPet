@@ -251,6 +251,9 @@ private:
     QList<QueuedAction> m_runtimeQueue;
     qint64 m_nextSequence;
 
+    // Track last played actionId per emotion to avoid consecutive repeats
+    QHash<QString, QString> m_lastEmotionActionId;
+
     // 将动作加入运行时队列
     void enqueueAction(const PetActionRef &ref, QueuedActionType type, const QString &reason);
 

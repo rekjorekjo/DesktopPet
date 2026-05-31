@@ -91,9 +91,6 @@ int main(int argc, char *argv[])
 
     QObject::connect(&tray, &TrayManager::quitRequested, &app, &QApplication::quit);
 
-    QObject::connect(&tray, &TrayManager::emotionRequested,
-                     &pet, &PetWidget::playEmotion);
-
     pet.show();
 
     if (AppSettings::openSettingsOnLaunch()) {

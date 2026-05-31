@@ -4,11 +4,51 @@
 
 bool ChatQueryClassifier::isForcedSearchQuery(const QString &text)
 {
+    return !extractForcedSearchQuery(text).isEmpty();
+}
+
+QString ChatQueryClassifier::extractForcedSearchQuery(const QString &text)
+{
     QString trimmed = text.trimmed();
-    return trimmed.startsWith("/search ", Qt::CaseInsensitive)
-        || trimmed.startsWith("#search ", Qt::CaseInsensitive)
-        || trimmed.startsWith("搜一下")
-        || trimmed.startsWith("查一下");
+    if (trimmed.isEmpty()) {
+        return QString();
+    }
+
+    struct Trigger {
+        QString marker;
+        bool caseInsensitive;
+    };
+    static const QVector<Trigger> triggers = {
+        {"/search", true},
+        {"#search", true},
+        {"搜一下", false},
+        {"查一下", false},
+    };
+
+    int bestPos = -1;
+    int bestMarkerLen = 0;
+
+    for (const Trigger &t : triggers) {
+        Qt::CaseSensitivity cs = t.caseInsensitive ? Qt::CaseInsensitive : Qt::CaseSensitive;
+        int pos = trimmed.indexOf(t.marker, 0, cs);
+        if (pos >= 0 && (bestPos < 0 || pos < bestPos)) {
+            bestPos = pos;
+            bestMarkerLen = t.marker.size();
+        }
+    }
+
+    if (bestPos < 0) {
+        return QString();
+    }
+
+    QString after = trimmed.mid(bestPos + bestMarkerLen).trimmed();
+    if (!after.isEmpty()) {
+        return after;
+    }
+
+    // Command with nothing after it: return everything before the command
+    QString before = trimmed.left(bestPos).trimmed();
+    return before.isEmpty() ? trimmed : before;
 }
 
 bool ChatQueryClassifier::isLocalTimeQuery(const QString &text)

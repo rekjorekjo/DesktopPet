@@ -81,7 +81,7 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
             existingRefs = m_playlist.timedActions();
             break;
         case 3:
-            existingRefs = m_playlist.emotionActions("happy");
+            existingRefs = m_playlist.emotionActions(defaultEmotionForNewAction());
             break;
     }
 
@@ -111,8 +111,8 @@ bool ActionSettingsPage::addActionIdToCurrentCategory(const QString &actionId)
             success = m_playlist.addTimedAction(ref);
             break;
         case 3:
-            ref.emotion = "happy";
-            success = m_playlist.addEmotionAction("happy", ref);
+            ref.emotion = defaultEmotionForNewAction();
+            success = m_playlist.addEmotionAction(ref.emotion, ref);
             break;
     }
 
@@ -293,10 +293,34 @@ void ActionSettingsPage::onMoveUp()
     QListWidget *list = currentCategoryList();
     if (!list) return;
 
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 3) {
+        // Emotion tab: move within the same emotion
+        QListWidgetItem *item = list->currentItem();
+        if (!item) return;
+        QString emotion = item->data(Qt::UserRole + 1).toString();
+        int index = item->data(Qt::UserRole).toInt();
+        if (index <= 0) return;
+
+        if (m_playlist.moveEmotionActionUp(emotion, index)) {
+            refreshEmotionCategoryList();
+            // Re-select the moved item
+            for (int i = 0; i < m_emotionActionList->count(); ++i) {
+                QListWidgetItem *newItem = m_emotionActionList->item(i);
+                if (newItem->data(Qt::UserRole + 1).toString() == emotion
+                    && newItem->data(Qt::UserRole).toInt() == index - 1) {
+                    m_emotionActionList->setCurrentItem(newItem);
+                    break;
+                }
+            }
+        }
+        return;
+    }
+
     int row = list->currentRow();
     if (row <= 0) return;
 
-    int tabIndex = m_categoryTabs->currentIndex();
     bool success = false;
 
     switch (tabIndex) {
@@ -308,9 +332,6 @@ void ActionSettingsPage::onMoveUp()
             break;
         case 2:
             success = m_playlist.moveTimedActionUp(row);
-            break;
-        case 3:
-            success = m_playlist.moveEmotionActionUp("happy", row);
             break;
     }
 
@@ -325,10 +346,35 @@ void ActionSettingsPage::onMoveDown()
     QListWidget *list = currentCategoryList();
     if (!list) return;
 
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 3) {
+        // Emotion tab: move within the same emotion
+        QListWidgetItem *item = list->currentItem();
+        if (!item) return;
+        QString emotion = item->data(Qt::UserRole + 1).toString();
+        int index = item->data(Qt::UserRole).toInt();
+        int emotionCount = m_playlist.emotionActions(emotion).size();
+        if (index < 0 || index >= emotionCount - 1) return;
+
+        if (m_playlist.moveEmotionActionDown(emotion, index)) {
+            refreshEmotionCategoryList();
+            // Re-select the moved item
+            for (int i = 0; i < m_emotionActionList->count(); ++i) {
+                QListWidgetItem *newItem = m_emotionActionList->item(i);
+                if (newItem->data(Qt::UserRole + 1).toString() == emotion
+                    && newItem->data(Qt::UserRole).toInt() == index + 1) {
+                    m_emotionActionList->setCurrentItem(newItem);
+                    break;
+                }
+            }
+        }
+        return;
+    }
+
     int row = list->currentRow();
     if (row < 0 || row >= list->count() - 1) return;
 
-    int tabIndex = m_categoryTabs->currentIndex();
     bool success = false;
 
     switch (tabIndex) {
@@ -340,9 +386,6 @@ void ActionSettingsPage::onMoveDown()
             break;
         case 2:
             success = m_playlist.moveTimedActionDown(row);
-            break;
-        case 3:
-            success = m_playlist.moveEmotionActionDown("happy", row);
             break;
     }
 
@@ -357,10 +400,24 @@ void ActionSettingsPage::onRemove()
     QListWidget *list = currentCategoryList();
     if (!list) return;
 
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    if (tabIndex == 3) {
+        // Emotion tab: remove using emotion and index from item data
+        QListWidgetItem *item = list->currentItem();
+        if (!item) return;
+        QString emotion = item->data(Qt::UserRole + 1).toString();
+        int index = item->data(Qt::UserRole).toInt();
+        if (m_playlist.removeEmotionActionAt(emotion, index)) {
+            refreshEmotionCategoryList();
+            clearCategorySelection();
+        }
+        return;
+    }
+
     int row = list->currentRow();
     if (row < 0) return;
 
-    int tabIndex = m_categoryTabs->currentIndex();
     bool success = false;
 
     switch (tabIndex) {
@@ -372,9 +429,6 @@ void ActionSettingsPage::onRemove()
             break;
         case 2:
             success = m_playlist.removeTimedActionAt(row);
-            break;
-        case 3:
-            success = m_playlist.removeEmotionActionAt("happy", row);
             break;
     }
 
@@ -418,8 +472,9 @@ void ActionSettingsPage::onRenameCategoryAction()
     }
 }
 
-void ActionSettingsPage::onTabChanged(int)
+void ActionSettingsPage::onTabChanged(int index)
 {
+    Q_UNUSED(index);
     refreshCurrentCategoryList();
     clearCategorySelection();
 }
@@ -432,6 +487,11 @@ void ActionSettingsPage::onCategorySelectionChanged()
 void ActionSettingsPage::onCategoryListRowsMoved()
 {
     if (m_updatingCategoryList) return;
+
+    int tabIndex = m_categoryTabs->currentIndex();
+
+    // Emotion tab uses NoDragDrop, so ignore rowsMoved
+    if (tabIndex == 3) return;
 
     QListWidget *list = currentCategoryList();
     if (!list) return;
@@ -447,7 +507,6 @@ void ActionSettingsPage::onCategoryListRowsMoved()
         }
     }
 
-    int tabIndex = m_categoryTabs->currentIndex();
     switch (tabIndex) {
         case 0:
             m_playlist.setIdleActions(newOrder);
@@ -457,9 +516,6 @@ void ActionSettingsPage::onCategoryListRowsMoved()
             break;
         case 2:
             m_playlist.setTimedActions(newOrder);
-            break;
-        case 3:
-            m_playlist.setEmotionActions("happy", newOrder);
             break;
     }
 

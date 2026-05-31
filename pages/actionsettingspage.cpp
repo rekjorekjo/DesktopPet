@@ -62,6 +62,8 @@ ActionSettingsPage::ActionSettingsPage(QWidget *parent)
     , m_timedIntervalSpinBox(nullptr)
     , m_triggerTimeLabel(nullptr)
     , m_triggerTimeEdit(nullptr)
+    , m_emotionConfigLabel(nullptr)
+    , m_emotionConfigComboBox(nullptr)
     , m_loadedSuccessfully(false)
 {
     setAttribute(Qt::WA_StyledBackground, false);
@@ -246,8 +248,7 @@ void ActionSettingsPage::setupUi()
     m_emotionActionList->viewport()->setAutoFillBackground(false);
     m_emotionActionList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_emotionActionList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_emotionActionList->setDragDropMode(QAbstractItemView::InternalMove);
-    m_emotionActionList->setDefaultDropAction(Qt::MoveAction);
+    m_emotionActionList->setDragDropMode(QAbstractItemView::DropOnly);
     m_emotionActionList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_emotionActionList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_emotionActionList->setEmptyStateText(tr("暂无可用动作"), tr("请前往动作库添加动作"));
@@ -279,7 +280,7 @@ void ActionSettingsPage::setupUi()
     m_actionConfigPanel->setBorderOpacity(70);
     QVBoxLayout *configPanelOuterLayout = new QVBoxLayout(m_actionConfigPanel);
     configPanelOuterLayout->setContentsMargins(16, 10, 16, 10);
-    configPanelOuterLayout->setSpacing(8);
+    configPanelOuterLayout->setSpacing(6);
 
     m_actionConfigTitleLabel = new QLabel(tr("当前动作配置"), m_actionConfigPanel);
     m_actionConfigTitleLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
@@ -289,14 +290,15 @@ void ActionSettingsPage::setupUi()
     m_actionConfigTitleLabel->setFont(configPanelTitleFont);
     configPanelOuterLayout->addWidget(m_actionConfigTitleLabel);
 
+    // Row 1: 循环 [checkbox] | 次数 [spinbox]
     QHBoxLayout *row1Layout = new QHBoxLayout();
-    row1Layout->setSpacing(16);
+    row1Layout->setSpacing(6);
 
-    m_loopCheckBox = new QCheckBox(tr("循环播放"), m_actionConfigPanel);
+    m_loopCheckBox = new QCheckBox(tr("循环"), m_actionConfigPanel);
     m_loopCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     row1Layout->addWidget(m_loopCheckBox);
 
-    m_repeatLabel = new QLabel(tr("循环次数"), m_actionConfigPanel);
+    m_repeatLabel = new QLabel(tr("次数"), m_actionConfigPanel);
     m_repeatLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                    .arg(theme.textSecondaryColor()));
     row1Layout->addWidget(m_repeatLabel);
@@ -304,8 +306,7 @@ void ActionSettingsPage::setupUi()
     m_repeatSpinBox = new QSpinBox(m_actionConfigPanel);
     m_repeatSpinBox->setRange(1, 10);
     m_repeatSpinBox->setValue(1);
-    m_repeatSpinBox->setMinimumWidth(120);
-    m_repeatSpinBox->setFixedWidth(120);
+    m_repeatSpinBox->setFixedWidth(88);
     m_repeatSpinBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_repeatSpinBox->setToolTip(tr("0 表示无限循环"));
     m_repeatSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
@@ -314,14 +315,15 @@ void ActionSettingsPage::setupUi()
     row1Layout->addStretch();
     configPanelOuterLayout->addLayout(row1Layout);
 
+    // Row 2: 倍速 [checkbox] | 速度 [combo]
     QHBoxLayout *row2Layout = new QHBoxLayout();
-    row2Layout->setSpacing(16);
+    row2Layout->setSpacing(6);
 
-    m_animationSpeedCheckBox = new QCheckBox(tr("倍速播放"), m_actionConfigPanel);
+    m_animationSpeedCheckBox = new QCheckBox(tr("倍速"), m_actionConfigPanel);
     m_animationSpeedCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     row2Layout->addWidget(m_animationSpeedCheckBox);
 
-    m_animationSpeedLabel = new QLabel(tr("播放速度"), m_actionConfigPanel);
+    m_animationSpeedLabel = new QLabel(tr("速度"), m_actionConfigPanel);
     m_animationSpeedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                              .arg(theme.textSecondaryColor()));
     row2Layout->addWidget(m_animationSpeedLabel);
@@ -338,21 +340,22 @@ void ActionSettingsPage::setupUi()
     m_animationSpeedComboBox->addItem("4.0x", 4.0);
     m_animationSpeedComboBox->addItem("5.0x", 5.0);
     m_animationSpeedComboBox->setCurrentIndex(3);
-    m_animationSpeedComboBox->setFixedWidth(100);
+    m_animationSpeedComboBox->setFixedWidth(86);
     m_animationSpeedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     row2Layout->addWidget(m_animationSpeedComboBox);
 
     row2Layout->addStretch();
     configPanelOuterLayout->addLayout(row2Layout);
 
+    // Row 3: 移动 [checkbox] | 速度 [combo] | 方向 [combo]
     QHBoxLayout *row3Layout = new QHBoxLayout();
-    row3Layout->setSpacing(16);
+    row3Layout->setSpacing(6);
 
-    m_moveEnabledCheckBox = new QCheckBox(tr("移动播放"), m_actionConfigPanel);
+    m_moveEnabledCheckBox = new QCheckBox(tr("移动"), m_actionConfigPanel);
     m_moveEnabledCheckBox->setStyleSheet(theme.checkBoxStyleSheet());
     row3Layout->addWidget(m_moveEnabledCheckBox);
 
-    m_speedLabel = new QLabel(tr("移动速度"), m_actionConfigPanel);
+    m_speedLabel = new QLabel(tr("速度"), m_actionConfigPanel);
     m_speedLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                     .arg(theme.textSecondaryColor()));
     row3Layout->addWidget(m_speedLabel);
@@ -369,24 +372,14 @@ void ActionSettingsPage::setupUi()
     m_speedComboBox->addItem("4.0x", 4.0);
     m_speedComboBox->addItem("5.0x", 5.0);
     m_speedComboBox->setCurrentIndex(3);
-    m_speedComboBox->setFixedWidth(100);
+    m_speedComboBox->setFixedWidth(86);
     m_speedComboBox->setStyleSheet(theme.comboBoxStyleSheet());
     row3Layout->addWidget(m_speedComboBox);
 
-    row3Layout->addStretch();
-    configPanelOuterLayout->addLayout(row3Layout);
-
-    QHBoxLayout *rowMoveAxisLayout = new QHBoxLayout();
-    rowMoveAxisLayout->setSpacing(16);
-
-    int moveEnabledCheckBoxWidth = m_moveEnabledCheckBox->sizeHint().width() + 16;
-    QSpacerItem *spacer = new QSpacerItem(moveEnabledCheckBoxWidth, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    rowMoveAxisLayout->addSpacerItem(spacer);
-
-    m_moveAxisLabel = new QLabel(tr("移动方向"), m_actionConfigPanel);
+    m_moveAxisLabel = new QLabel(tr("方向"), m_actionConfigPanel);
     m_moveAxisLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(theme.textSecondaryColor()));
-    rowMoveAxisLayout->addWidget(m_moveAxisLabel);
+    row3Layout->addWidget(m_moveAxisLabel);
 
     m_moveAxisComboBox = new QComboBox(m_actionConfigPanel);
     m_moveAxisComboBox->addItem(tr("随机"), static_cast<int>(MoveAxis::Random));
@@ -395,69 +388,93 @@ void ActionSettingsPage::setupUi()
     m_moveAxisComboBox->setCurrentIndex(0);
     m_moveAxisComboBox->setFixedWidth(100);
     m_moveAxisComboBox->setStyleSheet(theme.comboBoxStyleSheet());
-    rowMoveAxisLayout->addWidget(m_moveAxisComboBox);
+    row3Layout->addWidget(m_moveAxisComboBox);
 
-    rowMoveAxisLayout->addStretch();
-    configPanelOuterLayout->addLayout(rowMoveAxisLayout);
+    row3Layout->addStretch();
+    configPanelOuterLayout->addLayout(row3Layout);
 
-    QHBoxLayout *row4Layout = new QHBoxLayout();
-    row4Layout->setSpacing(16);
+    // Row 4: 对应情绪 [combo] (only visible for emotion tab)
+    QHBoxLayout *rowEmotionLayout = new QHBoxLayout();
+    rowEmotionLayout->setSpacing(6);
 
-    m_timedTriggerModeLabel = new QLabel(tr("触发方式:"), m_actionConfigPanel);
+    m_emotionConfigLabel = new QLabel(tr("对应情绪"), m_actionConfigPanel);
+    m_emotionConfigLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                            .arg(theme.textSecondaryColor()));
+    rowEmotionLayout->addWidget(m_emotionConfigLabel);
+
+    m_emotionConfigComboBox = new QComboBox(m_actionConfigPanel);
+    m_emotionConfigComboBox->addItem("happy");
+    m_emotionConfigComboBox->addItem("sad");
+    m_emotionConfigComboBox->addItem("angry");
+    m_emotionConfigComboBox->addItem("surprised");
+    m_emotionConfigComboBox->addItem("fear");
+    m_emotionConfigComboBox->addItem("confused");
+    m_emotionConfigComboBox->setFixedWidth(130);
+    m_emotionConfigComboBox->setStyleSheet(theme.comboBoxStyleSheet());
+    rowEmotionLayout->addWidget(m_emotionConfigComboBox);
+
+    rowEmotionLayout->addStretch();
+    configPanelOuterLayout->addLayout(rowEmotionLayout);
+
+    // Timed trigger rows (hidden by default)
+    QHBoxLayout *rowTimedModeLayout = new QHBoxLayout();
+    rowTimedModeLayout->setSpacing(8);
+
+    m_timedTriggerModeLabel = new QLabel(tr("触发方式"), m_actionConfigPanel);
     m_timedTriggerModeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                                .arg(theme.textPrimaryColor()));
-    m_timedTriggerModeLabel->setFixedWidth(80);
-    row4Layout->addWidget(m_timedTriggerModeLabel);
+    rowTimedModeLayout->addWidget(m_timedTriggerModeLabel);
 
     m_timedTriggerModeComboBox = new QComboBox(m_actionConfigPanel);
     m_timedTriggerModeComboBox->addItem(tr("每隔一段时间"), static_cast<int>(TimedTriggerMode::Interval));
     m_timedTriggerModeComboBox->addItem(tr("指定时间"), static_cast<int>(TimedTriggerMode::ClockTime));
-    m_timedTriggerModeComboBox->setFixedWidth(150);
+    m_timedTriggerModeComboBox->setFixedWidth(120);
     m_timedTriggerModeComboBox->setStyleSheet(theme.comboBoxStyleSheet());
-    row4Layout->addWidget(m_timedTriggerModeComboBox);
+    rowTimedModeLayout->addWidget(m_timedTriggerModeComboBox);
 
-    row4Layout->addStretch();
-    configPanelOuterLayout->addLayout(row4Layout);
+    rowTimedModeLayout->addStretch();
+    configPanelOuterLayout->addLayout(rowTimedModeLayout);
 
-    QHBoxLayout *row5Layout = new QHBoxLayout();
-    row5Layout->setSpacing(16);
+    QHBoxLayout *rowTimedIntervalLayout = new QHBoxLayout();
+    rowTimedIntervalLayout->setSpacing(8);
 
-    m_timedIntervalLabel = new QLabel(tr("定时间隔:"), m_actionConfigPanel);
+    m_timedIntervalLabel = new QLabel(tr("间隔"), m_actionConfigPanel);
     m_timedIntervalLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                             .arg(theme.textPrimaryColor()));
-    m_timedIntervalLabel->setFixedWidth(80);
-    row5Layout->addWidget(m_timedIntervalLabel);
+    rowTimedIntervalLayout->addWidget(m_timedIntervalLabel);
 
     m_timedIntervalSpinBox = new QSpinBox(m_actionConfigPanel);
     m_timedIntervalSpinBox->setRange(1, 86400);
     m_timedIntervalSpinBox->setValue(300);
     m_timedIntervalSpinBox->setSuffix(tr(" 秒"));
-    m_timedIntervalSpinBox->setMinimumWidth(160);
+    m_timedIntervalSpinBox->setFixedWidth(120);
     m_timedIntervalSpinBox->setStyleSheet(theme.spinBoxStyleSheet());
-    row5Layout->addWidget(m_timedIntervalSpinBox);
+    rowTimedIntervalLayout->addWidget(m_timedIntervalSpinBox);
 
-    row5Layout->addStretch();
-    configPanelOuterLayout->addLayout(row5Layout);
+    rowTimedIntervalLayout->addStretch();
+    configPanelOuterLayout->addLayout(rowTimedIntervalLayout);
 
-    QHBoxLayout *row6Layout = new QHBoxLayout();
-    row6Layout->setSpacing(16);
+    QHBoxLayout *rowTriggerTimeLayout = new QHBoxLayout();
+    rowTriggerTimeLayout->setSpacing(8);
 
-    m_triggerTimeLabel = new QLabel(tr("播放时间:"), m_actionConfigPanel);
+    m_triggerTimeLabel = new QLabel(tr("时间"), m_actionConfigPanel);
     m_triggerTimeLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                           .arg(theme.textPrimaryColor()));
-    m_triggerTimeLabel->setFixedWidth(80);
-    row6Layout->addWidget(m_triggerTimeLabel);
+    rowTriggerTimeLayout->addWidget(m_triggerTimeLabel);
 
     m_triggerTimeEdit = new QTimeEdit(m_actionConfigPanel);
     m_triggerTimeEdit->setDisplayFormat("HH:mm");
     m_triggerTimeEdit->setTime(QTime(0, 0));
     m_triggerTimeEdit->setFixedWidth(100);
     m_triggerTimeEdit->setStyleSheet(theme.timeEditStyleSheet());
-    row6Layout->addWidget(m_triggerTimeEdit);
+    rowTriggerTimeLayout->addWidget(m_triggerTimeEdit);
 
-    row6Layout->addStretch();
-    configPanelOuterLayout->addLayout(row6Layout);
+    rowTriggerTimeLayout->addStretch();
+    configPanelOuterLayout->addLayout(rowTriggerTimeLayout);
 
+    // Hide timed trigger controls by default
+    m_emotionConfigLabel->hide();
+    m_emotionConfigComboBox->hide();
     m_timedTriggerModeLabel->hide();
     m_timedTriggerModeComboBox->hide();
     m_timedIntervalLabel->hide();
@@ -595,6 +612,7 @@ void ActionSettingsPage::connectSignals()
     connect(m_timedTriggerModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onTimedTriggerModeChanged);
     connect(m_timedIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ActionSettingsPage::onTimedIntervalChanged);
     connect(m_triggerTimeEdit, &QTimeEdit::timeChanged, this, &ActionSettingsPage::onTriggerTimeChanged);
+    connect(m_emotionConfigComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ActionSettingsPage::onEmotionConfigChanged);
 }
 
 void ActionSettingsPage::refreshTheme()

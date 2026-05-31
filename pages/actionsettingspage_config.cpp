@@ -3,6 +3,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QListWidget>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QTime>
@@ -26,6 +27,7 @@ void ActionSettingsPage::updateActionConfigPanel()
     QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
     QSignalBlocker speedBlocker(m_speedComboBox);
     QSignalBlocker moveAxisBlocker(m_moveAxisComboBox);
+    QSignalBlocker emotionConfigBlocker(m_emotionConfigComboBox);
     QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
     QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
     QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
@@ -72,7 +74,18 @@ void ActionSettingsPage::updateActionConfigPanel()
 
     int tabIndex = m_categoryTabs->currentIndex();
     bool isTimedTab = (tabIndex == 2);
+    bool isEmotionTab = (tabIndex == 3);
 
+    // Show/hide emotion config (only for emotion tab)
+    m_emotionConfigLabel->setVisible(isEmotionTab);
+    m_emotionConfigComboBox->setVisible(isEmotionTab);
+
+    if (isEmotionTab) {
+        int emotionIndex = m_emotionConfigComboBox->findText(ref.emotion);
+        m_emotionConfigComboBox->setCurrentIndex(emotionIndex >= 0 ? emotionIndex : 0);
+    }
+
+    // Show/hide timed trigger controls
     m_timedTriggerModeLabel->setVisible(isTimedTab);
     m_timedTriggerModeComboBox->setVisible(isTimedTab);
 
@@ -119,6 +132,7 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         QSignalBlocker moveBlocker(m_moveEnabledCheckBox);
         QSignalBlocker speedBlocker(m_speedComboBox);
         QSignalBlocker moveAxisBlocker(m_moveAxisComboBox);
+        QSignalBlocker emotionConfigBlocker(m_emotionConfigComboBox);
         QSignalBlocker timedModeBlocker(m_timedTriggerModeComboBox);
         QSignalBlocker timedIntervalBlocker(m_timedIntervalSpinBox);
         QSignalBlocker triggerTimeBlocker(m_triggerTimeEdit);
@@ -135,6 +149,10 @@ void ActionSettingsPage::setActionConfigPanelEnabled(bool enabled)
         m_speedComboBox->setCurrentIndex(3);
         m_moveAxisComboBox->setEnabled(false);
         m_moveAxisComboBox->setCurrentIndex(0);
+
+        m_emotionConfigComboBox->setCurrentIndex(0);
+        m_emotionConfigLabel->hide();
+        m_emotionConfigComboBox->hide();
 
         m_timedTriggerModeComboBox->setCurrentIndex(0);
         m_timedIntervalSpinBox->setValue(300);
@@ -371,4 +389,58 @@ void ActionSettingsPage::onTriggerTimeChanged(const QTime &time)
 
     refreshCurrentCategoryList();
     list->setCurrentRow(row);
+}
+
+void ActionSettingsPage::onEmotionConfigChanged(int index)
+{
+    if (m_categoryTabs->currentIndex() != 3)
+        return;
+
+    QListWidget *list = currentCategoryList();
+    if (!list)
+        return;
+
+    QListWidgetItem *item = list->currentItem();
+    if (!item)
+        return;
+
+    QString oldEmotion = item->data(Qt::UserRole + 1).toString();
+    int oldIndex = item->data(Qt::UserRole).toInt();
+    QString newEmotion = m_emotionConfigComboBox->itemText(index).trimmed();
+    if (newEmotion.isEmpty() || newEmotion == oldEmotion)
+        return;
+
+    PetActionRef ref = currentSelectedRef();
+    if (!ref.isValid())
+        return;
+
+    // Remove from old emotion list
+    m_playlist.removeEmotionActionAt(oldEmotion, oldIndex);
+
+    // Add to new emotion list
+    ref.emotion = newEmotion;
+    m_playlist.addEmotionAction(newEmotion, ref);
+
+    // Refresh the full emotion list
+    refreshEmotionCategoryList();
+
+    // Try to re-select the moved item
+    QListWidget *emotionList = currentCategoryList();
+    if (emotionList) {
+        for (int i = 0; i < emotionList->count(); ++i) {
+            QListWidgetItem *newItem = emotionList->item(i);
+            if (newItem->data(Qt::UserRole + 1).toString() == newEmotion) {
+                int newIndex = newItem->data(Qt::UserRole).toInt();
+                QList<PetActionRef> refs = m_playlist.emotionActions(newEmotion);
+                if (newIndex >= 0 && newIndex < refs.size()
+                    && refs[newIndex].actionId == ref.actionId
+                    && refs[newIndex].displayName == ref.displayName) {
+                    emotionList->setCurrentItem(newItem);
+                    break;
+                }
+            }
+        }
+    }
+
+    updateActionConfigPanel();
 }

@@ -124,11 +124,11 @@ QString ChatLogService::formatEntriesForDisplay(const QList<ChatLogEntry> &entri
         result += header + "\n";
 
         if (entry.error) {
-            result += "错误：\n";
+            result += "错误： ";
             result += entry.errorMessage.isEmpty() ? "未知错误" : entry.errorMessage;
         } else {
-            QString roleDisplay = formatRole(entry.role);
-            result += roleDisplay + "：\n";
+            QString roleDisplay = formatRoleForEntry(entry);
+            result += roleDisplay + "： ";
             result += entry.content;
         }
 
@@ -243,17 +243,23 @@ ChatLogEntry ChatLogService::jsonToEntry(const QJsonObject &json)
     return entry;
 }
 
-QString ChatLogService::formatRole(const QString &role)
+QString ChatLogService::formatRoleForEntry(const ChatLogEntry &entry)
 {
-    QString lowerRole = role.toLower();
+    QString lowerRole = entry.role.toLower();
 
     if (lowerRole == "user") {
         return "我";
     } else if (lowerRole == "assistant") {
+        if (!entry.petName.isEmpty()) {
+            return entry.petName;
+        }
+        if (!entry.petId.isEmpty()) {
+            return entry.petId;
+        }
         return "宠物";
     } else if (lowerRole == "system") {
         return "系统";
     }
 
-    return role;
+    return entry.role;
 }

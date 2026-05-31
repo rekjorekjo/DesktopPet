@@ -5,6 +5,7 @@
 #include "services/apiprofileservice.h"
 #include "services/chatlogservice.h"
 #include "services/chatqueryclassifier.h"
+#include "services/chatresponseparser.h"
 #include "services/chatsettingsservice.h"
 #include "services/websearchsettingsservice.h"
 #include "theme/thememanager.h"
@@ -301,7 +302,8 @@ void PetChatWidget::appendUserMessage(const QString &content)
     hideEmptyState();
 
     QString currentText = m_messageDisplay->toPlainText();
-    QString newMessage = tr("我：\n%1\n").arg(content);
+    QString prefix = currentText.trimmed().isEmpty() ? QString() : QStringLiteral("\n");
+    QString newMessage = prefix + tr("我： %1\n").arg(content);
     m_messageDisplay->setPlainText(currentText + newMessage);
 
     QTextCursor cursor = m_messageDisplay->textCursor();
@@ -315,7 +317,8 @@ void PetChatWidget::appendAiMessage(const QString &content)
 {
     QString currentText = m_messageDisplay->toPlainText();
     const QString speakerName = m_petDisplayName.isEmpty() ? tr("宠物") : m_petDisplayName;
-    QString newMessage = tr("\n%1：\n%2\n").arg(speakerName, content);
+    QString prefix = currentText.trimmed().isEmpty() ? QString() : QStringLiteral("\n");
+    QString newMessage = prefix + tr("%1： %2\n").arg(speakerName, content);
     m_messageDisplay->setPlainText(currentText + newMessage);
 
     QTextCursor cursor = m_messageDisplay->textCursor();
@@ -330,7 +333,8 @@ void PetChatWidget::appendSystemMessage(const QString &content)
     hideEmptyState();
 
     QString currentText = m_messageDisplay->toPlainText();
-    QString newMessage = tr("\n系统：\n%1\n").arg(content);
+    QString prefix = currentText.trimmed().isEmpty() ? QString() : QStringLiteral("\n");
+    QString newMessage = prefix + tr("系统： %1\n").arg(content);
     m_messageDisplay->setPlainText(currentText + newMessage);
 
     QTextCursor cursor = m_messageDisplay->textCursor();
@@ -484,13 +488,19 @@ void PetChatWidget::onRequestFinished(const QString &requestId, const QString &c
     m_requestPending = false;
     setWaitingState(false);
 
-    // Add assistant message to context
+    ParsedChatResponse parsed = ChatResponseParser::parse(content, ChatResponseParser::defaultEmotions());
+
+    // Add assistant message to context (only the reply text, not raw JSON)
     ChatCompletionService::Message assistantMsg;
     assistantMsg.role = "assistant";
-    assistantMsg.content = content;
+    assistantMsg.content = parsed.reply;
     m_messages.append(assistantMsg);
 
-    appendAiMessage(content);
+    appendAiMessage(parsed.reply);
+
+    if (!parsed.emotion.isEmpty() && parsed.emotion != "neutral") {
+        emit assistantEmotionDetected(parsed.emotion);
+    }
 }
 
 void PetChatWidget::onRequestFailed(const QString &requestId, const QString &errorMessage)
@@ -528,25 +538,11 @@ bool PetChatWidget::shouldUseWebSearch(const QString &message) const
 
 QString PetChatWidget::normalizeSearchQuery(const QString &message) const
 {
-    QString trimmed = message.trimmed();
-
-    // Strip forced-search prefixes
-    static const QStringList prefixTriggers = {
-        "/search", "#search", "搜一下", "查一下"
-    };
-    for (const QString &prefix : prefixTriggers) {
-        if (trimmed.startsWith(prefix, Qt::CaseInsensitive)) {
-            trimmed = trimmed.mid(prefix.size()).trimmed();
-            break;
-        }
+    QString extracted = ChatQueryClassifier::extractForcedSearchQuery(message);
+    if (!extracted.isEmpty()) {
+        return extracted;
     }
-
-    // If nothing left after stripping, use original
-    if (trimmed.isEmpty()) {
-        return message.trimmed();
-    }
-
-    return trimmed;
+    return message.trimmed();
 }
 
 QString PetChatWidget::buildWebSearchContext(const QList<WebSearchResult> &results) const
@@ -684,6 +680,12 @@ void PetChatWidget::sendChatRequestWithWebContext(const QString &userMessage, co
         webMsg.content = webContext;
         requestMessages.append(webMsg);
     }
+
+    // Inject structured output format instruction (temporary, not persisted)
+    ChatCompletionService::Message formatMsg;
+    formatMsg.role = "system";
+    formatMsg.content = ChatResponseParser::responseFormatInstruction(ChatResponseParser::defaultEmotions());
+    requestMessages.append(formatMsg);
 
     // Add user message to persisted context
     ChatCompletionService::Message userMsg;

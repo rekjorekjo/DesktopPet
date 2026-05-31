@@ -69,6 +69,7 @@ private:
     void refreshActionLibraryList();
     void refreshCurrentCategoryList();
     void refreshCategoryList(QListWidget *list, const QList<PetActionRef> &actions);
+    void refreshEmotionCategoryList();
     void loadGlobalActionLibrary();
 
     // 格式化动作显示文本
@@ -96,6 +97,8 @@ private:
     void clearCategorySelection();
     int findSpeedIndex(double speed) const;
     bool saveCurrentPlaylist();
+    QStringList supportedEmotionKeys() const;
+    QString defaultEmotionForNewAction() const;
 
     void startImportFolderTask(const ActionImportWorker::ImportFolderTask &task, QPointer<ImportActionDialog> dialog = nullptr);
     void startImportGifTask(const ActionImportWorker::ImportGifTask &task, QPointer<NewActionDialog> dialog = nullptr);
@@ -123,6 +126,7 @@ private slots:
     void onTimedTriggerModeChanged(int index);
     void onTimedIntervalChanged(int value);
     void onTriggerTimeChanged(const QTime &time);
+    void onEmotionConfigChanged(int index);
     void onSaveConfig();
     void onSaveAndApplyConfig();
     void onCategoryListRowsMoved();
@@ -176,6 +180,9 @@ private:
     QSpinBox *m_timedIntervalSpinBox;
     QLabel *m_triggerTimeLabel;
     QTimeEdit *m_triggerTimeEdit;
+
+    QLabel *m_emotionConfigLabel;
+    QComboBox *m_emotionConfigComboBox;
 
     // 全局动作库缓存，从 actionlibrary.json 加载
     QList<PetAction> m_actionLibrary;

@@ -42,6 +42,7 @@ public slots:
 
 signals:
     void messageSubmitted(const QString &message);
+    void assistantEmotionDetected(const QString &emotion);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

@@ -38,7 +38,7 @@ private:
     static QString sanitizePetId(const QString &petId);
     static QJsonObject entryToJson(const ChatLogEntry &entry);
     static ChatLogEntry jsonToEntry(const QJsonObject &json);
-    static QString formatRole(const QString &role);
+    static QString formatRoleForEntry(const ChatLogEntry &entry);
 };
 
 #endif // CHATLOGSERVICE_H

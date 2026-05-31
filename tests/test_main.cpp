@@ -8,6 +8,7 @@
 #include "test_apiprofileservice.h"
 #include "test_apiconfig.h"
 #include "test_chatlogservice.h"
+#include "test_chatresponseparser.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +44,10 @@ int main(int argc, char *argv[])
     }
     {
         TestChatLogService t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestChatResponseParser t;
         status |= QTest::qExec(&t, argc, argv);
     }
 

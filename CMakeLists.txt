@@ -88,6 +88,8 @@ qt_add_executable(DesktopPet
     services/chatcompletionservice.h
     services/chatqueryclassifier.cpp
     services/chatqueryclassifier.h
+    services/chatresponseparser.cpp
+    services/chatresponseparser.h
     services/chatlogservice.cpp
     services/chatlogservice.h
     services/chatsettingsservice.cpp
@@ -287,6 +289,8 @@ if(BUILD_TESTING)
         tests/test_apiconfig.cpp
         tests/test_chatlogservice.h
         tests/test_chatlogservice.cpp
+        tests/test_chatresponseparser.h
+        tests/test_chatresponseparser.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -299,6 +303,8 @@ if(BUILD_TESTING)
         services/chatqueryclassifier.h
         services/chatlogservice.cpp
         services/chatlogservice.h
+        services/chatresponseparser.cpp
+        services/chatresponseparser.h
         services/apiprofileservice.cpp
         services/apiprofileservice.h
         models/apiconfig.cpp

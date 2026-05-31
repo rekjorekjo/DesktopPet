@@ -21,6 +21,12 @@ private slots:
 
     void buildPersonaRealtimeSearchQuery_data();
     void buildPersonaRealtimeSearchQuery();
+
+    void isForcedSearchQuery_data();
+    void isForcedSearchQuery();
+
+    void extractForcedSearchQuery_data();
+    void extractForcedSearchQuery();
 };
 
 #endif // TEST_CHATQUERYCLASSIFIER_H
