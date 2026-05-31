@@ -206,6 +206,8 @@ ctest --test-dir build -C Release --output-on-failure
 - API Key 脱敏（SecretStorageService）
 - WebSearch 配置 JSON 序列化与边界修正（WebSearchConfig）
 - 宠物库磁盘恢复逻辑（PetLibraryIndexService）
+- 版本比较逻辑（VersionUtils）
+- GitHub Release JSON 解析（UpdateService）
 
 ### 暂不覆盖
 
@@ -253,6 +255,21 @@ tools/packaging/build_installer.bat
 ```
 
 `package_release.bat` 调用 `windeployqt` 收集 Qt 依赖，并生成可发布目录与压缩包。`build_installer.bat` 调用 Inno Setup 生成安装程序。打包前需先在 Qt Creator 中构建 Release 版本。
+
+---
+
+## 更新机制
+
+DesktopPet 支持在"关于"页检查 GitHub Releases 上的新版本。
+
+- 点击"检查更新"会请求 GitHub Releases API，获取最新的正式 release（忽略 draft 和 prerelease）。
+- 如果有新版本，会显示版本号、更新说明，并提供"下载并安装"按钮。
+- 下载的是 GitHub release 中的 Inno Setup 安装包（`DesktopPet_Setup*.exe`），保存到系统临时目录。
+- 下载完成后自动启动安装向导，然后退出 DesktopPet。
+- 安装程序不会直接删除或覆盖 DesktopPet.exe，由 Inno Setup 处理文件替换。
+- 更新不会主动删除 `config`、`pets`、`logs` 目录。
+- 当前仅支持公开仓库更新，不内置 GitHub token，不支持私有仓库。
+- 自动后台更新可作为后续计划。
 
 ---
 

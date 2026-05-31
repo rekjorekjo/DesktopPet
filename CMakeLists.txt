@@ -38,6 +38,8 @@ qt_add_executable(DesktopPet
     core/petconfigmanager.h
     core/petpaths.cpp
     core/petpaths.h
+    core/versionutils.cpp
+    core/versionutils.h
     models/actioncategory.h
     models/apiconfig.h
     models/apiconfig.cpp
@@ -62,8 +64,6 @@ qt_add_executable(DesktopPet
     runtime/traymanager.h
     utils/gifframeextractor.cpp
     utils/gifframeextractor.h
-    utils/updatemanager.cpp
-    utils/updatemanager.h
     ui/settingswindow.cpp
     ui/settingswindow.h
     services/actionimportservice.cpp
@@ -96,6 +96,8 @@ qt_add_executable(DesktopPet
     services/chatsettingsservice.h
     services/secretstorageservice.cpp
     services/secretstorageservice.h
+    services/updateservice.cpp
+    services/updateservice.h
     services/websearchservice.cpp
     services/websearchservice.h
     services/websearchsettingsservice.cpp
@@ -291,6 +293,10 @@ if(BUILD_TESTING)
         tests/test_chatlogservice.cpp
         tests/test_chatresponseparser.h
         tests/test_chatresponseparser.cpp
+        tests/test_versionutils.h
+        tests/test_versionutils.cpp
+        tests/test_updateservice.h
+        tests/test_updateservice.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp
@@ -305,6 +311,8 @@ if(BUILD_TESTING)
         services/chatlogservice.h
         services/chatresponseparser.cpp
         services/chatresponseparser.h
+        services/updateservice.cpp
+        services/updateservice.h
         services/apiprofileservice.cpp
         services/apiprofileservice.h
         models/apiconfig.cpp
@@ -313,6 +321,8 @@ if(BUILD_TESTING)
         models/apiproviderpreset.h
         core/petpaths.cpp
         core/petpaths.h
+        core/versionutils.cpp
+        core/versionutils.h
         core/appsettings.cpp
         core/appsettings.h
         core/petconfigmanager.cpp
@@ -328,12 +338,14 @@ if(BUILD_TESTING)
     target_include_directories(DesktopPetTests
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_BINARY_DIR}/generated
     )
 
     target_link_libraries(DesktopPetTests
         PRIVATE
             Qt6::Core
             Qt6::Gui
+            Qt6::Network
             Qt6::Test
     )
 

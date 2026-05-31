@@ -9,6 +9,8 @@
 #include "test_apiconfig.h"
 #include "test_chatlogservice.h"
 #include "test_chatresponseparser.h"
+#include "test_versionutils.h"
+#include "test_updateservice.h"
 
 int main(int argc, char *argv[])
 {
@@ -48,6 +50,14 @@ int main(int argc, char *argv[])
     }
     {
         TestChatResponseParser t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestVersionUtils t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestUpdateService t;
         status |= QTest::qExec(&t, argc, argv);
     }
 

@@ -9,7 +9,9 @@
 #include "widgets/softcardwidget.h"
 
 class QFrame;
-class UpdateManager;
+class QProgressBar;
+class UpdateService;
+struct UpdateInfo;
 
 class AboutPage : public QWidget
 {
@@ -24,14 +26,20 @@ public slots:
 
 private slots:
     void onCheckUpdateClicked();
-    void onUpdateAvailable(const QString &latestVersion, const QString &releaseUrl);
-    void onNoUpdateAvailable(const QString &latestVersion);
+    void onCheckFinished(const UpdateInfo &info);
     void onCheckFailed(const QString &errorMessage);
+    void onDownloadClicked();
+    void onDownloadProgress(qint64 received, qint64 total);
+    void onDownloadFinished(const QString &filePath);
+    void onDownloadFailed(const QString &message);
+    void onOpenReleasePageClicked();
 
 private:
     void setupUi();
     void applyTheme();
-    QString elidedStatusText(const QString &text) const;
+    void showUpdateAvailable(const UpdateInfo &info);
+    void showNoUpdate();
+    void resetCheckButton();
 
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
@@ -46,13 +54,17 @@ private:
     SoftCardWidget *m_versionCard;
     QLabel *m_versionCardTitle;
     QLabel *m_versionLabel;
-
-    SoftCardWidget *m_updateCard;
-    QLabel *m_updateCardTitle;
     QLabel *m_updateStatusLabel;
+    QLabel *m_latestVersionLabel;
+    QLabel *m_releaseNotesLabel;
     QPushButton *m_checkUpdateButton;
+    QPushButton *m_downloadButton;
+    QPushButton *m_openReleasePageButton;
+    QProgressBar *m_downloadProgressBar;
+    QLabel *m_downloadStatusLabel;
 
-    UpdateManager *m_updateManager;
+    UpdateService *m_updateService;
+    UpdateInfo *m_currentUpdateInfo;
 };
 
 #endif // ABOUTPAGE_H
