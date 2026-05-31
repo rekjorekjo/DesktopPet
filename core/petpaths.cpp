@@ -1,5 +1,6 @@
 #include "petpaths.h"
 
+#include "core/apppaths.h"
 #include "core/appsettings.h"
 #include "models/petaction.h"
 #include "services/actionlibraryindexservice.h"
@@ -24,17 +25,21 @@ QString PetPaths::rootDirectory()
 {
     if (!s_dataRootOverride.isEmpty())
         return s_dataRootOverride;
-    return QDir::currentPath() + "/pets";
+    return AppPaths::dataRootDir();
 }
 
 QString PetPaths::actionsDirectory()
 {
-    return rootDirectory() + "/actions";
+    if (!s_dataRootOverride.isEmpty())
+        return rootDirectory() + "/actions";
+    return AppPaths::actionsDir();
 }
 
 QString PetPaths::petsDirectory()
 {
-    return rootDirectory() + "/pets";
+    if (!s_dataRootOverride.isEmpty())
+        return rootDirectory() + "/pets";
+    return AppPaths::petsDir();
 }
 
 QString PetPaths::petDirectory(const QString &petId)
@@ -73,7 +78,9 @@ QString PetPaths::resolveActionDirectory(const PetAction &action)
 
 QString PetPaths::configDir()
 {
-    return rootDirectory() + "/config";
+    if (!s_dataRootOverride.isEmpty())
+        return rootDirectory() + "/config";
+    return AppPaths::configDir();
 }
 
 QString PetPaths::apiProfilesFilePath()

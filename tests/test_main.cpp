@@ -7,6 +7,7 @@
 #include "test_repositorycleanup.h"
 #include "test_apiprofileservice.h"
 #include "test_apiconfig.h"
+#include "test_apppaths.h"
 #include "test_chatlogservice.h"
 #include "test_chatresponseparser.h"
 #include "test_versionutils.h"
@@ -42,6 +43,10 @@ int main(int argc, char *argv[])
     }
     {
         TestApiConfig t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestAppPaths t;
         status |= QTest::qExec(&t, argc, argv);
     }
     {

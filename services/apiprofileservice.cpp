@@ -325,7 +325,7 @@ bool ApiProfileService::configFromJson(const QJsonObject &obj, ApiConfig *outCon
     outConfig->apiKey = obj["apiKey"].toString();
     outConfig->baseUrl = obj["baseUrl"].toString();
     outConfig->model = obj["model"].toString();
-    outConfig->maxTokens = obj["maxTokens"].toInt(1024);
+    outConfig->maxTokens = clampMaxTokens(obj["maxTokens"].toInt(kDefaultMaxTokens));
     outConfig->temperature = obj["temperature"].toDouble(0.7);
     return true;
 }

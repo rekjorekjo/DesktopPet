@@ -43,4 +43,75 @@ void TestApiConfig::claudePresetHidden()
     }
 }
 
+void TestApiConfig::maxTokensUndefined()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, kDefaultMaxTokens);
+}
+
+void TestApiConfig::maxTokens2048()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n"
+        "MAX_TOKENS=2048\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, 2048);
+}
+
+void TestApiConfig::maxTokensZero()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n"
+        "MAX_TOKENS=0\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, kDefaultMaxTokens);
+}
+
+void TestApiConfig::maxTokensNegative()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n"
+        "MAX_TOKENS=-1\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, kDefaultMaxTokens);
+}
+
+void TestApiConfig::maxTokensTooLarge()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n"
+        "MAX_TOKENS=999999\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, kMaxAllowedMaxTokens);
+}
+
+void TestApiConfig::maxTokensNonNumeric()
+{
+    QString templateText =
+        "API_KEY=test\n"
+        "BASE_URL=https://example.com/v1\n"
+        "MODEL=test-model\n"
+        "MAX_TOKENS=abc\n";
+
+    ApiConfig config = parseTemplateToConfig(templateText, ApiFormat::OpenAICompatible);
+    QCOMPARE(config.maxTokens, kDefaultMaxTokens);
+}
+
 #include "moc_test_apiconfig.cpp"

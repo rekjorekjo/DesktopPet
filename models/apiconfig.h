@@ -1,7 +1,22 @@
 #ifndef APICONFIG_H
 #define APICONFIG_H
 
+#include <algorithm>
 #include <QString>
+
+// MAX_TOKENS client-side protection constants
+constexpr int kDefaultMaxTokens = 1024;
+constexpr int kMinMaxTokens = 1;
+constexpr int kMaxAllowedMaxTokens = 4096;
+
+// Clamp maxTokens to the allowed range [kMinMaxTokens, kMaxAllowedMaxTokens].
+// If maxTokens <= 0, returns kDefaultMaxTokens.
+inline int clampMaxTokens(int maxTokens)
+{
+    if (maxTokens <= 0)
+        return kDefaultMaxTokens;
+    return std::clamp(maxTokens, kMinMaxTokens, kMaxAllowedMaxTokens);
+}
 
 enum class ApiFormat {
     OpenAICompatible,

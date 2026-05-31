@@ -1,5 +1,6 @@
 #include "chatcompletionservice.h"
 
+#include "models/apiconfig.h"
 #include "services/secretstorageservice.h"
 
 #include <QJsonArray>
@@ -56,8 +57,7 @@ QString ChatCompletionService::sendChatCompletion(const ApiConfig &config,
         return failLater(tr("消息列表为空。"));
     }
 
-    int maxTokens = config.maxTokens;
-    if (maxTokens <= 0) maxTokens = 1024;
+    int maxTokens = clampMaxTokens(config.maxTokens);
     double temperature = config.temperature;
     if (temperature < 0.0 || temperature > 2.0) temperature = 0.7;
 

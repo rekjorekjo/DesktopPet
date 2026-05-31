@@ -11,6 +11,12 @@ private slots:
     void parseTemplateIgnoresCommentLines();
     void customPresetUsesOpenAICompatible();
     void claudePresetHidden();
+    void maxTokensUndefined();
+    void maxTokens2048();
+    void maxTokensZero();
+    void maxTokensNegative();
+    void maxTokensTooLarge();
+    void maxTokensNonNumeric();
 };
 
 #endif // TEST_APICONFIG_H

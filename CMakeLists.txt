@@ -31,6 +31,8 @@ qt_standard_project_setup()
 qt_add_executable(DesktopPet
     WIN32
     main.cpp
+    core/apppaths.cpp
+    core/apppaths.h
     core/appsettings.cpp
     core/appsettings.h
     core/appversion.h
@@ -255,6 +257,7 @@ endif()
 target_include_directories(DesktopPet-resize
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/tools/resize
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(DesktopPet-resize
@@ -289,6 +292,8 @@ if(BUILD_TESTING)
         tests/test_apiprofileservice.cpp
         tests/test_apiconfig.h
         tests/test_apiconfig.cpp
+        tests/test_apppaths.h
+        tests/test_apppaths.cpp
         tests/test_chatlogservice.h
         tests/test_chatlogservice.cpp
         tests/test_chatresponseparser.h
@@ -319,6 +324,8 @@ if(BUILD_TESTING)
         models/apiconfig.h
         models/apiproviderpreset.cpp
         models/apiproviderpreset.h
+        core/apppaths.cpp
+        core/apppaths.h
         core/petpaths.cpp
         core/petpaths.h
         core/versionutils.cpp

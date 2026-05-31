@@ -31,8 +31,8 @@ ApiConfig parseTemplateToConfig(const QString &templateText, ApiFormat format)
         } else if (key == "MAX_TOKENS") {
             bool ok = false;
             int v = value.toInt(&ok);
-            if (ok && v > 0)
-                config.maxTokens = v;
+            if (ok)
+                config.maxTokens = clampMaxTokens(v);
         } else if (key == "TEMPERATURE") {
             bool ok = false;
             double v = value.toDouble(&ok);
