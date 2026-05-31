@@ -29,6 +29,10 @@ AboutPage::AboutPage(QWidget *parent)
     , m_iconLabel(nullptr)
     , m_appNameLabel(nullptr)
     , m_descriptionLabel(nullptr)
+    , m_manualCard(nullptr)
+    , m_manualCardTitle(nullptr)
+    , m_manualDescriptionLabel(nullptr)
+    , m_openManualButton(nullptr)
     , m_versionCard(nullptr)
     , m_versionCardTitle(nullptr)
     , m_versionLabel(nullptr)
@@ -154,6 +158,37 @@ void AboutPage::setupUi()
     infoLayout->addLayout(iconTextLayout);
     contentLayout->addWidget(m_infoCard);
 
+    // ── Manual Card ──
+    m_manualCard = new SoftCardWidget(m_contentWidget);
+    m_manualCard->setObjectName("manualCard");
+    QVBoxLayout *manualLayout = new QVBoxLayout(m_manualCard);
+    manualLayout->setContentsMargins(24, 24, 24, 24);
+    manualLayout->setSpacing(12);
+
+    m_manualCardTitle = new QLabel(tr("用户手册"), m_manualCard);
+    QFont manualTitleFont = m_manualCardTitle->font();
+    manualTitleFont.setPointSize(12);
+    manualTitleFont.setBold(true);
+    m_manualCardTitle->setFont(manualTitleFont);
+    m_manualCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                         .arg(p.subtitleText));
+    manualLayout->addWidget(m_manualCardTitle);
+
+    m_manualDescriptionLabel = new QLabel(tr("查看 DesktopPet 的完整使用说明，包括宠物管理、动作设置、AI 对话、联网搜索、对话日志、个性化、托盘菜单与更新机制。"), m_manualCard);
+    m_manualDescriptionLabel->setWordWrap(true);
+    m_manualDescriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                                .arg(p.textSecondary));
+    manualLayout->addWidget(m_manualDescriptionLabel);
+
+    m_openManualButton = new QPushButton(tr("打开用户手册"), m_manualCard);
+    m_openManualButton->setMinimumHeight(42);
+    m_openManualButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_openManualButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 45));
+    connect(m_openManualButton, &QPushButton::clicked, this, &AboutPage::onOpenManualClicked);
+    manualLayout->addWidget(m_openManualButton);
+
+    contentLayout->addWidget(m_manualCard);
+
     // ── Version Card (merged with update) ──
     m_versionCard = new SoftCardWidget(m_contentWidget);
     m_versionCard->setObjectName("versionCard");
@@ -266,6 +301,12 @@ void AboutPage::applyTheme()
                                     .arg(p.accent));
     m_descriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.textSecondary));
+
+    m_manualCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                         .arg(p.subtitleText));
+    m_manualDescriptionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
+                                                .arg(p.textSecondary));
+    m_openManualButton->setStyleSheet(theme.softSecondaryButtonStyleSheet(6, 45));
 
     m_versionCardTitle->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                         .arg(p.subtitleText));
@@ -418,4 +459,10 @@ void AboutPage::onOpenReleasePageClicked()
     if (m_currentUpdateInfo && !m_currentUpdateInfo->htmlUrl.isEmpty()) {
         QDesktopServices::openUrl(QUrl(m_currentUpdateInfo->htmlUrl));
     }
+}
+
+void AboutPage::onOpenManualClicked()
+{
+    QDesktopServices::openUrl(QUrl(
+        "https://rekjorekjo.github.io/2026/05/31/DesktopPet%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C/"));
 }

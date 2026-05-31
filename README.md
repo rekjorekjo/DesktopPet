@@ -4,24 +4,30 @@
 ![Qt](https://img.shields.io/badge/Qt_6.x-41CD52?logo=qt&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake_3.19+-064F8C?logo=cmake&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white)
-![Status](https://img.shields.io/badge/status-beta-orange)
 
-DesktopPet 是一款基于 C++ / Qt 6 开发的桌面宠物应用，支持桌面悬浮宠物、动作播放、宠物资源管理、主题设置，以及基于 OpenAI 兼容 API 的基础 AI 对话能力。
+DesktopPet 是一个基于 Qt Widgets 开发的桌面宠物应用，支持自定义宠物资源、动作播放、AI 对话、联网搜索、情绪动作联动、对话日志和自动更新。
+
+DesktopPet 旨在提供一个轻量、可扩展、可个性化的桌面陪伴工具，同时保留清晰的本地资源管理、配置管理和发布更新流程。
 
 ---
 
 ## 功能特性
 
-- 桌面悬浮宠物显示，支持拖拽与透明窗口
-- GIF / 图片帧动作播放与动作序列管理
-- 宠物资源库管理（新建、导入、编辑、移除、删除）
-- 动作库与播放列表配置（播放速度、重复次数、循环、移动方向等）
+- 桌面悬浮宠物显示，支持拖拽、右键菜单、托盘菜单
+- 宠物管理：新建、导入、启用/禁用、删除、重新加载
+- 动作管理：新建动作、导入动作、动作分类配置
+- 日常 / 随机 / 定时 / 情绪动作分类播放
+- 模型结构化回复（reply + emotion），情绪动作自动触发
 - 桌宠移动（水平、垂直、随机方向）
 - 主题系统（浅色 / 深色 / Bloom / 卡片渐变 / 随机渐变）
 - 基于 OpenAI 兼容 API 的非流式 AI 对话
 - 联网搜索增强（支持 Tavily / Brave Search / Exa，关键词自动触发与手动触发）
+- 对话日志 JSONL 写入与查看
 - 聊天设置与系统提示词自定义（角色设定）
 - API Profile 配置管理与 JSON 持久化
+- 个性化主题、不透明度、开机自启动、注册表清理
+- 关于页检查 GitHub Releases 更新
+- Inno Setup 安装包发布
 - 配套工具 DesktopPet-resize，用于批量处理动作图片资源
 
 ---
@@ -90,6 +96,7 @@ config/
 petlibrary.json              # 宠物库索引（宠物 ID 唯一依据）
 pets/<petId>/                # 宠物配置（pet.json、playlist.json）
 actions/<actionId>/          # 动作资源（action.json、图片帧）
+logs/chat/<petId>/<yyyyMMdd>.jsonl  # 对话日志（JSONL 格式）
 ```
 
 宠物目录规则：`pets/<petId>/` 是唯一合法的宠物目录格式，`petId` 必须与 `pet.json` 中的 `id` 字段一致。
@@ -227,21 +234,11 @@ ctest --test-dir build -C Release --output-on-failure
 
 ## 路线图
 
-- 聊天日志持久化
-- 模型回复情感信息与宠物动作联动
-- ~~WebSearch / 外部信息工具~~（v0.31.2 已实现）
-- Tool Calling / Function Calling
 - 流式输出与请求取消
-- 更多跨平台适配
+- Tool Calling / Function Calling
+- 长期记忆 / 摘要记忆
 - 更完善的宠物资源编辑器
-
----
-
-## Beta 阶段说明
-
-DesktopPet 当前仍处于 Beta 阶段，功能和配置格式可能继续调整。
-
-历史阶段性开发记录已归档到 docs/archive/README_BETA.md。
+- 更多跨平台适配
 
 ---
 

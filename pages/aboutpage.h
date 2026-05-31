@@ -33,6 +33,7 @@ private slots:
     void onDownloadFinished(const QString &filePath);
     void onDownloadFailed(const QString &message);
     void onOpenReleasePageClicked();
+    void onOpenManualClicked();
 
 private:
     void setupUi();
@@ -50,6 +51,11 @@ private:
     QLabel *m_iconLabel;
     QLabel *m_appNameLabel;
     QLabel *m_descriptionLabel;
+
+    SoftCardWidget *m_manualCard;
+    QLabel *m_manualCardTitle;
+    QLabel *m_manualDescriptionLabel;
+    QPushButton *m_openManualButton;
 
     SoftCardWidget *m_versionCard;
     QLabel *m_versionCardTitle;
