@@ -11,6 +11,7 @@
 #include <QStackedWidget>
 #include <QDateTime>
 #include <QTimeZone>
+#include <QUuid>
 #include <QWidget>
 
 class EmptyStateWidget;
@@ -55,6 +56,8 @@ private:
     QString currentSystemPrompt() const;
     void cancelCurrentRequest();
 
+    void logVisibleMessage(const QString &role, const QString &content, bool error = false, const QString &errorMessage = QString());
+
     bool isForcedWebSearchQuery(const QString &text) const;
     bool shouldUseWebSearch(const QString &message) const;
     QString normalizeSearchQuery(const QString &message) const;
@@ -97,6 +100,8 @@ private:
     bool m_waitingForPersonaSearch;
     QString m_personaSearchRequestId;
     QString m_pendingPersonaUserMessage;
+
+    QString m_conversationId;
 };
 
 #endif // PETCHATWIDGET_H

@@ -122,7 +122,6 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 - Tool Calling / Function Calling
 - 流式输出
 - 模型情感动作联动
-- 聊天日志自动写入
 
 ### 支持的 API 格式与供应商
 
@@ -131,6 +130,14 @@ DesktopPet 内置聊天面板，支持接入 OpenAI 兼容格式的大模型 API
 DeepSeek、Kimi、Qwen、GLM、Doubao、MiniMax、XiaoMiMiMo、OpenAI、Gemini（OpenAI endpoint）、Grok，以及"自定义"配置。
 
 Claude / Anthropic 原生接口（Anthropic-compatible）暂未开放。
+
+### 对话日志
+
+v0.32.1 起支持对话日志自动写入。聊天窗口中可见的用户消息、宠物回复和系统提示会写入本地 JSONL 日志文件。
+
+日志路径：`logs/chat/<petId>/<yyyyMMdd>.jsonl`。没有当前宠物时使用 `logs/chat/_no_pet/<yyyyMMdd>.jsonl`。
+
+日志仅用于查看和检索，不会自动恢复聊天窗口，也不会作为长期记忆重新注入对话。不记录 API Key、临时 system prompt、当前时间 system message 或联网搜索上下文原文。
 
 ### 联网搜索说明
 

@@ -285,6 +285,8 @@ if(BUILD_TESTING)
         tests/test_apiprofileservice.cpp
         tests/test_apiconfig.h
         tests/test_apiconfig.cpp
+        tests/test_chatlogservice.h
+        tests/test_chatlogservice.cpp
         services/secretstorageservice.cpp
         services/secretstorageservice.h
         models/websearchconfig.cpp

@@ -1,7 +1,9 @@
 #include "petchatwidget.h"
 
+#include "core/appsettings.h"
 #include "models/websearchconfig.h"
 #include "services/apiprofileservice.h"
+#include "services/chatlogservice.h"
 #include "services/chatqueryclassifier.h"
 #include "services/chatsettingsservice.h"
 #include "services/websearchsettingsservice.h"
@@ -29,6 +31,7 @@ PetChatWidget::PetChatWidget(QWidget *parent)
     , m_waitingForSearch(false)
     , m_firstChatAfterLaunch(true)
     , m_waitingForPersonaSearch(false)
+    , m_conversationId(QUuid::createUuid().toString(QUuid::WithoutBraces))
 {
     connect(m_chatService, &ChatCompletionService::requestFinished,
             this, &PetChatWidget::onRequestFinished);
@@ -304,6 +307,8 @@ void PetChatWidget::appendUserMessage(const QString &content)
     QTextCursor cursor = m_messageDisplay->textCursor();
     cursor.movePosition(QTextCursor::End);
     m_messageDisplay->setTextCursor(cursor);
+
+    logVisibleMessage("user", content);
 }
 
 void PetChatWidget::appendAiMessage(const QString &content)
@@ -316,6 +321,8 @@ void PetChatWidget::appendAiMessage(const QString &content)
     QTextCursor cursor = m_messageDisplay->textCursor();
     cursor.movePosition(QTextCursor::End);
     m_messageDisplay->setTextCursor(cursor);
+
+    logVisibleMessage("assistant", content);
 }
 
 void PetChatWidget::appendSystemMessage(const QString &content)
@@ -329,10 +336,13 @@ void PetChatWidget::appendSystemMessage(const QString &content)
     QTextCursor cursor = m_messageDisplay->textCursor();
     cursor.movePosition(QTextCursor::End);
     m_messageDisplay->setTextCursor(cursor);
+
+    logVisibleMessage("system", content);
 }
 
 void PetChatWidget::clearMessages()
 {
+    m_conversationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     m_hasMessages = false;
     m_messageDisplay->clear();
     m_messages.clear();
@@ -351,6 +361,36 @@ void PetChatWidget::clearMessages()
 
     setWaitingState(false);
     showEmptyState();
+}
+
+void PetChatWidget::logVisibleMessage(const QString &role, const QString &content, bool error, const QString &errorMessage)
+{
+    ChatLogEntry entry;
+    entry.timestamp = QDateTime::currentDateTime();
+    entry.petId = AppSettings::currentPetId();
+    entry.petName = !m_petDisplayName.isEmpty() ? m_petDisplayName : m_petName;
+    entry.apiConfigName = ApiProfileService::instance().currentProfileName();
+
+    ApiConfig config;
+    if (ApiProfileService::instance().currentProfile(&config)) {
+        entry.apiConfigId = config.providerId;
+        entry.provider = config.providerId;
+        entry.model = config.model;
+    } else {
+        entry.apiConfigId = QString();
+        entry.provider = QString();
+        entry.model = m_model;
+    }
+
+    entry.role = role;
+    entry.content = content;
+    entry.conversationId = m_conversationId;
+    entry.error = error;
+    entry.errorMessage = errorMessage;
+
+    if (!ChatLogService::appendLog(entry)) {
+        qWarning() << "PetChatWidget: Failed to append chat log for role" << role;
+    }
 }
 
 QString PetChatWidget::currentSystemPrompt() const

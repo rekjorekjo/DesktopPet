@@ -7,6 +7,7 @@
 #include "test_repositorycleanup.h"
 #include "test_apiprofileservice.h"
 #include "test_apiconfig.h"
+#include "test_chatlogservice.h"
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +39,10 @@ int main(int argc, char *argv[])
     }
     {
         TestApiConfig t;
+        status |= QTest::qExec(&t, argc, argv);
+    }
+    {
+        TestChatLogService t;
         status |= QTest::qExec(&t, argc, argv);
     }
 
