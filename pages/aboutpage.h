@@ -62,7 +62,6 @@ private:
     QLabel *m_versionLabel;
     QLabel *m_updateStatusLabel;
     QLabel *m_latestVersionLabel;
-    QLabel *m_releaseNotesLabel;
     QPushButton *m_checkUpdateButton;
     QPushButton *m_downloadButton;
     QPushButton *m_openReleasePageButton;

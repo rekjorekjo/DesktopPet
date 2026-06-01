@@ -27,19 +27,92 @@ UpdateService::~UpdateService()
 
 void UpdateService::checkForUpdates()
 {
-    QString apiUrl = QString("https://api.github.com/repos/%1/%2/releases/latest")
-                         .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
+    // Try manifest first (latest.json at a fixed URL)
+    QString manifestUrl = QString("https://github.com/%1/%2/releases/latest/download/latest.json")
+                              .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
 
-    QUrl url(apiUrl);
+    QUrl url(manifestUrl);
     QNetworkRequest request(url);
-    request.setRawHeader("Accept", "application/vnd.github+json");
     request.setRawHeader("User-Agent", "DesktopPet-Updater");
-    request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
 
     QNetworkReply *reply = m_networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        onCheckReplyFinished(reply);
+        onManifestReplyFinished(reply);
     });
+}
+
+void UpdateService::onManifestReplyFinished(QNetworkReply *reply)
+{
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        // Manifest fetch failed, fall back to GitHub Releases API
+        qInfo() << "Manifest check failed, falling back to GitHub Releases API.";
+
+        QString apiUrl = QString("https://api.github.com/repos/%1/%2/releases/latest")
+                             .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
+
+        QUrl url(apiUrl);
+        QNetworkRequest request(url);
+        request.setRawHeader("Accept", "application/vnd.github+json");
+        request.setRawHeader("User-Agent", "DesktopPet-Updater");
+        request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
+
+        QNetworkReply *fallbackReply = m_networkManager->get(request);
+        connect(fallbackReply, &QNetworkReply::finished, this, [this, fallbackReply]() {
+            onCheckReplyFinished(fallbackReply);
+        });
+        return;
+    }
+
+    QByteArray data = reply->readAll();
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+        // Manifest parse failed, fall back to GitHub Releases API
+        qInfo() << "Manifest parse failed, falling back to GitHub Releases API.";
+
+        QString apiUrl = QString("https://api.github.com/repos/%1/%2/releases/latest")
+                             .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
+
+        QUrl url(apiUrl);
+        QNetworkRequest request(url);
+        request.setRawHeader("Accept", "application/vnd.github+json");
+        request.setRawHeader("User-Agent", "DesktopPet-Updater");
+        request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
+
+        QNetworkReply *fallbackReply = m_networkManager->get(request);
+        connect(fallbackReply, &QNetworkReply::finished, this, [this, fallbackReply]() {
+            onCheckReplyFinished(fallbackReply);
+        });
+        return;
+    }
+
+    QString currentVersion = QString::fromUtf8(APP_VERSION_TAG);
+    UpdateInfo info = parseManifestJson(doc.object(), currentVersion);
+
+    if (!info.valid) {
+        // Manifest validation failed, fall back to GitHub Releases API
+        qInfo() << "Manifest validation failed, falling back to GitHub Releases API.";
+
+        QString apiUrl = QString("https://api.github.com/repos/%1/%2/releases/latest")
+                             .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
+
+        QUrl url(apiUrl);
+        QNetworkRequest request(url);
+        request.setRawHeader("Accept", "application/vnd.github+json");
+        request.setRawHeader("User-Agent", "DesktopPet-Updater");
+        request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
+
+        QNetworkReply *fallbackReply = m_networkManager->get(request);
+        connect(fallbackReply, &QNetworkReply::finished, this, [this, fallbackReply]() {
+            onCheckReplyFinished(fallbackReply);
+        });
+        return;
+    }
+
+    emit checkFinished(info);
 }
 
 void UpdateService::onCheckReplyFinished(QNetworkReply *reply)
@@ -59,13 +132,13 @@ void UpdateService::onCheckReplyFinished(QNetworkReply *reply)
 
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Update check failed: JSON parse error";
-        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
+        emit checkFailed(tr("检查更新失败，请稍后重试或手动访问 GitHub Releases。"));
         return;
     }
 
     if (!doc.isObject()) {
         qWarning() << "Update check failed: Invalid response format";
-        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
+        emit checkFailed(tr("检查更新失败，请稍后重试或手动访问 GitHub Releases。"));
         return;
     }
 
@@ -73,7 +146,7 @@ void UpdateService::onCheckReplyFinished(QNetworkReply *reply)
     UpdateInfo info = parseReleaseJson(doc.object(), currentVersion);
 
     if (!info.valid) {
-        emit checkFailed(tr("检查更新失败，请检查网络连接或稍后重试。"));
+        emit checkFailed(tr("检查更新失败，请稍后重试或手动访问 GitHub Releases。"));
         return;
     }
 
@@ -132,6 +205,61 @@ UpdateInfo UpdateService::parseReleaseJson(const QJsonObject &obj, const QString
             break;
         }
     }
+
+    return info;
+}
+
+UpdateInfo UpdateService::parseManifestJson(const QJsonObject &obj, const QString &currentVersion)
+{
+    UpdateInfo info;
+    info.currentVersion = currentVersion;
+
+    QString version = obj["version"].toString();
+    if (version.isEmpty()) {
+        qWarning() << "Manifest parse failed: missing 'version' field.";
+        return info;
+    }
+
+    QString installerUrl = obj["installerUrl"].toString();
+    if (installerUrl.isEmpty()) {
+        qWarning() << "Manifest parse failed: missing 'installerUrl' field.";
+        return info;
+    }
+
+    // Extract installer filename from URL path and validate it
+    QUrl url(installerUrl);
+    QString path = url.path();
+    QString installerName = path.mid(path.lastIndexOf('/') + 1);
+    if (installerName.isEmpty()) {
+        installerName = obj["installerName"].toString();
+    }
+    if (installerName.isEmpty()) {
+        qWarning() << "Manifest parse failed: cannot determine installer filename.";
+        return info;
+    }
+
+    // Validate filename matches DesktopPet_Setup*.exe pattern
+    if (!installerName.startsWith("DesktopPet_Setup", Qt::CaseInsensitive)
+        || !installerName.endsWith(".exe", Qt::CaseInsensitive)) {
+        qWarning() << "Manifest parse failed: installer filename does not match DesktopPet_Setup*.exe pattern:" << installerName;
+        return info;
+    }
+
+    info.valid = true;
+    info.latestVersion = version;
+    info.releaseName = QString();
+    info.releaseNotes = QString();
+    info.htmlUrl = obj["releaseUrl"].toString();
+    if (info.htmlUrl.isEmpty()) {
+        info.htmlUrl = QString("https://github.com/%1/%2/releases/latest")
+                           .arg(QString::fromUtf8(GitHubOwner), QString::fromUtf8(GitHubRepo));
+    }
+    info.assetName = installerName;
+    info.downloadUrl = installerUrl;
+
+    // Compare versions
+    int cmp = VersionUtils::compareVersions(version, currentVersion);
+    info.updateAvailable = (cmp > 0);
 
     return info;
 }
@@ -240,5 +368,5 @@ QString UpdateService::friendlyErrorMessage(const QString &rawError) const
         return tr("检查更新失败，当前环境的 SSL 组件不可用，请检查运行环境。");
     }
 
-    return tr("检查更新失败，请检查网络连接或稍后重试。");
+    return tr("检查更新失败，请稍后重试或手动访问 GitHub Releases。");
 }

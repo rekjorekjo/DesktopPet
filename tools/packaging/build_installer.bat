@@ -31,7 +31,7 @@ echo  Output:     %OUTPUT_EXE%
 echo.
 
 rem ============================================================
-echo [1/3] Checking prerequisites...
+echo [1/4] Checking prerequisites...
 rem ============================================================
 
 if not exist "%ISCC%" (
@@ -67,7 +67,7 @@ echo   DesktopPet-resize.exe: OK
 
 rem ============================================================
 echo.
-echo [2/3] Checking for user data in dist...
+echo [2/4] Checking for user data in dist...
 rem ============================================================
 
 set "HAS_WARNING=0"
@@ -88,7 +88,7 @@ if "!HAS_WARNING!"=="0" (
 
 rem ============================================================
 echo.
-echo [3/3] Compiling installer...
+echo [3/4] Compiling installer...
 rem ============================================================
 
 "%ISCC%" "%PROJECT_ROOT%\tools\packaging\DesktopPet.iss" /O"%PROJECT_ROOT%\dist" /DMyAppVersion="%APP_VERSION%"
@@ -97,12 +97,49 @@ if errorlevel 1 (
     goto error
 )
 
+rem ============================================================
+echo.
+echo [4/4] Generating latest.json manifest...
+rem ============================================================
+
+set "LATEST_JSON=%PROJECT_ROOT%\dist\latest.json"
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$v = '%APP_VERSION%'; " ^
+    "$out = $env:LATEST_JSON; " ^
+    "$now = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'); " ^
+    "$data = [ordered]@{ " ^
+    "    version = $v; " ^
+    "    tag = ('v' + $v); " ^
+    "    releaseUrl = ('https://github.com/rekjorekjo/DesktopPet/releases/tag/v' + $v); " ^
+    "    installerUrl = ('https://github.com/rekjorekjo/DesktopPet/releases/download/v' + $v + '/DesktopPet_Setup_v' + $v + '.exe'); " ^
+    "    installerName = ('DesktopPet_Setup_v' + $v + '.exe'); " ^
+    "    publishedAt = $now; " ^
+    "    notes = 'Stability fixes' " ^
+    "}; " ^
+    "$json = $data | ConvertTo-Json -Depth 3; " ^
+    "$utf8NoBom = New-Object System.Text.UTF8Encoding($false); " ^
+    "[System.IO.File]::WriteAllText($out, $json, $utf8NoBom)"
+
+if errorlevel 1 (
+    echo ERROR: Failed to generate latest.json.
+    goto error
+)
+
+if not exist "%LATEST_JSON%" (
+    echo ERROR: latest.json was not created.
+    goto error
+)
+
+echo   latest.json: OK
+
 echo.
 echo ============================================
 echo  Build completed successfully!
 echo ============================================
 echo.
 echo  Installer: %OUTPUT_EXE%
+echo  Manifest:  %LATEST_JSON%
 echo.
 
 goto end

@@ -9,7 +9,7 @@ DesktopPet 是一个基于 Qt Widgets 开发的桌面宠物应用，支持自定
 
 DesktopPet 旨在提供一个轻量、可扩展、可个性化的桌面陪伴工具，同时保留清晰的本地资源管理、配置管理和发布更新流程。
 
-项目状态（v1.1.0，统计数据仅供参考）
+项目状态（v1.1.1，统计数据仅供参考）
 
 ---
 
@@ -217,6 +217,7 @@ ctest --test-dir build -C Release --output-on-failure
 - 宠物库磁盘恢复逻辑（PetLibraryIndexService）
 - 版本比较逻辑（VersionUtils）
 - GitHub Release JSON 解析（UpdateService）
+- Manifest JSON 解析与安装包文件名校验（UpdateService）
 
 ### 暂不覆盖
 
@@ -261,13 +262,16 @@ tools/packaging/build_installer.bat
 
 DesktopPet 支持在"关于"页检查 GitHub Releases 上的新版本。
 
-- 点击"检查更新"会请求 GitHub Releases API，获取最新的正式 release（忽略 draft 和 prerelease）。
-- 如果有新版本，会显示版本号、更新说明，并提供"下载并安装"按钮。
+- 检查更新时优先读取 GitHub Release asset 中的 `latest.json` manifest 文件。
+- 如果 manifest 获取或解析失败，会 fallback 到 GitHub Releases API。
+- 关于页只显示版本号信息，不显示 release notes / release body / Markdown 内容。
+- 如果有新版本，会提供"下载并安装"和"打开发布页"按钮。
 - 下载的是 GitHub release 中的 Inno Setup 安装包（`DesktopPet_Setup*.exe`），保存到系统临时目录。
 - 下载完成后自动启动安装向导，然后退出 DesktopPet。
 - 安装程序不会直接删除或覆盖 DesktopPet.exe，由 Inno Setup 处理文件替换。
 - 更新不会主动删除 `config`、`pets`、`logs` 目录。
 - 当前仅支持公开仓库更新，不内置 GitHub token，不支持私有仓库。
+- 发布 GitHub Release 时需要上传 `latest.json` 文件（由 `build_installer.bat` 自动生成）。
 - 自动后台更新可作为后续计划。
 
 ---

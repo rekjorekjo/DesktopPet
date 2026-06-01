@@ -38,7 +38,6 @@ AboutPage::AboutPage(QWidget *parent)
     , m_versionLabel(nullptr)
     , m_updateStatusLabel(nullptr)
     , m_latestVersionLabel(nullptr)
-    , m_releaseNotesLabel(nullptr)
     , m_checkUpdateButton(nullptr)
     , m_downloadButton(nullptr)
     , m_openReleasePageButton(nullptr)
@@ -224,15 +223,6 @@ void AboutPage::setupUi()
     m_latestVersionLabel->setVisible(false);
     versionLayout->addWidget(m_latestVersionLabel);
 
-    m_releaseNotesLabel = new QLabel(m_versionCard);
-    m_releaseNotesLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(p.textSecondary));
-    m_releaseNotesLabel->setWordWrap(true);
-    m_releaseNotesLabel->setMaximumHeight(120);
-    m_releaseNotesLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_releaseNotesLabel->setVisible(false);
-    versionLayout->addWidget(m_releaseNotesLabel);
-
     m_downloadProgressBar = new QProgressBar(m_versionCard);
     m_downloadProgressBar->setMinimum(0);
     m_downloadProgressBar->setMaximum(100);
@@ -316,8 +306,6 @@ void AboutPage::applyTheme()
                                          .arg(p.textSecondary));
     m_latestVersionLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                           .arg(p.textSecondary));
-    m_releaseNotesLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
-                                         .arg(p.textSecondary));
     m_downloadStatusLabel->setStyleSheet(QString("color: %1; border: none; background: transparent;")
                                            .arg(p.textSecondary));
     m_checkUpdateButton->setStyleSheet(theme.softButtonStyleSheet(6, 45));
@@ -333,7 +321,6 @@ void AboutPage::onCheckUpdateClicked()
 
     // Hide update-specific UI
     m_latestVersionLabel->setVisible(false);
-    m_releaseNotesLabel->setVisible(false);
     m_downloadButton->setVisible(false);
     m_openReleasePageButton->setVisible(false);
     m_downloadProgressBar->setVisible(false);
@@ -370,21 +357,7 @@ void AboutPage::showUpdateAvailable(const UpdateInfo &info)
     m_updateStatusLabel->setText(tr("发现新版本：%1").arg(info.latestVersion));
 
     m_latestVersionLabel->setVisible(true);
-    if (!info.releaseName.isEmpty()) {
-        m_latestVersionLabel->setText(tr("版本名称：%1").arg(info.releaseName));
-    } else {
-        m_latestVersionLabel->setText(tr("版本：%1").arg(info.latestVersion));
-    }
-
-    // Show release notes (truncated)
-    if (!info.releaseNotes.isEmpty()) {
-        m_releaseNotesLabel->setVisible(true);
-        QString notes = info.releaseNotes;
-        if (notes.length() > 500) {
-            notes = notes.left(500) + "...";
-        }
-        m_releaseNotesLabel->setText(notes);
-    }
+    m_latestVersionLabel->setText(tr("最新版本：%1").arg(info.latestVersion));
 
     if (!info.assetName.isEmpty()) {
         m_downloadButton->setVisible(true);

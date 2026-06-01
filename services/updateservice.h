@@ -37,6 +37,10 @@ public:
     // Static so it can be tested without network.
     static UpdateInfo parseReleaseJson(const QJsonObject &obj, const QString &currentVersion);
 
+    // Parse a manifest JSON object (latest.json) into UpdateInfo.
+    // Static so it can be tested without network.
+    static UpdateInfo parseManifestJson(const QJsonObject &obj, const QString &currentVersion);
+
 signals:
     void checkFinished(const UpdateInfo &info);
     void checkFailed(const QString &message);
@@ -45,6 +49,7 @@ signals:
     void downloadFailed(const QString &message);
 
 private slots:
+    void onManifestReplyFinished(QNetworkReply *reply);
     void onCheckReplyFinished(QNetworkReply *reply);
     void onDownloadReplyFinished(QNetworkReply *reply);
     void onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);

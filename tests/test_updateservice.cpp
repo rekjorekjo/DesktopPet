@@ -167,3 +167,101 @@ void TestUpdateService::testParseReleaseJsonNoUpdateWhenCurrentTagMatches()
     QVERIFY(info.valid);
     QVERIFY(!info.updateAvailable);
 }
+
+void TestUpdateService::testParseManifestJsonValid()
+{
+    QJsonObject manifest;
+    manifest["version"] = "1.1.1";
+    manifest["tag"] = "v1.1.1";
+    manifest["releaseUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/tag/v1.1.1";
+    manifest["installerUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.1/DesktopPet_Setup_v1.1.1.exe";
+    manifest["installerName"] = "DesktopPet_Setup_v1.1.1.exe";
+    manifest["publishedAt"] = "2026-05-31T00:00:00Z";
+    manifest["notes"] = "稳定性修复版本";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(info.valid);
+    QVERIFY(info.updateAvailable);
+    QCOMPARE(info.latestVersion, QString("1.1.1"));
+    QCOMPARE(info.downloadUrl, QString("https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.1/DesktopPet_Setup_v1.1.1.exe"));
+    QCOMPARE(info.assetName, QString("DesktopPet_Setup_v1.1.1.exe"));
+    QCOMPARE(info.htmlUrl, QString("https://github.com/rekjorekjo/DesktopPet/releases/tag/v1.1.1"));
+    QVERIFY(info.releaseName.isEmpty());
+    QVERIFY(info.releaseNotes.isEmpty());
+}
+
+void TestUpdateService::testParseManifestJsonMissingVersion()
+{
+    QJsonObject manifest;
+    manifest["installerUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.1/DesktopPet_Setup_v1.1.1.exe";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(!info.valid);
+    QVERIFY(!info.updateAvailable);
+}
+
+void TestUpdateService::testParseManifestJsonMissingInstallerUrl()
+{
+    QJsonObject manifest;
+    manifest["version"] = "1.1.1";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(!info.valid);
+    QVERIFY(!info.updateAvailable);
+}
+
+void TestUpdateService::testParseManifestJsonInstallerUrlMismatch()
+{
+    QJsonObject manifest;
+    manifest["version"] = "1.1.1";
+    manifest["installerUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.1/DesktopPet_Source_v1.1.1.exe";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(!info.valid);
+    QVERIFY(!info.updateAvailable);
+}
+
+void TestUpdateService::testParseManifestJsonInstallerUrlWithPathMismatch()
+{
+    // URL where "DesktopPet_Setup" appears in path but final filename is not DesktopPet_Setup*.exe
+    QJsonObject manifest;
+    manifest["version"] = "1.1.1";
+    manifest["installerUrl"] = "https://example.com/DesktopPet_Setup/something.exe";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(!info.valid);
+    QVERIFY(!info.updateAvailable);
+}
+
+void TestUpdateService::testParseManifestJsonNoUpdateWhenCurrent()
+{
+    QJsonObject manifest;
+    manifest["version"] = "1.1.0";
+    manifest["installerUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.0/DesktopPet_Setup_v1.1.0.exe";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(info.valid);
+    QVERIFY(!info.updateAvailable);
+}
+
+void TestUpdateService::testParseManifestJsonNotesIgnored()
+{
+    QJsonObject manifest;
+    manifest["version"] = "1.1.1";
+    manifest["installerUrl"] = "https://github.com/rekjorekjo/DesktopPet/releases/download/v1.1.1/DesktopPet_Setup_v1.1.1.exe";
+    manifest["notes"] = "**Markdown** _should not_ be rendered as `code`";
+
+    UpdateInfo info = UpdateService::parseManifestJson(manifest, "1.1.0");
+
+    QVERIFY(info.valid);
+    QVERIFY(info.updateAvailable);
+    // Both releaseName and releaseNotes should be empty — notes are ignored
+    QVERIFY(info.releaseName.isEmpty());
+    QVERIFY(info.releaseNotes.isEmpty());
+}
