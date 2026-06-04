@@ -50,12 +50,14 @@ Source: "{#MyDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{#MyAppName} 图片处理工具"; Filename: "{app}\DesktopPet-resize.exe"
+Name: "{group}\{#MyAppName} 图片处理工具"; Filename: "{app}\DesktopPet-resize.exe"; IconFilename: "{app}\DesktopPet-resize.exe"
 Name: "{group}\卸载 {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{userdesktop}\{#MyAppName} 图片处理工具"; Filename: "{app}\DesktopPet-resize.exe"; IconFilename: "{app}\DesktopPet-resize.exe"; Tasks: desktopiconresize
 
 [Tasks]
 Name: "desktopicon"; Description: "创建桌面快捷方式"; Flags: unchecked
+Name: "desktopiconresize"; Description: "创建图片处理工具桌面快捷方式"; Flags: unchecked
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
