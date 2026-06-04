@@ -38,6 +38,8 @@ Thumbs.db
 # Archives
 *.zip
 *.bak
+*.png
+*.jpg
 
 generate_bloom_qt_themes.py
 
