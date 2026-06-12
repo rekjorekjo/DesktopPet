@@ -8,6 +8,12 @@
 #include <QSettings>
 #endif
 
+#ifdef Q_OS_WIN
+static const char *kRunKeyPath = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+static const char *kStartupApprovedKeyPath = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run";
+static const char *kValueName = "DesktopPet";
+#endif
+
 QString AppSettings::currentPetId()
 {
     QSettings settings("DesktopPet", "DesktopPet");
@@ -50,34 +56,68 @@ void AppSettings::setPetOpacity(double opacity)
 
 bool AppSettings::autoStartOnBoot()
 {
+#ifdef Q_OS_WIN
+    // Read the real system state from the registry
+    QSettings runSettings(kRunKeyPath, QSettings::NativeFormat);
+    if (!runSettings.contains(kValueName)) {
+        return false;
+    }
+
+    // Check StartupApproved to see if disabled by task manager / security software
+    QSettings startupApprovedSettings(kStartupApprovedKeyPath, QSettings::NativeFormat);
+    if (startupApprovedSettings.contains(kValueName)) {
+        QByteArray approvedData = startupApprovedSettings.value(kValueName).toByteArray();
+        // First byte 0x03 means disabled
+        if (!approvedData.isEmpty() && static_cast<unsigned char>(approvedData.at(0)) == 0x03) {
+            return false;
+        }
+    }
+
+    return true;
+#else
     QSettings settings("DesktopPet", "DesktopPet");
     return settings.value("startup/autoStartOnBoot", false).toBool();
+#endif
 }
 
-void AppSettings::setAutoStartOnBoot(bool enabled)
+bool AppSettings::setAutoStartOnBoot(bool enabled)
 {
-    QSettings settings("DesktopPet", "DesktopPet");
-    settings.setValue("startup/autoStartOnBoot", enabled);
-
 #ifdef Q_OS_WIN
-    QSettings regSettings(
-        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-        QSettings::NativeFormat);
+    QSettings runSettings(kRunKeyPath, QSettings::NativeFormat);
+    QSettings startupApprovedSettings(kStartupApprovedKeyPath, QSettings::NativeFormat);
+
     if (enabled) {
         QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-        regSettings.setValue("DesktopPet", QString("\"%1\"").arg(appPath));
+        runSettings.setValue(kValueName, QString("\"%1\"").arg(appPath));
+        // Clear any disabled state from StartupApproved
+        startupApprovedSettings.remove(kValueName);
     } else {
-        regSettings.remove("DesktopPet");
+        runSettings.remove(kValueName);
+        startupApprovedSettings.remove(kValueName);
     }
+
+    runSettings.sync();
+    startupApprovedSettings.sync();
+
+    if (runSettings.status() != QSettings::NoError) {
+        return false;
+    }
+
+    // Only persist to our own QSettings after registry write succeeds
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("startup/autoStartOnBoot", enabled);
+    return true;
 #else
-    Q_UNUSED(enabled);
+    QSettings settings("DesktopPet", "DesktopPet");
+    settings.setValue("startup/autoStartOnBoot", enabled);
+    return true;
 #endif
 }
 
 bool AppSettings::autoPlayOnLaunch()
 {
     QSettings settings("DesktopPet", "DesktopPet");
-    return settings.value("startup/autoPlayOnLaunch", true).toBool();
+    return settings.value("startup/autoPlayOnLaunch", false).toBool();
 }
 
 void AppSettings::setAutoPlayOnLaunch(bool enabled)

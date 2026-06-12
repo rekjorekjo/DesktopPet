@@ -20,7 +20,7 @@ public:
     static void setPetOpacity(double opacity);
 
     static bool autoStartOnBoot();
-    static void setAutoStartOnBoot(bool enabled);
+    static bool setAutoStartOnBoot(bool enabled);
 
     static bool autoPlayOnLaunch();
     static void setAutoPlayOnLaunch(bool enabled);

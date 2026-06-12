@@ -396,7 +396,15 @@ void PersonalizationPage::onBaseMoveSpeedChanged(int value)
 
 void PersonalizationPage::onAutoStartOnBootChanged(bool enabled)
 {
-    AppSettings::setAutoStartOnBoot(enabled);
+    bool ok = AppSettings::setAutoStartOnBoot(enabled);
+    if (!ok) {
+        QSignalBlocker blocker(m_autoStartOnBootCheckBox);
+        m_autoStartOnBootCheckBox->setChecked(AppSettings::autoStartOnBoot());
+        SoftMessageBox::warning(
+            this,
+            tr("开机自启动设置失败"),
+            tr("开机自启动设置失败，请检查系统权限或安全软件限制。"));
+    }
 }
 
 void PersonalizationPage::onAutoPlayOnLaunchChanged(bool enabled)
@@ -433,6 +441,12 @@ void PersonalizationPage::onClearRegistryClicked()
         QSettings::NativeFormat);
     runSettings.remove("DesktopPet");
     runSettings.sync();
+
+    QSettings startupApprovedSettings(
+        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run",
+        QSettings::NativeFormat);
+    startupApprovedSettings.remove("DesktopPet");
+    startupApprovedSettings.sync();
 #endif
 
     QSettings settings("DesktopPet", "DesktopPet");
